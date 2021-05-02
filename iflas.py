@@ -8,6 +8,8 @@ Last modified: 2021-04-29 14:19:36
 '''
 
 import sys, argparse, time
+# from commonFuncs import *
+from Config import *
 
 class Logger(object):
     def __init__(self, fn):
@@ -25,66 +27,80 @@ class Logger(object):
         print msg
 
 def iFLAS(args):
-    if args.command == 'preproc':
-        log = Logger(args.o + '.preproc.log.txt')
-        log.log(sys.argv)
-        from preprocess import preprocess
-        preprocess(args, log)
-    if args.command == 'mapping':
-        log = Logger(args.o + '.mapping.log.txt')
-        log.log(sys.argv)
-        from mapping import mapping
-        mapping(args, log)
-    if args.command == 'filter':
-        log = Logger(args.o + '.filter.log.txt')
-        log.log(sys.argv)
-        from filter import filter
-        filter(args, log)
-    if args.command == 'collapse':
-        log = Logger(args.o + '.collapse.log.txt')
-        log.log(sys.argv)
-        from collapse import collapse
-        collapse(args, log)
-    if args.command == 'find_as':
-        log = Logger(args.o + '.find_as.log.txt')
-        log.log(sys.argv)
-        from find_as import find_as
-        find_as(args, log)
-    if args.command == 'visual_as':
-        log = Logger('.'.join(args.phe.split('/')[-1].split('.')[:-1]) + '.visual_as.log.txt')
-        log.log(sys.argv)
-        from visual_as import visual_as
-        visual_as(args, log)
-    if args.command == 'rank_as':
-        log = Logger(args.o + '.find_as.log.txt')
-        log.log(sys.argv)
-        from rank_as import rank_as
-        rank_as(args, log)
-    if args.command == 'allelic_as':
-        log = Logger(args.o + '.find_as.log.txt')
-        log.log(sys.argv)
-        from allelic_as import allelic_as
-        allelic_as(args, log)
-    if args.command == 'palen_as':
-        log = Logger(args.o + '.find_as.log.txt')
-        log.log(sys.argv)
-        from palen_as import palen_as
-        palen_as(args, log)
-    if args.command == 'diff_as':
-        log = Logger(args.o + '.find_as.log.txt')
-        log.log(sys.argv)
-        from diff_as import diff_as
-        diff_as(args, log)
-    if args.command == 'go':
-        log = Logger(args.o + '.find_as.log.txt')
-        log.log(sys.argv)
-        from go import go
-        go(args, log)
-    if args.command == 'report':
-        log = Logger(args.o + '.find_as.log.txt')
-        log.log(sys.argv)
-        from report import report
-        report(args, log)
+    defaultCfg = Config(args.default_cfg)
+    dataToProcess = defaultCfg.dataToProcess
+    refInfoParams = defaultCfg.refInfoParams
+    ccsParams = defaultCfg.ccsParams
+    minimap2Params = defaultCfg.minimap2Params
+    optionTools = defaultCfg.optionTools
+    dirSpec = defaultCfg.dirParams
+    for refStrain in refInfoParams:
+        refParams = refInfoParams[refStrain]
+        initRefSetting(refParams=refParams, dirSpec=dirSpec)
+    initSysResourceSetting(optionTools=optionTools)
+    for dataObj in dataToProcess:
+        refParams = refInfoParams[dataObj.ref_strain]
+        dataObj.single_run_threads = len(optionTools.threads/float(len(dataToProcess)))
+        if args.command == 'preproc':
+            log = Logger(args.o + '.preproc.log.txt')
+            log.log(sys.argv)
+            from preprocess import preprocess
+            preprocess(dataObj=dataObj, ccsParams=ccsParams, dirSpec=dirSpec, threads=dataObj.single_run_threads)
+        if args.command == 'mapping':
+            log = Logger(args.o + '.mapping.log.txt')
+            log.log(sys.argv)
+            from mapping import mapping
+            mapping(dataObj=dataObj, minimap2Params=minimap2Params, refParams=refParams, dirSpec=dirSpec, threads=dataObj.single_run_threads)
+        if args.command == 'filter':
+            log = Logger(args.o + '.filter.log.txt')
+            log.log(sys.argv)
+            from filter import filter
+            filter(args, log)
+        if args.command == 'collapse':
+            log = Logger(args.o + '.collapse.log.txt')
+            log.log(sys.argv)
+            from collapse import collapse
+            collapse(args, log)
+        if args.command == 'find_as':
+            log = Logger(args.o + '.find_as.log.txt')
+            log.log(sys.argv)
+            from find_as import find_as
+            find_as(args, log)
+        if args.command == 'visual_as':
+            log = Logger('.'.join(args.phe.split('/')[-1].split('.')[:-1]) + '.visual_as.log.txt')
+            log.log(sys.argv)
+            from visual_as import visual_as
+            visual_as(args, log)
+        if args.command == 'rank_as':
+            log = Logger(args.o + '.find_as.log.txt')
+            log.log(sys.argv)
+            from rank_as import rank_as
+            rank_as(args, log)
+        if args.command == 'allelic_as':
+            log = Logger(args.o + '.find_as.log.txt')
+            log.log(sys.argv)
+            from allelic_as import allelic_as
+            allelic_as(args, log)
+        if args.command == 'palen_as':
+            log = Logger(args.o + '.find_as.log.txt')
+            log.log(sys.argv)
+            from palen_as import palen_as
+            palen_as(args, log)
+        if args.command == 'diff_as':
+            log = Logger(args.o + '.find_as.log.txt')
+            log.log(sys.argv)
+            from diff_as import diff_as
+            diff_as(args, log)
+        if args.command == 'go':
+            log = Logger(args.o + '.find_as.log.txt')
+            log.log(sys.argv)
+            from go import go
+            go(args, log)
+        if args.command == 'report':
+            log = Logger(args.o + '.find_as.log.txt')
+            log.log(sys.argv)
+            from report import report
+            report(args, log)
 
 if __name__ == "__main__":
     USAGE = ' iFLAS: integrated Full Length Alternative Splicing analysis '
