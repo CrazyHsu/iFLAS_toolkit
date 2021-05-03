@@ -1,7 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="3f835e87-a78b-4e3d-a5a5-05b9a628c273" name="Default Changelist" comment="">
+    <list default="true" id="3f835e87-a78b-4e3d-a5a5-05b9a628c273" name="Default Changelist" comment="add mapping and preprocess module">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Config.py" beforeDir="false" afterPath="$PROJECT_DIR$/Config.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/collapse.py" beforeDir="false" afterPath="$PROJECT_DIR$/collapse.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/commonFuncs.py" beforeDir="false" afterPath="$PROJECT_DIR$/commonFuncs.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/commonObjs.py" beforeDir="false" afterPath="$PROJECT_DIR$/commonObjs.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/filter.py" beforeDir="false" afterPath="$PROJECT_DIR$/filter.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/find_as.py" beforeDir="false" afterPath="$PROJECT_DIR$/find_as.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/iFLAS_config.cfg" beforeDir="false" afterPath="$PROJECT_DIR$/iFLAS_config.cfg" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/iflas.py" beforeDir="false" afterPath="$PROJECT_DIR$/iflas.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/mapping.py" beforeDir="false" afterPath="$PROJECT_DIR$/mapping.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/preprocess.py" beforeDir="false" afterPath="$PROJECT_DIR$/preprocess.py" afterDir="false" />
@@ -82,8 +90,16 @@
       <workItem from="1619630372584" duration="88000" />
       <workItem from="1619630472618" duration="3000" />
       <workItem from="1619675703784" duration="218000" />
-      <workItem from="1619675930287" duration="32938000" />
+      <workItem from="1619675930287" duration="42116000" />
     </task>
+    <task id="LOCAL-00001" summary="add mapping and preprocess module">
+      <created>1619946107051</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1619946107052</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -99,5 +115,9 @@
         </entry>
       </map>
     </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="add mapping and preprocess module" />
+    <option name="LAST_COMMIT_MESSAGE" value="add mapping and preprocess module" />
   </component>
 </project>

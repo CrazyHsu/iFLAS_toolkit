@@ -13,7 +13,7 @@ def minimap2mapping(dataObj=None, minimap2Params=None, refParams=None, dirSpec=N
     projectName, sampleName = dataObj.project_name, dataObj.sample_name
     print getCurrentTime() + " Mapping flnc reads to reference genome for project {} sample {}...".format(projectName, sampleName)
     prevDir = os.getcwd()
-    workDir = os.path.join(dirSpec.out_dir, "mapping")
+    workDir = os.path.join(dirSpec.out_dir, projectName, sampleName, "mapping")
     resolveDir(workDir)
     if dataObj.mm2index != None:
         mm2index = minimap2Params.mm2index
@@ -28,12 +28,16 @@ def minimap2mapping(dataObj=None, minimap2Params=None, refParams=None, dirSpec=N
     processedFlncFq = dataObj.data_processed_location
     logDir = os.path.join(dirSpec.out_dir, dataObj.project_name, dataObj.sample_name, "log")
     if dataObj.tgs_plat == "pacbio":
-        cmd = "minimap2 -ax splice:hq -G {} -uf {} --secondary=no --MD {} -t {} >{}.mm2.sam 2>{}/{}.mm2.log".format(
-            minimap2Params.max_reads_length, mm2index, processedFlncFq, threads, sampleName, logDir, sampleName)
+        cmd = "minimap2 -ax splice:hq -G {} -uf {} --secondary=no --MD {} -t {} >flnc.mm2.sam 2>{}/{}.mm2.log".format(
+            minimap2Params.max_reads_length, mm2index, processedFlncFq, threads, logDir, sampleName)
     else:
-        cmd = "minimap2 -ax splice -G {} -k14 -uf {} --secondary=no --MD {} -t {} >{}.mm2.sam 2>{}/{}.mm2.log".format(
-            minimap2Params.max_reads_length, mm2index, processedFlncFq, threads, sampleName, logDir, sampleName)
+        cmd = "minimap2 -ax splice -G {} -k14 -uf {} --secondary=no --MD {} -t {} >flnc.mm2.sam 2>{}/{}.mm2.log".format(
+            minimap2Params.max_reads_length, mm2index, processedFlncFq, threads, logDir, sampleName)
     subprocess.call(cmd, shell=True)
+    cmd = "samtools sort -@ {} flnc.mm2.sam > flnc.mm2.sorted.bam".format(threads)
+    subprocess.call(cmd, shell=True)
+    # cmd = "samtools fasta -@ {} {}.flnc.mm2.sorted.bam > {}.flnc.fa"
+    # subprocess.call(cmd, shell=True)
     print getCurrentTime() + " Mapping flnc reads to reference genome for project {} sample {} done!".format(projectName, sampleName)
     os.chdir(prevDir)
 
@@ -41,7 +45,7 @@ def hisat2mapping(dataObj=None, refParams=None, dirSpec=None, optionTools=None, 
     projectName, sampleName = dataObj.project_name, dataObj.sample_name
     print getCurrentTime() + " Mapping rna-seq short reads to reference genome with hisat2 for project {} sample {}...".format(projectName, sampleName)
     prevDir = os.getcwd()
-    workDir = os.path.join(dirSpec.out_dir, "mapping", "rna-seq")
+    workDir = os.path.join(dirSpec.out_dir, projectName, sampleName, "mapping", "rna-seq")
     resolveDir(workDir)
     logDir = os.path.join(dirSpec.out_dir, projectName, sampleName, "log")
     hisat2indexDir = os.path.join(workDir, "hisat2indexDir")

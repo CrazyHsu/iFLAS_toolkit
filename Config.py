@@ -36,8 +36,8 @@ MINIMAP2_TAGS = [MM2INDEX, MAXREADSLENGTH] \
     = ["mm2_index", "max_reads_length"]
 DATA_TAGS = [PROJECTNAME, SAMPLENAME, USEFMLRC2, SINGLERUNTHREADS] \
     = ["project_name", "sample_name", "use_fmlrc2", "single_run_threads"]
-COLLAPSE_TAGS = [MAXIDENTITY, MAXCOVERAGE, FLCOVERAGE, MAXFUZZYJUNCTION, MAX5DIFF, MAX3DIFF] \
-    = ["max_indentity", "max_coverage", "fl_coverage", "max_fuzzy_junction", "max_5_diff", "max_3_diff"]
+COLLAPSE_TAGS = [MAXIDENTITY, MAXCOVERAGE, FLCOVERAGE, MAXFUZZYJUNCTION, MAX5DIFF, MAX3DIFF, DUNMERGE5SHORTER] \
+    = ["max_indentity", "max_coverage", "fl_coverage", "max_fuzzy_junction", "max_5_diff", "max_3_diff", "dun_merge_5_shorter"]
 OPTION_TAGS = [THREADS, MEMORY] \
     = ["threads", "memory"]
 BUILDIN_TAGS = [PYTHON, R, BASH] \
@@ -55,7 +55,7 @@ BUILDIN_TAGS = [SECTIONTYPE] + BUILDIN_TAGS
 DIR_TAGS = [SECTIONTYPE] + DIR_TAGS
 VALID_TAGS = [SECTIONTYPE] + REF_TAGS + CCS_TAGS + DATA_TAGS + OPTION_TAGS + BUILDIN_TAGS + DIR_TAGS
 
-BOOLEAN_TAGS = [USEFMLRC2]
+BOOLEAN_TAGS = [USEFMLRC2, DUNMERGE5SHORTER]
 FLOAT_TAGS = [CCSMINREADSCORE, CCSMINPREDICTEDACCURACY, MAXIDENTITY, MAXCOVERAGE]
 INTEGER_TAGS = [CCSMINREADLENGTH, CCSMINSUBREADLENGTH, CCSMINCCSLENGTH, CCSMINPASS, FLCOVERAGE, MAXFUZZYJUNCTION,
                 MAX5DIFF, MAX3DIFF, MAXREADSLENGTH, THREADS, SINGLERUNTHREADS]
@@ -147,6 +147,7 @@ class CollapseSection(object):
         self.max_5_diff = 1000
         self.max_3_diff = 500
         self.fl_coverage = 2
+        self.dun_merge_5_shorter = True
 
     def __setattr__(self, key, value):
         if key != "section_type" and key not in COLLAPSE_TAGS:

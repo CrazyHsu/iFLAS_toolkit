@@ -7,14 +7,14 @@ Created on: 2021-04-29 16:11:47
 Last modified: 2021-04-29 16:11:47
 '''
 
-import subprocess
+# import subprocess
 from commonFuncs import *
 
 def retrievePacbio(dataObj=None, ccsParams=None, dirSpec=None, threads=10):
     projectName, strategy, sampleName = dataObj.project_name, dataObj.strategy, dataObj.sample_name
     print getCurrentTime() + " Extract PacBio reads for project {} sample {}...".format(projectName, sampleName)
-    workDir = os.path.join(dirSpec.out_dir, "preprocess", "pacbio")
-    resolveDir(workDir, chdir=True)
+    workDir = os.path.join(dirSpec.out_dir, projectName, sampleName, "preprocess", "pacbio")
+    resolveDir(workDir)
 
     if strategy.lower() == "rsii":
         print getCurrentTime() + " The reads in project {} entry {} are from RSII".format(projectName, sampleName)
@@ -68,14 +68,14 @@ def retrievePacbio(dataObj=None, ccsParams=None, dirSpec=None, threads=10):
         print getCurrentTime() + " Extract CCS reads from subreads files for project {} sample {}...".format(projectName, sampleName)
         ccsOut = subprocess.Popen(["ccs", "--version"], stdout=subprocess.PIPE).communicate()[0].strip("\n")
         if "ccs 3." in ccsOut:
-            cmd = "ccs {} {}.CCS.bam -j {} --minPasses {} --minLength {} --minPredictedAccuracy {} --minReadScore " \
-                  "{} --force".format(subreads, sampleName, threads, ccsParams.min_pass,
+            cmd = "ccs {} CCS.bam -j {} --minPasses {} --minLength {} --minPredictedAccuracy {} --minReadScore " \
+                  "{} --force".format(subreads, threads, ccsParams.min_pass,
                                       ccsParams.min_subread_length,
                                       ccsParams.min_predicted_accuracy, ccsParams.min_read_score)
             subprocess.call(cmd, shell=True)
         elif "ccs 4." in ccsOut:
-            cmd = "ccs {} {}.CCS.bam -j {} --min-passes {} --min-length {} " \
-                  "--min-rq {}".format(subreads, sampleName, threads, ccsParams.min_pass, ccsParams.min_subread_length,
+            cmd = "ccs {} CCS.bam -j {} --min-passes {} --min-length {} " \
+                  "--min-rq {}".format(subreads, threads, ccsParams.min_pass, ccsParams.min_subread_length,
                                        ccsParams.min_predicted_accuracy)
             subprocess.call(cmd, shell=True)
         else:
@@ -85,16 +85,16 @@ def retrievePacbio(dataObj=None, ccsParams=None, dirSpec=None, threads=10):
         raise Exception("You should input the right PacBio sequencing strategy!!")
 
     print getCurrentTime() + " Demultiplex CCS bam for project {} sample {}...".format(projectName, sampleName)
-    cmd = "lima {}.CCS.bam {} {}.fl.bam --isoseq --dump-clips -j {}".format(sampleName, dataObj.primer, sampleName, threads)
+    cmd = "lima CCS.bam {} fl.bam --isoseq --dump-clips -j {}".format(dataObj.primer, sampleName, threads)
     subprocess.call(cmd, shell=True)
     print getCurrentTime() + " Demultiplex CCS bam for project {} sample {} done!".format(projectName, sampleName)
 
     print getCurrentTime() + " Refine CCS bam for project {} sample {}...".format(projectName, sampleName)
-    tmpBamName = "{}.fl.5p--{}_3p.bam".format(sampleName, dataObj.primer)
+    tmpBamName = "fl.5p--{}_3p.bam".format(sampleName, sampleName)
     # primerFileName = "{}.{}.primers.fa".format(sampleName, dataObj.primer)
-    cmd = "isoseq3 refine {} {} {}.flnc.bam --require-polya -j {}".format(tmpBamName, dataObj.primer, sampleName, threads)
+    cmd = "isoseq3 refine {} {} flnc.bam --require-polya -j {}".format(tmpBamName, dataObj.primer, threads)
     subprocess.call(cmd, shell=True)
-    cmd = "samtools fasta {}.flnc.bam > {}.flnc.fa".format(sampleName, sampleName)
+    cmd = "samtools fasta flnc.bam > flnc.fa"
     subprocess.call(cmd, shell=True)
     dataObj.data_processed_location = os.path.join(workDir, "{}.flnc.fa".format(sampleName))
     print getCurrentTime() + " Refine CCS bam for project {} sample {} done!".format(projectName, sampleName)
@@ -179,7 +179,7 @@ def processRnaseq(dataObj=None, threads=None, max_reads_length_tirmmed=30):
 def retrieveNanopore(dataObj=None, dirSpec=None, threads=10, flowcellType="FLO-MIN106", kitType="SQK-RNA002"):
     projectName, sampleName = dataObj.project_name, dataObj.sample_name
     print getCurrentTime() + " Calling fastq files from fast5 files for project {} sample {}...".format(projectName, sampleName)
-    workDir = os.path.join(dirSpec.out_dir, "preprocess", "nanopore")
+    workDir = os.path.join(dirSpec.out_dir, projectName, sampleName, "preprocess", "nanopore")
     resolveDir(workDir)
     fast5Dir = dataObj.data_location
     nanoporeFileType = checkFast5Files(fast5Dir)
@@ -215,12 +215,12 @@ def correctWithFmlrc2(dataObj, dirSpec=None, useFmlrc2=True, threads=None):
         cmd = cmd + "ropebwt2 -LR 2>{}/{}.ropebwt2.log | tr NT TN | fmlrc2-convert comp_msbwt.npy 1>{}/{}.fmlrc_convert.log 2>&1".format(
             logDir, sampleName, logDir, sampleName)
         subprocess.call(cmd, shell=True)
-        cmd = "seqkit seq --rna2dna {} -w 0 > {}.raw.dna.fastq".format(dataObj.data_processed_location, "sample")
+        cmd = "seqkit seq --rna2dna {} -w 0 > raw.dna.fastq".format(dataObj.data_processed_location)
         subprocess.call(cmd, shell=True)
-        cmd = "fmlrc2 -t {} -C 10 comp_msbwt.npy {}.raw.dna.fastq {}.fmlrc_corrected.fasta 1>{}/{}.fmlrc.log 2>&1".format(
-            threads, sampleName, sampleName, logDir, sampleName)
+        cmd = "fmlrc2 -t {} -C 10 comp_msbwt.npy raw.dna.fastq fmlrc_corrected.fasta 1>{}/{}.fmlrc.log 2>&1".format(
+            threads, logDir, sampleName)
         subprocess.call(cmd, shell=True)
-        dataObj.data_processed_location = os.path.join(prevDir, "{}.fmlrc_corrected.fasta".format(sampleName))
+        dataObj.data_processed_location = os.path.join(prevDir, "fmlrc_corrected.fasta")
         # removeFiles(os.getcwd(), ["leftReads.fastq", "rightReads.fastq"])
         os.chdir(prevDir)
         print getCurrentTime() + " Correct {} with short-reads done!".format(dataObj.projectName, dataObj.sampleName)

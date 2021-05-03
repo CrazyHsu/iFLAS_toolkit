@@ -1,4 +1,4 @@
-import os, re, datetime, psutil, subprocess
+import os, re, datetime, psutil, subprocess, pysam
 from Bio import SeqIO
 
 def batchCreateDir(dirList):
@@ -68,8 +68,69 @@ def makeHisat2Index(refParams=None, hisat2indexDir=None, indexPrefix=None, optio
         subprocess.call(cmd, shell=True)
         print str(datetime.datetime.now()) + " End Hisat2 indexing!"
 
-def getPrimerName():
-    pass
+def getSubSamByName(samFile, nameList, isBam=False, nameListIsFile=False, outPrefix=None, sort=True, threads=4):
+    n = nameList
+    if nameListIsFile:
+        with open(nameList, 'r') as infile:
+            n = infile.read().splitlines()
+    if isBam:
+        samHandle = pysam.AlignmentFile(samFile, 'rb', check_sq=False)
+        suffix = ".bam"
+    else:
+        tmpBam = "tmp.bam"
+        pysam.view("-o", tmpBam, "--output-fmt", "BAM", samFile, catch_stdout=False)
+        samHandle = pysam.AlignmentFile(tmpBam, 'rb', check_sq=False)
+        suffix = ".sam"
+    name_indexed = pysam.IndexedReads(samHandle)
+    name_indexed.build()
+    header = samHandle.header.copy()
+    if isBam:
+        out = pysam.Samfile(outPrefix + suffix, 'wb', header=header)
+    else:
+        out = pysam.Samfile(outPrefix + suffix, 'w', header=header)
+    for name in n:
+        try:
+            name_indexed.find(name)
+        except KeyError:
+            pass
+        else:
+            iterator = name_indexed.find(name)
+            for x in iterator:
+                out.write(x)
+    out.close()
+    if not isBam:
+        os.remove("tmp.bam")
+    if sort:
+        if isBam:
+            pysam.sort("-o", outPrefix + ".sorted" + suffix, "-@", str(threads), outPrefix + suffix, catch_stdout=False)
+        else:
+            pysam.sort("-o", outPrefix + ".sorted" + suffix, "-@", str(threads), "--output-fmt", "SAM", outPrefix + suffix, catch_stdout=False)
+        os.remove(outPrefix + suffix)
+        return outPrefix + ".sorted" + suffix
+    else:
+        return outPrefix + suffix
+
+
+def getFxSequenceId(fxFile, isFa=False, isFq=False, outFile=None):
+    recordId = []
+    if isFa:
+        for rec in SeqIO.parse(fxFile, "fasta"):
+            recordId.append(rec.id)
+        if outFile:
+            with open(outFile, 'w') as f:
+                for item in recordId:
+                    print >> f, item
+        else:
+            return recordId
+    if isFq:
+        for rec in SeqIO.parse(fxFile, "fastq"):
+            recordId.append(rec.id)
+        if outFile:
+            with open(outFile, 'w') as f:
+                for item in recordId:
+                    print >> f, item
+        else:
+            return recordId
 
 def getCurrentTime():
     return str(datetime.datetime.now())

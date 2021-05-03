@@ -32,6 +32,7 @@ def iFLAS(args):
     refInfoParams = defaultCfg.refInfoParams
     ccsParams = defaultCfg.ccsParams
     minimap2Params = defaultCfg.minimap2Params
+    collapseParams = defaultCfg.collapseParams
     optionTools = defaultCfg.optionTools
     dirSpec = defaultCfg.dirParams
     for refStrain in refInfoParams:
@@ -55,17 +56,17 @@ def iFLAS(args):
             log = Logger(args.o + '.filter.log.txt')
             log.log(sys.argv)
             from filter import filter
-            filter(args, log)
+            filter(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
         if args.command == 'collapse':
             log = Logger(args.o + '.collapse.log.txt')
             log.log(sys.argv)
             from collapse import collapse
-            collapse(args, log)
+            collapse(dataObj=dataObj, collapseParams=collapseParams, refParams=refParams, dirSpec=dirSpec, threads=dataObj.single_run_threads)
         if args.command == 'find_as':
             log = Logger(args.o + '.find_as.log.txt')
             log.log(sys.argv)
             from find_as import find_as
-            find_as(args, log)
+            find_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
         if args.command == 'visual_as':
             log = Logger('.'.join(args.phe.split('/')[-1].split('.')[:-1]) + '.visual_as.log.txt')
             log.log(sys.argv)
