@@ -1,0 +1,64 @@
+FROM ubuntu:16.04
+MAINTAINER xufeng <crazyhsu9527@gmail.com>
+
+# install basic dependencies
+RUN sed -i s@/archive.ubuntu.com/@/mirrors.tuna.tsinghua.edu.cn/@g /etc/apt/sources.list
+RUN apt-get clean && apt-get update && apt-get install -y --no-install-recommends \
+	build-essential \
+	cmake \
+	git \
+	wget \
+	apt-transport-https \
+	libz-dev \
+	ca-certificates \
+	vim \
+	less \
+	sudo \
+	apt-utils
+
+# install albacore
+RUN mkdir /.pip && echo "[global]\nindex-url = https://pypi.tuna.tsinghua.edu.cn/simple" > /.pip/pip.conf
+
+ARG UID=1001
+ARG GID=1001
+RUN groupadd --gid $GID iflas && useradd --uid $UID --gid iflas --shell /bin/bash --create-home iflas
+RUN echo "root:123456" | chpasswd
+RUN echo "iflas:123456" | chpasswd
+USER iflas
+
+ENV IFLAS_HOME /home/iflas
+
+RUN mkdir $IFLAS_HOME/data && mkdir $IFLAS_HOME/software
+
+# install miniconda for python2.7
+RUN wget --no-check-certificate https://mirrors.tuna.tsinghua.edu.cn/anaconda/miniconda/Miniconda2-latest-Linux-x86_64.sh -O ~/miniconda2.sh && \
+#RUN wget --no-check-certificate https://repo.anaconda.com/miniconda/Miniconda2-latest-Linux-x86_64.sh -O ~/miniconda2.sh && \
+	/bin/bash ~/miniconda2.sh -b -p $IFLAS_HOME/software/conda && \
+	rm ~/miniconda2.sh
+
+
+ENV PATH=$IFLAS_HOME/software/conda/bin:$IFLAS_HOME/software:$PATH
+
+# change conda source for China users
+RUN conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free/ && \
+	conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main/ && \
+	conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/conda-forge/ && \
+	conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/bioconda/ && \
+	conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/r/
+
+RUN sed -i '$d' $IFLAS_HOME/.condarc
+
+RUN conda update --all -y
+
+# create isoseq3 environment with python2.7
+RUN conda create -n isoseq3_pipeline python=2.7
+
+# set some environment variables
+ENV CONDA_DEFAULT_ENV=isoseq3_pipeline
+ENV CONDA_PREFIX=$IFLAS_HOME/software/conda/envs/$CONDA_DEFAULT_ENV
+ENV CONDA_AUTO_UPDATE_CONDA=false
+
+RUN echo ". $IFLAS_HOME/software/conda/etc/profile.d/conda.sh" >> ~/.bashrc && \
+	echo "conda activate isoseq3_pipeline" >> ~/.bashrc
+
+RUN conda install -y -c bioconda bax2bam

@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="3f835e87-a78b-4e3d-a5a5-05b9a628c273" name="Default Changelist" comment="add mapping and preprocess module">
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Config.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/allelic_as.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/collapse.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/commonFuncs.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/commonObjs.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/diff_as.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/filter.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/find_as.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/iFLAS_config.cfg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/iflas.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/mapping.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/111.yml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/Config.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/DESeq2.R" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/Dockerfile_final" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/Dockerfile_for_China" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/Dockerfile_for_overseas" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/Dockfile_bak_China" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/Dockfile_bak_overseas" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/EBSeq.R" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/LICENSE" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/PAandAS.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/alleleSpecific.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/alleleSpecificReadsAssign.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/alleleSpecific_test.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/asEnumerate3.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/asEnumerate4.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/asEnumerate4_for_reference.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/asEnumerate4_without_pa.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/ase.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/aseTest.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/assignGeneNameToSE.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/bedObjs.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/commonFuncs.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/commonObjs.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/determineAllelePos.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/docker_py36" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/docker_test" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/evaluation.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/evaluationFuncs.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/filterAndCollapse.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/filterAndCollapseFuncs.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/filterSpecificExonInEs.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/findAS.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/findASmain.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/findASmain_test.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/foo" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/fusionTransAnalysis.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/geneFeatures.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/getESexonAndFlankExonSeq.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/getJuncCountFromNGSassembly.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/getRepresentSeq.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/groupSpecificedAS.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/gtfObjs.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/iFLAS.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/iFLAS_ont.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/identifyASE.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/identifyASEFuncs.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/identifyDAShybrid.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/identifyDEhybrid.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/identifyLncRNA.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/indepComb.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/input.cfg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/input_alldata.cfg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/install_env_with_conda" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/irConfirm.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/isoViewer.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/isoViewerFuncs.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/isoformIdentityByJunc.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/isoformIdentityByJunc_bak.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/isoseq_multiplat.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/juncOverlapBetweenFiles.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/makeBadMappedTranscriptome.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/mergeIsoAndAssignReads.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/merge_splited_collapse.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/ngsCfg_for_alldata.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/ngsCfg_for_minidata.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/paAnalysis.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/paAnalysisFuncs.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/paCluster.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/palenRelatedAS.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/plotGeneStructure.R" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/plotGeneStrucure_bak.R" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/preprocessAndCorrFuncs.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/processOnlyNGS.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/processRawReadsAndCorr.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/quantHybrid.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/readsAssign.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/readsEnumerate.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/relationshipBetweenAlleleSpecificAndAS.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/relationshipBetweenPAlenAndAS.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/retrieveTGSdata.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/sampleCond.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/scanESbyNGS.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/scanESbyNGSFuncs.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/singleRun.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/singleRun_1.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/singleRun_2.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/software/Cogent" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/software/SQANTI" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/software/SpliceGrapher_packages" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/software/cDNA_Cupcake" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/strainSpecificAS.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/test.R" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/test.cfg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/testJuncCount.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/tgsCfg_for_alldata.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/tgsCfg_for_minidata.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/tmp_log" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_scripts/venn.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/palen_as.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/preprocess.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/rank_as.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/report.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/visual_as.py" beforeDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="PUSH_TAGS">
+      <GitPushTagMode>
+        <option name="argument" value="--follow-tags" />
+        <option name="title" value="Current Branch" />
+      </GitPushTagMode>
+    </option>
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitSEFilterConfiguration">
+    <file-type-list>
+      <filtered-out-file-type name="LOCAL_BRANCH" />
+      <filtered-out-file-type name="REMOTE_BRANCH" />
+      <filtered-out-file-type name="TAG" />
+      <filtered-out-file-type name="COMMIT_BY_MESSAGE" />
+    </file-type-list>
+  </component>
+  <component name="ProjectId" id="1ro70pygZmWsoP1y9Hr7abTeCfR" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="settings.editor.selected.configurable" value="PyConsoleConfigurable.Python Console" />
+  </component>
+  <component name="PyConsoleOptionsProvider">
+    <option name="myPythonConsoleState">
+      <console-settings sdk-home="D:\softInstallation\miniconda2\envs\iFLAS_toolkit\python.exe" working-directory="$PROJECT_DIR$">
+        <option name="mySdkHome" value="D:\softInstallation\miniconda2\envs\iFLAS_toolkit\python.exe" />
+        <option name="myWorkingDirectory" value="$PROJECT_DIR$" />
+      </console-settings>
+    </option>
+  </component>
+  <component name="RunManager">
+    <configuration name="iflas" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="D:\softInstallation\miniconda2\envs\iFLAS_toolkit\python.exe" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/iflas.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="3f835e87-a78b-4e3d-a5a5-05b9a628c273" name="Default Changelist" comment="" />
+      <created>1619630370993</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1619630370993</updated>
+      <workItem from="1619630372584" duration="88000" />
+      <workItem from="1619630472618" duration="3000" />
+      <workItem from="1619675703784" duration="218000" />
+      <workItem from="1619675930287" duration="42116000" />
+      <workItem from="1620022920155" duration="310000" />
+      <workItem from="1620023240499" duration="656000" />
+      <workItem from="1620023997284" duration="601000" />
+      <workItem from="1620024704668" duration="39000" />
+      <workItem from="1620024783081" duration="2309000" />
+    </task>
+    <task id="LOCAL-00001" summary="add mapping and preprocess module">
+      <created>1619946107051</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1619946107052</updated>
+    </task>
+    <task id="LOCAL-00002" summary="add mapping and preprocess module">
+      <created>1620022948046</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1620022948046</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State>
+              <option name="FILTERS">
+                <map>
+                  <entry key="branch">
+                    <value>
+                      <list>
+                        <option value="master" />
+                      </list>
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </State>
+          </value>
+        </entry>
+      </map>
+    </option>
+    <option name="oldMeFiltersMigrated" value="true" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="add mapping and preprocess module" />
+    <option name="LAST_COMMIT_MESSAGE" value="add mapping and preprocess module" />
+  </component>
+  <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/iFLAS_toolkit$iFLAS_toolkit.coverage" NAME="iFLAS_toolkit Coverage Results" MODIFIED="1620024379737" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/.." />
+  </component>
+</project>
