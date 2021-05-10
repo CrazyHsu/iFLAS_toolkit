@@ -233,18 +233,25 @@ def preprocess(dataObj=None, ccsParams=None, dirSpec=None, threads=10):
         else:
             raise Exception(getCurrentTime() + " It seems like you provided an unvalid processed fasta/fastq file, please check it!")
     else:
-        if dataObj.tgs_plat.lower() == "pacbio" and (dataObj.ngs_left_reads != None or dataObj.ngs_right_reads != None):
-            retrievePacbio(dataObj=dataObj, ccsParams=ccsParams, dirSpec=dirSpec, threads=threads)
-            correctWithFmlrc2(dataObj, useFmlrc2=dataObj.use_fmlrc2)
-            processRnaseq(dataObj=dataObj, threads=threads, max_reads_length_tirmmed=0)
-            renameNGSdata2fastp(dataObj=dataObj)
-        elif dataObj.tgs_plat.lower() == "nanopore" and (dataObj.ngs_left_reads != None or dataObj.ngs_right_reads != None):
-            retrieveNanopore(dataObj=dataObj, dirSpec=dirSpec, threads=threads)
-            correctWithFmlrc2(dataObj, useFmlrc2=dataObj.use_fmlrc2)
-            processRnaseq(dataObj=dataObj, threads=threads, max_reads_length_tirmmed=0)
-            renameNGSdata2fastp(dataObj=dataObj)
-        elif dataObj.tgs_plat == None and (dataObj.ngs_left_reads != None or dataObj.ngs_right_reads != None):
-            processRnaseq(dataObj=dataObj, threads=threads, max_reads_length_tirmmed=0)
-            renameNGSdata2fastp(dataObj=dataObj)
+        if validateFile(dataObj.data_location) or validateDir(dataObj.data_location):
+            if dataObj.tgs_plat.lower() == "pacbio" and (dataObj.ngs_left_reads != None or dataObj.ngs_right_reads != None):
+                retrievePacbio(dataObj=dataObj, ccsParams=ccsParams, dirSpec=dirSpec, threads=threads)
+                correctWithFmlrc2(dataObj, useFmlrc2=dataObj.use_fmlrc2)
+                processRnaseq(dataObj=dataObj, threads=threads, max_reads_length_tirmmed=0)
+                renameNGSdata2fastp(dataObj=dataObj)
+            elif dataObj.tgs_plat.lower() == "nanopore" and (dataObj.ngs_left_reads != None or dataObj.ngs_right_reads != None):
+                retrieveNanopore(dataObj=dataObj, dirSpec=dirSpec, threads=threads)
+                correctWithFmlrc2(dataObj, useFmlrc2=dataObj.use_fmlrc2)
+                processRnaseq(dataObj=dataObj, threads=threads, max_reads_length_tirmmed=0)
+                renameNGSdata2fastp(dataObj=dataObj)
+            elif dataObj.tgs_plat == None and (dataObj.ngs_left_reads != None or dataObj.ngs_right_reads != None):
+                processRnaseq(dataObj=dataObj, threads=threads, max_reads_length_tirmmed=0)
+                renameNGSdata2fastp(dataObj=dataObj)
+            else:
+                raise Exception(getCurrentTime() + "The TGS platform you input can't be identified, please check it!")
         else:
-            raise Exception("The TGS platform you input can't be identified, please check it!")
+            if dataObj.ngs_left_reads != None or dataObj.ngs_right_reads != None:
+                processRnaseq(dataObj=dataObj, threads=threads, max_reads_length_tirmmed=0)
+                renameNGSdata2fastp(dataObj=dataObj)
+            else:
+                raise Exception(getCurrentTime() + "Please check the data your input is valid!")

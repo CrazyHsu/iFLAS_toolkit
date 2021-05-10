@@ -36,14 +36,14 @@ MINIMAP2_TAGS = [MM2INDEX, MAXINTRONLENGTH] \
     = ["mm2_index", "max_intron_length"]
 DATA_TAGS = [PROJECTNAME, SAMPLENAME, STRAIN, CONDITION, TGSPLAT, STRATEGY, DATALOTAION, PRIMER, DATAPROCESSEDLOCATION,
              POLYALOCATION, NGSLEFTREADS, NGSRIGHTREADS, NGSREADSPAIRED, NGSREADSLENGTH, NGSJUNCTIONS, USEFMLRC2,
-             SINGLERUNTHREADS] \
-    = ["project_name", "sample_name", "strain", "condition", "tgs_plat", "strategy", "data_location",
-       "data_processed_location", "ngs_left_reads", "ngs_right_reads", "ngs_reads_paired", "ngs_reads_length",
-       "ngs_junctions", "use_fmlrc2", "single_run_threads"]
+             SINGLERUNTHREADS, DATAMERGED] \
+    = ["project_name", "sample_name", "strain", "condition", "tgs_plat", "strategy", "data_location", "primer",
+       "data_processed_location", "polya_location", "ngs_left_reads", "ngs_right_reads", "ngs_reads_paired",
+       "ngs_reads_length", "ngs_junctions", "use_fmlrc2", "single_run_threads", "data_merged"]
 COLLAPSE_TAGS = [MAXIDENTITY, MAXCOVERAGE, FLCOVERAGE, MAXFUZZYJUNCTION, MAX5DIFF, MAX3DIFF, DUNMERGE5SHORTER] \
     = ["max_indentity", "max_coverage", "fl_coverage", "max_fuzzy_junction", "max_5_diff", "max_3_diff", "dun_merge_5_shorter"]
-OPTION_TAGS = [THREADS, MEMORY, MERGEDATAFROMSAMESTRAIN, GENE2GO] \
-    = ["threads", "memory", "merge_data_from_same_strain", "gene2go"]
+OPTION_TAGS = [THREADS, MEMORY, GENE2GO] \
+    = ["threads", "memory", "gene2go"]
 BUILDIN_TAGS = [PYTHON, R, BASH] \
     = ["python_location", "r_location", "bash_location"]
 DIR_TAGS = [TMPDIR, OUTDIR] \
@@ -59,7 +59,7 @@ BUILDIN_TAGS = [SECTIONTYPE] + BUILDIN_TAGS
 DIR_TAGS = [SECTIONTYPE] + DIR_TAGS
 VALID_TAGS = [SECTIONTYPE] + REF_TAGS + CCS_TAGS + DATA_TAGS + OPTION_TAGS + BUILDIN_TAGS + DIR_TAGS
 
-BOOLEAN_TAGS = [USEFMLRC2, DUNMERGE5SHORTER, MERGEDATAFROMSAMESTRAIN]
+BOOLEAN_TAGS = [USEFMLRC2, DUNMERGE5SHORTER, DATAMERGED]
 FLOAT_TAGS = [CCSMINREADSCORE, CCSMINPREDICTEDACCURACY, MAXIDENTITY, MAXCOVERAGE]
 INTEGER_TAGS = [CCSMINREADLENGTH, CCSMINSUBREADLENGTH, CCSMINCCSLENGTH, CCSMINPASS, FLCOVERAGE, MAXFUZZYJUNCTION,
                 MAX5DIFF, MAX3DIFF, MAXINTRONLENGTH, THREADS, SINGLERUNTHREADS, NGSREADSLENGTH]
