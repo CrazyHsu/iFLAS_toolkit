@@ -21,7 +21,7 @@ BUILDIN_SECTION = "buildInTools"
 DIR_SECTION = "dirs"
 
 SECTION_TYPE_LIST = [i.lower() for i in REF_SECTION, CCS_PARAMS_SECTION, DATA_CFG_SECTION, OPTION_SECTION,
-                                        BUILDIN_SECTION, DIR_SECTION]
+                                        BUILDIN_SECTION, DIR_SECTION, MINIMAP2_SECTION, COLLAPSE_SECTION]
 
 SECTIONTYPE = "section_type"
 REFSTRAIN = "ref_strain"
@@ -40,10 +40,10 @@ DATA_TAGS = [PROJECTNAME, SAMPLENAME, STRAIN, CONDITION, TGSPLAT, STRATEGY, DATA
     = ["project_name", "sample_name", "strain", "condition", "tgs_plat", "strategy", "data_location", "primer",
        "data_processed_location", "polya_location", "ngs_left_reads", "ngs_right_reads", "ngs_reads_paired",
        "ngs_reads_length", "ngs_junctions", "use_fmlrc2", "single_run_threads", "data_merged"]
-COLLAPSE_TAGS = [MAXIDENTITY, MAXCOVERAGE, FLCOVERAGE, MAXFUZZYJUNCTION, MAX5DIFF, MAX3DIFF, DUNMERGE5SHORTER] \
-    = ["max_indentity", "max_coverage", "fl_coverage", "max_fuzzy_junction", "max_5_diff", "max_3_diff", "dun_merge_5_shorter"]
-OPTION_TAGS = [THREADS, MEMORY, GENE2GO] \
-    = ["threads", "memory", "gene2go"]
+COLLAPSE_TAGS = [MINIDENTITY, MINCOVERAGE, FLCOVERAGE, MAXFUZZYJUNCTION, MAX5DIFF, MAX3DIFF, DUNMERGE5SHORTER] \
+    = ["min_identity", "min_coverage", "fl_coverage", "max_fuzzy_junction", "max_5_diff", "max_3_diff", "dun_merge_5_shorter"]
+OPTION_TAGS = [THREADS, MEMORY, GENE2GO, MERGEDATAFROMSAMESTRAIN] \
+    = ["threads", "memory", "gene2go", "merge_data_from_same_strain"]
 BUILDIN_TAGS = [PYTHON, R, BASH] \
     = ["python_location", "r_location", "bash_location"]
 DIR_TAGS = [TMPDIR, OUTDIR] \
@@ -57,10 +57,10 @@ COLLAPSE_TAGS = [SECTIONTYPE] + COLLAPSE_TAGS
 OPTION_TAGS = [SECTIONTYPE] + OPTION_TAGS
 BUILDIN_TAGS = [SECTIONTYPE] + BUILDIN_TAGS
 DIR_TAGS = [SECTIONTYPE] + DIR_TAGS
-VALID_TAGS = [SECTIONTYPE] + REF_TAGS + CCS_TAGS + DATA_TAGS + OPTION_TAGS + BUILDIN_TAGS + DIR_TAGS
+VALID_TAGS = [SECTIONTYPE] + REF_TAGS + CCS_TAGS + DATA_TAGS + MINIMAP2_TAGS + COLLAPSE_TAGS + OPTION_TAGS + BUILDIN_TAGS + DIR_TAGS
 
-BOOLEAN_TAGS = [USEFMLRC2, DUNMERGE5SHORTER, DATAMERGED]
-FLOAT_TAGS = [CCSMINREADSCORE, CCSMINPREDICTEDACCURACY, MAXIDENTITY, MAXCOVERAGE]
+BOOLEAN_TAGS = [USEFMLRC2, DUNMERGE5SHORTER, DATAMERGED, MERGEDATAFROMSAMESTRAIN]
+FLOAT_TAGS = [CCSMINREADSCORE, CCSMINPREDICTEDACCURACY, MINIMAP2_TAGS, MINCOVERAGE]
 INTEGER_TAGS = [CCSMINREADLENGTH, CCSMINSUBREADLENGTH, CCSMINCCSLENGTH, CCSMINPASS, FLCOVERAGE, MAXFUZZYJUNCTION,
                 MAX5DIFF, MAX3DIFF, MAXINTRONLENGTH, THREADS, SINGLERUNTHREADS, NGSREADSLENGTH]
 STRING_TAGS = [SECTIONTYPE, REFSTRAIN, STRAIN, CONDITION, REFGENOME, REFSIZE, REFANNOGFF, REFANNOGTF, REFBED, REFMM2INDEX, OUTDIR, MEMORY]
@@ -131,7 +131,7 @@ class Minimap2Section(object):
     def __init__(self, type):
         self.section_type = type
         self.mm2_index = None
-        self.max_reads_length = 50000
+        self.max_intron_length = 50000
 
     def __setattr__(self, key, value):
         if key != "section_type" and key not in MINIMAP2_TAGS:
@@ -145,8 +145,8 @@ class Minimap2Section(object):
 class CollapseSection(object):
     def __init__(self, type):
         self.section_type = type
-        self.max_identity = None
-        self.max_coverage = 50000
+        self.min_identity = 0.9
+        self.min_coverage = 0.9
         self.max_fuzzy_junction = 5
         self.max_5_diff = 1000
         self.max_3_diff = 500
@@ -324,8 +324,7 @@ class Config(object):
         for sec in self.getIds():
             sectionType = self.getValue(sec, "section_type")
             if sectionType.lower() not in SECTION_TYPE_LIST:
-                raise ValueError(
-                    "The section type %s in %s isn't in %s" % (sectionType, sec, ",".join(SECTION_TYPE_LIST)))
+                raise ValueError("The section type %s in %s isn't in %s" % (sectionType, sec, ",".join(SECTION_TYPE_LIST)))
 
             if sectionType.lower() == REF_SECTION.lower():
                 s = RefSection(sectionType)

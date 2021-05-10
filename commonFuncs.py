@@ -363,7 +363,9 @@ def removeFiles(myDir, fileList):
         os.remove(os.path.join(myDir, f.strip("\n")))
         
 def renameNGSdata2fastp(dataObj=None):
-    if dataObj.ngs_paired == "paired":
+    if "fastp" in dataObj.ngs_left_reads and "fastp" in dataObj.ngs_right_reads:
+        return
+    if dataObj.ngs_reads_paired == "paired":
         leftReadsRepeats = [i.strip() for i in dataObj.ngs_left_reads.split(";")]
         rightReadsRepeats = [i.strip() for i in dataObj.ngs_right_reads.split(";")]
         if len(leftReadsRepeats) != len(rightReadsRepeats):
@@ -424,7 +426,7 @@ def renameNGSdata2fastp(dataObj=None):
 
 def validateFaAndFqFile(myFile):
     cmd = "seqkit head -n 100 {} | seqkit stat".format(myFile)
-    validateOutput = os.popen(cmd)
+    validateOutput = os.popen(cmd).read()
     if "FASTQ" in validateOutput:
         return "fastq"
     elif "FASTA" in validateOutput:

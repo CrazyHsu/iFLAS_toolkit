@@ -8,6 +8,7 @@ Last modified: 2021-04-29 14:19:36
 '''
 
 import sys, argparse, time
+from multiprocessing import Pool
 from commonFuncs import *
 from Config import *
 
@@ -74,20 +75,27 @@ def iflas(args):
         refParams = refInfoParams[refStrain]
         initRefSetting(refParams=refParams, dirSpec=dirSpec)
     initSysResourceSetting(optionTools=optionTools)
-    strain2data = {}
+
+    pool = Pool(processes=len(dataToProcess))
     for dataObj in dataToProcess:
-        dataObj.single_run_threads = len(optionTools.threads/float(len(dataToProcess)))
+        dataObj.single_run_threads = int(optionTools.threads/float(len(dataToProcess)))
         if args.command == 'preproc':
             from preprocess import preprocess
-            preprocess(dataObj=dataObj, ccsParams=ccsParams, dirSpec=dirSpec, threads=dataObj.single_run_threads)
-            if dataObj.project_name not in strain2data:
-                strain2data[dataObj.project_name] = {dataObj.ref_strain: {dataObj.strain: [dataObj]}}
-            elif dataObj.ref_strain not in strain2data[dataObj.project_name]:
-                strain2data[dataObj.project_name][dataObj.ref_strain] = {dataObj.strain: [dataObj]}
-            elif dataObj.strain not in strain2data[dataObj.project_name][dataObj.ref_strain]:
-                strain2data[dataObj.project_name][dataObj.ref_strain][dataObj.strain] = [dataObj]
-            else:
-                strain2data[dataObj.project_name][dataObj.ref_strain][dataObj.strain].append(dataObj)
+            pool.apply_async(preprocess, (dataObj, ccsParams, dirSpec, dataObj.single_run_threads))
+    pool.close()
+    pool.join()
+
+    strain2data = {}
+    for dataObj in dataToProcess:
+        if dataObj.project_name not in strain2data:
+            strain2data[dataObj.project_name] = {dataObj.ref_strain: {dataObj.strain: [dataObj]}}
+        elif dataObj.ref_strain not in strain2data[dataObj.project_name]:
+            strain2data[dataObj.project_name][dataObj.ref_strain] = {dataObj.strain: [dataObj]}
+        elif dataObj.strain not in strain2data[dataObj.project_name][dataObj.ref_strain]:
+            strain2data[dataObj.project_name][dataObj.ref_strain][dataObj.strain] = [dataObj]
+        else:
+            strain2data[dataObj.project_name][dataObj.ref_strain][dataObj.strain].append(dataObj)
+
     if optionTools.merge_data_from_same_strain:
         sampleMergedToProcess = mergeSample(strain2data)
         for proj in sampleMergedToProcess:
@@ -95,7 +103,7 @@ def iflas(args):
                 for strain in sampleMergedToProcess[proj][ref_strain]:
                     for dataObj in sampleMergedToProcess[proj][ref_strain][strain]:
                         refParams = refInfoParams[ref_strain]
-                        dataObj.single_run_threads = len(optionTools.threads / float(len(sampleMergedToProcess)))
+                        dataObj.single_run_threads = int(optionTools.threads / float(len(sampleMergedToProcess)))
                         if args.command == 'mapping':
                             from mapping import mapping
                             mapping(dataObj=dataObj, minimap2Params=minimap2Params, refParams=refParams,
