@@ -24,29 +24,33 @@ SECTION_TYPE_LIST = [i.lower() for i in REF_SECTION, CCS_PARAMS_SECTION, DATA_CF
                                         BUILDIN_SECTION, DIR_SECTION]
 
 SECTIONTYPE = "section_type"
-STRAIN = "ref_strain"
+REFSTRAIN = "ref_strain"
 
-REF_TAGS = [REFGENOME, REFSIZE, REFANNOGFF, REFANNOGTF, REFBED, REFMM2INDEX] \
-    = ["ref_genome", "ref_size", "ref_gff", "ref_gtf", "ref_bed", "ref_mm2_index"]
+REF_TAGS = [REFGENOME, REFSIZE, REFANNOGFF, REFANNOGTF, REFANNOGPE, REFBED, REFMM2INDEX] \
+    = ["ref_genome", "ref_size", "ref_gff", "ref_gtf", "ref_gpe", "ref_bed", "ref_mm2_index"]
 CCS_TAGS = [CCSMINREADLENGTH, CCSMINREADSCORE, CCSMINSUBREADLENGTH, CCSMINCCSLENGTH, CCSMINPREDICTEDACCURACY,
             CCSMINPASS] \
     = ["min_read_length", "min_read_score", "min_subread_length", "min_ccs_length", "min_predicted_accuracy",
        "min_pass"]
-MINIMAP2_TAGS = [MM2INDEX, MAXREADSLENGTH] \
-    = ["mm2_index", "max_reads_length"]
-DATA_TAGS = [PROJECTNAME, SAMPLENAME, USEFMLRC2, SINGLERUNTHREADS] \
-    = ["project_name", "sample_name", "use_fmlrc2", "single_run_threads"]
+MINIMAP2_TAGS = [MM2INDEX, MAXINTRONLENGTH] \
+    = ["mm2_index", "max_intron_length"]
+DATA_TAGS = [PROJECTNAME, SAMPLENAME, STRAIN, CONDITION, TGSPLAT, STRATEGY, DATALOTAION, PRIMER, DATAPROCESSEDLOCATION,
+             POLYALOCATION, NGSLEFTREADS, NGSRIGHTREADS, NGSREADSPAIRED, NGSREADSLENGTH, NGSJUNCTIONS, USEFMLRC2,
+             SINGLERUNTHREADS] \
+    = ["project_name", "sample_name", "strain", "condition", "tgs_plat", "strategy", "data_location",
+       "data_processed_location", "ngs_left_reads", "ngs_right_reads", "ngs_reads_paired", "ngs_reads_length",
+       "ngs_junctions", "use_fmlrc2", "single_run_threads"]
 COLLAPSE_TAGS = [MAXIDENTITY, MAXCOVERAGE, FLCOVERAGE, MAXFUZZYJUNCTION, MAX5DIFF, MAX3DIFF, DUNMERGE5SHORTER] \
     = ["max_indentity", "max_coverage", "fl_coverage", "max_fuzzy_junction", "max_5_diff", "max_3_diff", "dun_merge_5_shorter"]
-OPTION_TAGS = [THREADS, MEMORY] \
-    = ["threads", "memory"]
+OPTION_TAGS = [THREADS, MEMORY, MERGEDATAFROMSAMESTRAIN, GENE2GO] \
+    = ["threads", "memory", "merge_data_from_same_strain", "gene2go"]
 BUILDIN_TAGS = [PYTHON, R, BASH] \
     = ["python_location", "r_location", "bash_location"]
 DIR_TAGS = [TMPDIR, OUTDIR] \
     = ["tmp_dir", "out_dir"]
 
-REF_TAGS = [SECTIONTYPE, STRAIN] + REF_TAGS
-DATA_TAGS = [SECTIONTYPE, STRAIN] + DATA_TAGS
+REF_TAGS = [SECTIONTYPE, REFSTRAIN] + REF_TAGS
+DATA_TAGS = [SECTIONTYPE, REFSTRAIN] + DATA_TAGS
 CCS_TAGS = [SECTIONTYPE] + CCS_TAGS
 MINIMAP2_TAGS = [SECTIONTYPE] + MINIMAP2_TAGS
 COLLAPSE_TAGS = [SECTIONTYPE] + COLLAPSE_TAGS
@@ -55,11 +59,11 @@ BUILDIN_TAGS = [SECTIONTYPE] + BUILDIN_TAGS
 DIR_TAGS = [SECTIONTYPE] + DIR_TAGS
 VALID_TAGS = [SECTIONTYPE] + REF_TAGS + CCS_TAGS + DATA_TAGS + OPTION_TAGS + BUILDIN_TAGS + DIR_TAGS
 
-BOOLEAN_TAGS = [USEFMLRC2, DUNMERGE5SHORTER]
+BOOLEAN_TAGS = [USEFMLRC2, DUNMERGE5SHORTER, MERGEDATAFROMSAMESTRAIN]
 FLOAT_TAGS = [CCSMINREADSCORE, CCSMINPREDICTEDACCURACY, MAXIDENTITY, MAXCOVERAGE]
 INTEGER_TAGS = [CCSMINREADLENGTH, CCSMINSUBREADLENGTH, CCSMINCCSLENGTH, CCSMINPASS, FLCOVERAGE, MAXFUZZYJUNCTION,
-                MAX5DIFF, MAX3DIFF, MAXREADSLENGTH, THREADS, SINGLERUNTHREADS]
-STRING_TAGS = [SECTIONTYPE, STRAIN, REFGENOME, REFSIZE, REFANNOGFF, REFANNOGTF, REFBED, REFMM2INDEX, OUTDIR, MEMORY]
+                MAX5DIFF, MAX3DIFF, MAXINTRONLENGTH, THREADS, SINGLERUNTHREADS, NGSREADSLENGTH]
+STRING_TAGS = [SECTIONTYPE, REFSTRAIN, STRAIN, CONDITION, REFGENOME, REFSIZE, REFANNOGFF, REFANNOGTF, REFBED, REFMM2INDEX, OUTDIR, MEMORY]
 
 FILE_TAGS = [REFGENOME, REFSIZE, REFANNOGFF, REFANNOGTF, REFBED]
 
@@ -163,7 +167,7 @@ class OptionSection(object):
         self.section_type = type
         self.threads = 4
         self.memory = "4000M"
-        self.use_fmlrc2 = True
+        self.merge_data_from_same_strain = True
 
     def __setattr__(self, key, value):
         if key != "section_type" and key not in OPTION_TAGS:
@@ -180,7 +184,7 @@ class RefSection(object):
 
     def __init__(self, type):
         self.section_type = type
-        self.strain = None
+        self.ref_strain = None
         self.ref_genome = None
         self.ref_size = None
         self.ref_gpe = None
@@ -211,16 +215,19 @@ class DataCfg(object):
         self.project_name = None
         self.sample_name = None
         self.ref_strain = None
+        self.strain = None
+        self.condition = None
 
         self.tgs_plat = None
         self.strategy = None
         self.data_location = None
         self.data_processed_location = None
         self.primer = None
+        self.polya_location = None
 
         self.ngs_left_reads = None
         self.ngs_right_reads = None
-        self.ngs_reads_paired = True
+        self.ngs_reads_paired = "paired"
         self.ngs_reads_length = None
         self.ngs_junctions = None
 
@@ -272,14 +279,10 @@ class Dirs(object):
 
 class Config(object):
     refInfoParams = {}
-    # mecatParams = None
     ccsParams = None
     minimap2Params = None
     collapseParams = None
-    # proovreadParams = ProovreadParams(PROOVREAD_PARAMS_SECTION)
-    # lncRNAcpatParams = {}
-    dataToProcess = {}
-    # researchCfg = None
+    dataToProcess = []
     optionTools = None
     buildInTools = None
     dirParams = None
@@ -314,8 +317,7 @@ class Config(object):
             else:  # STRING_TAGS
                 return value
         except ValueError as e:
-            raise ValueError(
-                'Invalid assignment in config file: %s is %s, should be %s\n' % (tag, value, TAG_TYPE[tag]))
+            raise ValueError('Invalid assignment in config file: %s is %s, should be %s\n' % (tag, value, TAG_TYPE[tag]))
 
     def instantiate(self):
         """Instantiates all objects related to the configuration."""
@@ -329,19 +331,13 @@ class Config(object):
                 s = RefSection(sectionType)
                 for o in self.config.options(sec):
                     s.__dict__[o] = self.getValue(sec, o)
-                self.refInfoParams[s.strain] = s
-
-            # if sectionType.lower() == RESEARCH_CFG_SECTION.lower():
-            #     s = ResearchCfg(sectionType)
-            #     for o in self.config.options(sec):
-            #         s.__dict__[o] = self.getValue(sec, o)
-            #     self.researchCfg = s
+                self.refInfoParams[s.ref_strain] = s
 
             if sectionType.lower() == DATA_CFG_SECTION.lower():
                 s = DataCfg(sectionType)
                 for o in self.config.options(sec):
                     s.__dict__[o] = self.getValue(sec, o)
-                self.ccsParams = s
+                self.dataToProcess.append(s)
 
             if sectionType.lower() == CCS_PARAMS_SECTION.lower():
                 s = CcsCalling(sectionType)
@@ -360,18 +356,6 @@ class Config(object):
                 for o in self.config.options(sec):
                     s.__dict__[o] = self.getValue(sec, o)
                 self.collapseParams = s
-
-            # if sectionType.lower() == MECAT_PARAMS_SECTION.lower():
-            #     s = MecatParams(sectionType)
-            #     for o in self.config.options(sec):
-            #         s.__dict__[o] = self.getValue(sec, o)
-            #     self.mecatParams = s
-
-            # if sectionType.lower() == LNCRNA_CPAT_SECTION.lower():
-            #     s = LncRNAcpat(sectionType)
-            #     for o in self.config.options(sec):
-            #         s.__dict__[o] = self.getValue(sec, o)
-            #     self.lncRNAcpatParams[s.strain] = s
 
             if sectionType.lower() == OPTION_SECTION.lower():
                 s = OptionSection(sectionType)

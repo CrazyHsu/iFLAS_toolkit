@@ -51,7 +51,7 @@ def readsAssign(transBedFile, readsBedFile, offset=10, minConsenesusIntronN=1, m
                 matchedDict[readsBed.name]["matchedGenes"].append(transGene)
                 matchedDict[readsBed.name]["inEndExonAndExtension"].append(inEndExonAndExtension)
         else:
-            consensusIntronN = getConsensusIntronN1(readsBed.exonStarts, readsBed.exonEnds, transBed.exonStarts, transBed.exonEnds, offset=offset)
+            consensusIntronN = getConsensusIntronN(readsBed.exonStarts, readsBed.exonEnds, transBed.exonStarts, transBed.exonEnds, offset=offset)
             readsJuncChain, transJuncChain = readsBed.juncChain, transBed.juncChain
             if re.search(readsJuncChain + "$", transJuncChain) or re.search("^" + readsJuncChain, transJuncChain):
                 juncChainFlank = 1
@@ -197,9 +197,9 @@ def collapse(dataObj=None, collapseParams=None, refParams=None, dirSpec=None, th
     logDir = os.path.join(baseDir, "log")
     processedFa = os.path.join(baseDir, "filtration", "processed.fa")
     processedBed = os.path.join(baseDir, "filtration", "processed.bed12+")
-    flncSortedBam = os.path.join(baseDir, "mapping", "flnc.mm2.sorted.bam")
+    flncSam = os.path.join(baseDir, "mapping", "flnc.mm2.sam")
     processedIds = getFxSequenceId(processedFa, isFa=True)
-    getSubSamByName(flncSortedBam, nameList=processedIds, isBam=False, nameListIsFile=False,
+    getSubSamByName(flncSam, nameList=processedIds, isBam=False, nameListIsFile=False,
                     outPrefix="processed", sort=True, threads=threads)
     if collapseParams.dun_merge_5_shorter:
         cmd = "collapse_isoforms_by_sam.py --input {} -s processed.sorted.sam --max_5_diff {} --max_3_diff {} " \
@@ -230,5 +230,4 @@ def collapse(dataObj=None, collapseParams=None, refParams=None, dirSpec=None, th
     cmd = "cut -f 1-12,15 reads.assigned.unambi.bed12+ | bed2gpe.pl -b 12 -g 13 - | genePredToGtf file stdin reads.unambi.gtf -source=iFLAS"
     subprocess.call(cmd, shell=True)
     os.chdir(prevDir)
-    print getCurrentTime() + " Collapse with cDNA_cupcake for project {} sample {} done!".format(
-        projectName, sampleName)
+    print getCurrentTime() + " Collapse with cDNA_cupcake for project {} sample {} done!".format(projectName, sampleName)

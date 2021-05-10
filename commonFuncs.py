@@ -93,7 +93,7 @@ def makeLink(sourcePath, targetPath):
         os.remove(targetPath)
     os.symlink(sourcePath, targetPath)
 
-def makeHisat2Index(refParams=None, hisat2indexDir=None, indexPrefix=None, optionTools=None):
+def makeHisat2Index(refParams=None, hisat2indexDir=None, indexPrefix=None, threads=None):
     # hisat2indexDir = os.path.join(outDir, "hisat2indexDir")
     if not os.path.exists(hisat2indexDir):
         os.makedirs(hisat2indexDir)
@@ -109,11 +109,8 @@ def makeHisat2Index(refParams=None, hisat2indexDir=None, indexPrefix=None, optio
         refAnnoExon = "{}/{}.exon".format(hisat2indexDir, indexPrefix)
         cmd = "hisat2_extract_exons.py {} >{}".format(refAnnoGTF, refAnnoExon)
         subprocess.call(cmd, shell=True)
-        cmd = "hisat2-build -p {} --ss {} --exon {} {} {}/{} 1>{}/hisat2build.log 2>&1".format(optionTools.threads,
-                                                                                               refAnnoSS, refAnnoExon,
-                                                                                               refParams.ref_genome,
-                                                                                               hisat2indexDir,
-                                                                                               indexPrefix, hisat2indexDir)
+        cmd = "hisat2-build -p {} --ss {} --exon {} {} {}/{} 1>{}/hisat2build.log 2>&1"
+        cmd = cmd.format(threads, refAnnoSS, refAnnoExon, refParams.ref_genome, hisat2indexDir, indexPrefix, hisat2indexDir)
         subprocess.call(cmd, shell=True)
         print str(datetime.datetime.now()) + " End Hisat2 indexing!"
 
@@ -217,6 +214,26 @@ def getFxSequenceId(fxFile, isFa=False, isFq=False, outFile=None):
         else:
             return recordId
 
+def getBlockLength(blockList):
+    return sum(map(lambda x: int(x[1]) - int(x[0]), blockList))
+
+def getConsensusIntronN(exonStarts1, exonEnds1, exonStarts2, exonEnds2, offset):
+    '''
+    get consensus intron number, i.e. the intron info of reads is identical to the reference
+    :return: the count of the consensus introns
+    '''
+    intronStarts1, intronEnds1 = getIntrons(exonStarts1, exonEnds1)
+    intronStarts2, intronEnds2 = getIntrons(exonStarts2, exonEnds2)
+    j, consensusN = 0, 0
+    for i in range(len(intronStarts1)):
+        for k in range(j, len(intronStarts2)):
+            if intronStarts2[k] > intronStarts1[i]: break
+            if intronStarts1[i] - offset <= intronStarts2[k] and intronStarts2[k] <= intronEnds1[i] + offset and \
+                    intronEnds1[i] - offset <= intronEnds2[k] and intronEnds2[k] <= intronEnds1[i] + offset:
+                consensusN += 1
+                j += 1
+    return consensusN
+
 def getCurrentTime():
     return str(datetime.datetime.now())
 
@@ -225,6 +242,22 @@ def getSizes(starts, ends):
 
 def getRelStarts(blockStarts):
     return map(lambda x: int(blockStarts[x]) - int(blockStarts[0]), range(len(blockStarts)))
+
+def getDictFromFile(myFile, sep="\t", inlineSep=None, keyCol=1, valueCol=None):
+    with open(myFile) as f:
+        myDict = {}
+        for line in f.readlines():
+            infoList = line.strip("\n").split(sep)
+            key = infoList[keyCol-1]
+            if valueCol:
+                if inlineSep:
+                    value = infoList[valueCol-1].split(inlineSep)
+                else:
+                    value = infoList[valueCol-1]
+            else:
+                value = infoList
+            myDict[key] = value
+        return myDict
 
 def initRefSetting(refParams=None, dirSpec=None):
     originDir = os.getcwd()
@@ -302,6 +335,17 @@ def initSysResourceSetting(optionTools=None):
     else:
         raise Exception("The number of threads should be digital, please check it!")
 
+# def isFastaOrFastq(filename):
+#     with open(filename, "r") as handle:
+#         fasta = SeqIO.parse(handle, "fasta")
+#         if any(fasta):
+#             return "fasta"
+#     with open(filename, "r") as handle:
+#         fastq = SeqIO.parse(handle, "fastq")
+#         if any(fastq):
+#             return "fastq"
+#     return None
+
 def listStr2Int(myList):
     return [int(i) for i in myList]
 
@@ -319,9 +363,9 @@ def removeFiles(myDir, fileList):
         os.remove(os.path.join(myDir, f.strip("\n")))
         
 def renameNGSdata2fastp(dataObj=None):
-    if dataObj.ngsPaired == "paired":
-        leftReadsRepeats = [i.strip() for i in dataObj.ngsLeftReads.split(";")]
-        rightReadsRepeats = [i.strip() for i in dataObj.ngsRightReads.split(";")]
+    if dataObj.ngs_paired == "paired":
+        leftReadsRepeats = [i.strip() for i in dataObj.ngs_left_reads.split(";")]
+        rightReadsRepeats = [i.strip() for i in dataObj.ngs_right_reads.split(";")]
         if len(leftReadsRepeats) != len(rightReadsRepeats):
             raise Exception("The repeats of your NGS data not match between your left reads and right reads")
         else:
@@ -346,11 +390,11 @@ def renameNGSdata2fastp(dataObj=None):
                         newRightReads.append(newRight)
                     newLeftReadsRepeats.append(",".join(newLeftReads))
                     newRightReadsRepeats.append(",".join(newRightReads))
-            dataObj.ngsLeftReads = ";".join(newLeftReadsRepeats)
-            dataObj.ngsRightReads = ";".join(newRightReadsRepeats)
+            dataObj.ngs_left_reads = ";".join(newLeftReadsRepeats)
+            dataObj.ngs_right_reads = ";".join(newRightReadsRepeats)
     else:
-        if dataObj.ngsLeftReads and dataObj.ngsRightReads == None:
-            leftReadsRepeats = [i.strip() for i in dataObj.ngsLeftReads.split(";")]
+        if dataObj.ngs_left_reads and dataObj.ngs_right_reads == None:
+            leftReadsRepeats = [i.strip() for i in dataObj.ngs_left_reads.split(";")]
             newLeftReadsRepeats = []
             for i in range(len(leftReadsRepeats)):
                 leftReads = leftReadsRepeats[i].split(",")
@@ -361,9 +405,9 @@ def renameNGSdata2fastp(dataObj=None):
                     newLeft = os.path.join(leftReadsDir, "fastp.{}".format(leftReadsBase))
                     newLeftReads.append(newLeft)
                 newLeftReadsRepeats.append(",".join(newLeftReads))
-            dataObj.ngsLeftReads = ";".join(newLeftReadsRepeats)
-        elif dataObj.ngsRightReads and dataObj.ngsLeftReads == None:
-            rightReadsRepeats = [i.strip() for i in dataObj.ngsRightReads.split(";")]
+            dataObj.ngs_left_reads = ";".join(newLeftReadsRepeats)
+        elif dataObj.ngs_right_reads and dataObj.ngs_left_reads == None:
+            rightReadsRepeats = [i.strip() for i in dataObj.ngs_right_reads.split(";")]
             newRightReadsRepeats = []
             for i in range(len(rightReadsRepeats)):
                 rightReads = rightReadsRepeats[i].split(",")
@@ -374,12 +418,12 @@ def renameNGSdata2fastp(dataObj=None):
                     newRight = os.path.join(rightReadsDir, "fastp.{}".format(rightReadsBase))
                     newRightReads.append(newRight)
                 newRightReadsRepeats.append(",".join(newRightReads))
-            dataObj.ngsRightReads = ";".join(newRightReadsRepeats)
+            dataObj.ngs_right_reads = ";".join(newRightReadsRepeats)
         else:
             raise Exception("The NGS data seem not to be single, please check it")
 
 def validateFaAndFqFile(myFile):
-    cmd = "seqkit head 100 {} | seqkit stat".format(myFile)
+    cmd = "seqkit head -n 100 {} | seqkit stat".format(myFile)
     validateOutput = os.popen(cmd)
     if "FASTQ" in validateOutput:
         return "fastq"

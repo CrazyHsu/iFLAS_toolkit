@@ -728,6 +728,62 @@ class GenePredObj(object):
                         bedList.append(str(gp[2].go_to_bed(gene=gene)))
             return bedList
 
+class MergedTgsSample(object):
+    # def __init__(self):
+    #     self.projectName = None
+    #     self.sampleName = None
+    #     self.refStrain = None
+    #
+    #     self.tgsPlat = None
+    #     self.tgsStrategy = None
+    #     self.tgsProcessedData = None
+    #     self.tgsPrimer = None
+    #     self.dataLocation = None
+    #
+    #     self.ngsLeftReads = None
+    #     self.ngsRightReads = None
+    #     self.ngsReadPair = "paired"
+    #     self.ngsReadsLength = 150
+    #     self.ngsJunctions = None
+    #     self.ngsCondition = None
+    #
+    #     self.runThreads = None
+    #     self.runMemory = None
+
+    def __init__(self):
+        self.project_name = None
+        self.sample_name = None
+        self.ref_strain = None
+        self.strain = None
+        # self.condition = None
+
+        self.tgs_plat = None
+        self.strategy = None
+        self.data_location = None
+        self.data_processed_location = None
+        # self.primer = None
+        self.polya_location = None
+
+        self.ngs_left_reads = None
+        self.ngs_right_reads = None
+        self.ngs_reads_paired = "paired"
+        self.ngs_reads_length = None
+        self.ngs_junctions = None
+
+        self.use_fmlrc2 = True
+        self.single_run_threads = 1
+
+    # def getMergedName(self):
+    #     self.mergedName = "{}_all".format(self.strain)
+
+    def __str__(self):
+        return "%s:%s_all:%s, %s:%s:%s, %s:%s:%s:%s:%s, %d" % \
+               (self.project_name, self.sample_name, self.ref_strain, self.tgs_plat, self.strategy,
+                self.data_processed_location, self.ngs_left_reads, self.ngs_right_reads, self.ngs_reads_paired,
+                self.ngs_reads_length, self.ngs_junctions, self.single_run_threads)
+
+    __repr__ = __str__
+
 class ReadLineStruc(Bed12):
     """
     get Bed12+ read structure

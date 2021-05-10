@@ -134,25 +134,31 @@ def strandAdjust(genomeFasta, refGPE, bedFile, minCoverage, juncDiffScore, stran
     strandConfirmedOut.close()
 
 
-def getJuncFromRegtools(dataObj=None, dirSpec=None):
+def getJuncFromRegtools(dataObj=None, dirSpec=None, filterByCount=10):
     projectName, sampleName = dataObj.project_name, dataObj.sample_name
     print getCurrentTime() + " Get junctions from RNA-seq with Regtools for project {} sample {}...".format(projectName, sampleName)
     rnaseqSortedBam = os.path.join(dirSpec.out_dir, projectName, sampleName, "mapping", "rna-seq", "reassembly", "tmp.bam")
-    cmd = "regtools junctions extract -a 5 -m 50 -M 50000 {} > junctions.bed".format(rnaseqSortedBam)
+    cmd = "regtools junctions extract -a 5 -m 50 -M 50000 {} > tmp.bed".format(rnaseqSortedBam)
     subprocess.call(cmd, shell=True)
+    cmd = '''awk '{if($5>10){print}}' tmp.bed > junctions.bed'''
+    subprocess.call(cmd, shell=True, executable="/bin/bash")
     dataObj.ngs_junctions = os.path.join(os.getcwd(), "junctions.bed")
     print getCurrentTime() + " Get junctions from RNA-seq with Regtools for project {} sample {} done!".format(projectName, sampleName)
 
 def filterByJunc(dataObj=None, refParams=None, dirSpec=None, threads=10):
     projectName, sampleName = dataObj.project_name, dataObj.sample_name
     print getCurrentTime() + " Filter reads by junctions information from RNA-seq for project {} sample {}...".format(projectName, sampleName)
-    mappedSam = os.path.join(dataObj.out_dir, projectName, sampleName, "preprocess", dataObj.tgs_plat.lower(), "{}.mm2.sam".format(sampleName))
-    flncFa = dataObj.data_processed_location
-    cmd = r'''samAddTag.pl --checkHardClip --coverage --identity {} 2>lengthInconsistent.sam | samtools sort -m 4G - >mapped.addCVandID.bam'''.format(
-        mappedSam)
+    mappedSam = os.path.join(dataObj.out_dir, projectName, sampleName, "mapping", "flnc.mm2.sam")
+    rawMappedSam = os.path.join(dataObj.out_dir, projectName, sampleName, "mapping", "rawFlnc.mm2.sam")
+    cmd = r'''samAddTag.pl --checkHardClip --coverage --identity {} 2>lengthInconsistent.sam | samtools sort -m 4G - >mapped.addCVandID.bam'''.format(mappedSam)
     subprocess.call(cmd, shell=True)
     cmd = "sam2bed.pl -t CV,ID mapped.addCVandID.bam >mapped.addCVandID.bed12+"
     subprocess.call(cmd, shell=True)
+    cmd = r'''samAddTag.pl --checkHardClip --coverage --identity {} 2>/dev/null | samtools sort -m 4G - >raw.mapped.addCVandID.bam'''.format(rawMappedSam)
+    subprocess.call(cmd, shell=True)
+    cmd = "sam2bed.pl -t CV,ID raw.mapped.addCVandID.bam >raw.mapped.addCVandID.bed12+"
+    subprocess.call(cmd, shell=True)
+
     cmd = "readsFilter.pl -c 0.4 -r 0.8 mapped.addCVandID.bed12+ 2>discarded.bed12+ >uniq.bed12+"
     subprocess.call(cmd, shell=True)
     cmd = r'''(samtools view -H mapped.addCVandID.bam; samtools view mapped.addCVandID.bam | filter.pl -o <(awk 'BEGIN{FS=OFS="\t"}{print $1,$2+1,$4,$5}' uniq.bed12+) -1 1,2,3,4 -2 3,4,1,5 -m i) > uniq.sam'''
@@ -163,16 +169,17 @@ def filterByJunc(dataObj=None, refParams=None, dirSpec=None, threads=10):
     strandAdjust(refParams.ref_genome, refParams.ref_gpe, "uniq.bed12+", 2, 0.8, strandAdjust="strandAdjusted.bed12+",
                  strandConfirmed="strandConfirm.bed12+")
 
-    if dataObj.ngsLeftReads or dataObj.ngsRightReads:
-        if dataObj.ngsJunctions == None:
-            dataObj.ngsJunctions = os.path.join(dirSpec.out_dir, projectName, sampleName, "RNA-seq", "reassembly", "junctions.bed")
-        juncScoringParams = "-r {} strandConfirm.bed12+ -j {}".format(refParams.ref_gpe, dataObj.ngsJunctions)
+    if dataObj.ngs_left_reads or dataObj.ngs_right_reads:
+        if dataObj.ngs_junctions == None:
+            dataObj.ngs_junctions = os.path.join(dirSpec.out_dir, projectName, sampleName, "RNA-seq", "reassembly", "junctions.bed")
+        juncScoringParams = "-r {} strandConfirm.bed12+ -j {}".format(refParams.ref_gpe, dataObj.ngs_junctions)
     else:
         juncScoringParams = "-r {} strandConfirm.bed12+".format(refParams.ref_gpe)
     cmd = "juncConsensus.pl -s <(juncScoring.pl {}) -l 10 strandConfirm.bed12+ >processed.bed12+".format(juncScoringParams)
     subprocess.call(cmd, shell=True, executable="/bin/bash")
-    cmd = "seqkit grep {} -f <(cut -f4 processed.bed12+) -w 0 >processed.fa".format(flncFa)
-    subprocess.call(cmd, shell=True, executable="/bin/bash", stdout=subprocess.PIPE)
+    flncFx = dataObj.data_processed_location
+    cmd = "seqkit grep {} -f <(cut -f4 processed.bed12+) | seqkit fq2fa - -w 0 >processed.fa".format(flncFx)
+    subprocess.call(cmd, shell=True, executable="/bin/bash")
 
     print getCurrentTime() + " Filter reads by junctions information from RNA-seq for project {} sample {} done!".format(projectName, sampleName)
 
@@ -181,6 +188,6 @@ def filter(dataObj=None, refParams=None, dirSpec=None):
     workDir = os.path.join(dataObj.out_dir, projectName, sampleName, "filtration")
     resolveDir(workDir)
     if dataObj.ngs_junctions == None:
-        getJuncFromRegtools(dataObj=dataObj)
+        getJuncFromRegtools(dataObj=dataObj, dirSpec=dirSpec)
     filterByJunc(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, threads=dataObj.single_run_threads)
 

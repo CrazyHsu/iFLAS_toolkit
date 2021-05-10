@@ -33,15 +33,15 @@ def retrievePacbio(dataObj=None, ccsParams=None, dirSpec=None, threads=10):
         if "ccs 3." not in ccsOut:
             raise ValueError("The RSii data only support pbccs version 3.*, please use the correct version")
 
-        cmd = "ccs {} {}.CCS.bam -j {} --noPolish --minPasses {} --minLength {} --minPredictedAccuracy {} --minReadScore " \
-              "{}".format(inputBam, dataObj.uniqName, threads, ccsParams.min_pass, ccsParams.min_subread_length,
+        cmd = "ccs {} CCS.bam -j {} --noPolish --minPasses {} --minLength {} --minPredictedAccuracy {} --minReadScore " \
+              "{}".format(inputBam, threads, ccsParams.min_pass, ccsParams.min_subread_length,
                           ccsParams.min_predicted_accuracy, ccsParams.min_read_score)
         subprocess.call(cmd, shell=True)
         print getCurrentTime() + " Extract CCS reads from bax.h5 files for project {} entry {} done!".format(projectName, sampleName)
     elif strategy.lower() == "sequel":
         print getCurrentTime() + " The reads in project {} entry {} are from Sequel".format(projectName, sampleName)
-        if os.path.isdir(dataObj.dataLocation):
-            tgsDir = dataObj.dataLocation
+        if os.path.isdir(dataObj.data_location):
+            tgsDir = dataObj.data_location
             xmlFiles = os.popen("find -L {} -name '*.subreadset.xml'".format(tgsDir))
             xmlFileStr = " ".join([i.strip("\n") for i in xmlFiles])
             if not xmlFileStr:
@@ -53,7 +53,7 @@ def retrievePacbio(dataObj=None, ccsParams=None, dirSpec=None, threads=10):
             else:
                 fileStr = xmlFileStr
         else:
-            tgsFiles = [i.strip() for i in dataObj.dataLocation.split(",")]
+            tgsFiles = [i.strip() for i in dataObj.data_location.split(",")]
             for i in tgsFiles:
                 if not os.path.exists(i + ".pbi"):
                     cmd = "pbindex {}".format(i)
@@ -69,8 +69,7 @@ def retrievePacbio(dataObj=None, ccsParams=None, dirSpec=None, threads=10):
         ccsOut = subprocess.Popen(["ccs", "--version"], stdout=subprocess.PIPE).communicate()[0].strip("\n")
         if "ccs 3." in ccsOut:
             cmd = "ccs {} CCS.bam -j {} --minPasses {} --minLength {} --minPredictedAccuracy {} --minReadScore " \
-                  "{} --force".format(subreads, threads, ccsParams.min_pass,
-                                      ccsParams.min_subread_length,
+                  "{} --force".format(subreads, threads, ccsParams.min_pass, ccsParams.min_subread_length,
                                       ccsParams.min_predicted_accuracy, ccsParams.min_read_score)
             subprocess.call(cmd, shell=True)
         elif "ccs 4." in ccsOut:
@@ -94,9 +93,9 @@ def retrievePacbio(dataObj=None, ccsParams=None, dirSpec=None, threads=10):
     # primerFileName = "{}.{}.primers.fa".format(sampleName, dataObj.primer)
     cmd = "isoseq3 refine {} {} flnc.bam --require-polya -j {}".format(tmpBamName, dataObj.primer, threads)
     subprocess.call(cmd, shell=True)
-    cmd = "samtools fasta flnc.bam > flnc.fa"
+    cmd = "samtools fastq flnc.bam > rawFlnc.fq"
     subprocess.call(cmd, shell=True)
-    dataObj.data_processed_location = os.path.join(workDir, "{}.flnc.fa".format(sampleName))
+    dataObj.data_processed_location = os.path.join(os.getcwd(), "rawFlnc.fq")
     print getCurrentTime() + " Refine CCS bam for project {} sample {} done!".format(projectName, sampleName)
 
     if dataObj.use_fmlrc2:
@@ -105,8 +104,8 @@ def retrievePacbio(dataObj=None, ccsParams=None, dirSpec=None, threads=10):
 
 def processRnaseq(dataObj=None, threads=None, max_reads_length_tirmmed=30):
     if dataObj.ngsPaired == "paired":
-        leftReadsRepeats = [i.strip() for i in dataObj.ngsLeftReads.split(";")]
-        rightReadsRepeats = [i.strip() for i in dataObj.ngsRightReads.split(";")]
+        leftReadsRepeats = [i.strip() for i in dataObj.ngs_left_reads.split(";")]
+        rightReadsRepeats = [i.strip() for i in dataObj.ngs_right_reads.split(";")]
         if len(leftReadsRepeats) != len(rightReadsRepeats):
             raise Exception("The repeats of your NGS data not match between your left reads and right reads")
         else:
@@ -135,11 +134,11 @@ def processRnaseq(dataObj=None, threads=None, max_reads_length_tirmmed=30):
                         newRightReads.append(newRight)
                     newLeftReadsRepeats.append(",".join(newLeftReads))
                     newRightReadsRepeats.append(",".join(newRightReads))
-            dataObj.ngsLeftReads = ";".join(newLeftReadsRepeats)
-            dataObj.ngsRightReads = ";".join(newRightReadsRepeats)
+            dataObj.ngs_left_reads = ";".join(newLeftReadsRepeats)
+            dataObj.ngs_right_reads = ";".join(newRightReadsRepeats)
     else:
-        if dataObj.ngsLeftReads and dataObj.ngsRightReads == None:
-            leftReadsRepeats = [i.strip() for i in dataObj.ngsLeftReads.split(";")]
+        if dataObj.ngs_left_reads and dataObj.ngs_right_reads == None:
+            leftReadsRepeats = [i.strip() for i in dataObj.ngs_left_reads.split(";")]
             newLeftReadsRepeats = []
             for i in range(len(leftReadsRepeats)):
                 leftReads = leftReadsRepeats[i].split(",")
@@ -149,14 +148,13 @@ def processRnaseq(dataObj=None, threads=None, max_reads_length_tirmmed=30):
                     leftReadsBase = os.path.basename(leftReads[j])
                     newLeft = os.path.join(leftReadsDir, "fastp.{}".format(leftReadsBase))
                     cmd = "fastp -i {} -o {} -w {} -q 20 -l {} 2>/dev/null"
-                    cmd.format(leftReads[j], newLeft, dataObj.threads,
-                               int(dataObj.ngsReadsLength) - max_reads_length_tirmmed)
+                    cmd.format(leftReads[j], newLeft, threads, int(dataObj.ngs_reads_length) - max_reads_length_tirmmed)
                     subprocess.call(cmd, shell=True)
                     newLeftReads.append(newLeft)
                 newLeftReadsRepeats.append(",".join(newLeftReads))
-            dataObj.ngsLeftReads = ";".join(newLeftReadsRepeats)
-        elif dataObj.ngsRightReads and dataObj.ngsLeftReads == None:
-            rightReadsRepeats = [i.strip() for i in dataObj.ngsRightReads.split(";")]
+            dataObj.ngs_left_reads = ";".join(newLeftReadsRepeats)
+        elif dataObj.ngs_right_reads and dataObj.ngs_left_reads == None:
+            rightReadsRepeats = [i.strip() for i in dataObj.ngs_right_reads.split(";")]
             newRightReadsRepeats = []
             for i in range(len(rightReadsRepeats)):
                 rightReads = rightReadsRepeats[i].split(",")
@@ -166,12 +164,11 @@ def processRnaseq(dataObj=None, threads=None, max_reads_length_tirmmed=30):
                     rightReadsBase = os.path.basename(rightReads[j])
                     newRight = os.path.join(rightReadsDir, "fastp.{}".format(rightReadsBase))
                     cmd = "fastp -i {} -o {} -w {} -q 20 -l {} 2>/dev/null"
-                    cmd.format(rightReads[j], newRight, dataObj.threads,
-                               int(dataObj.ngsReadsLength) - max_reads_length_tirmmed)
+                    cmd.format(rightReads[j], newRight, threads, int(dataObj.ngs_reads_length) - max_reads_length_tirmmed)
                     subprocess.call(cmd, shell=True)
                     newRightReads.append(newRight)
                 newRightReadsRepeats.append(",".join(newRightReads))
-            dataObj.ngsRightReads = ";".join(newRightReadsRepeats)
+            dataObj.ngs_right_reads = ";".join(newRightReadsRepeats)
         else:
             raise Exception("The NGS data seem not to be single, please check it")
 
@@ -180,6 +177,7 @@ def retrieveNanopore(dataObj=None, dirSpec=None, threads=10, flowcellType="FLO-M
     projectName, sampleName = dataObj.project_name, dataObj.sample_name
     print getCurrentTime() + " Calling fastq files from fast5 files for project {} sample {}...".format(projectName, sampleName)
     workDir = os.path.join(dirSpec.out_dir, projectName, sampleName, "preprocess", "nanopore")
+    prevDir = os.getcwd()
     resolveDir(workDir)
     fast5Dir = dataObj.data_location
     nanoporeFileType = checkFast5Files(fast5Dir)
@@ -188,20 +186,22 @@ def retrieveNanopore(dataObj=None, dirSpec=None, threads=10, flowcellType="FLO-M
         cmd = "guppy_basecaller.py --flowcell {} --kit {} -i {} --save_path {} --cpu_threads_per_caller {}" \
               " --number_callers {}".format(flowcellType, kitType, fast5Dir, basecallingOut, threads, 1)
         subprocess.call(cmd, shell=True)
-        nanoporeRawFq = "nanoporeRawSeq.fq"
-        cmd = "cat {}/workspace/pass/* > {}".format(basecallingOut, nanoporeRawFq)
+        rawFlncFq = "rawFlnc.fq"
+        cmd = "cat {}/workspace/pass/* > {}".format(basecallingOut, rawFlncFq)
         subprocess.call(cmd, shell=True)
-        dataObj.data_processed_location = os.path.join(workDir, nanoporeRawFq)
+        dataObj.data_processed_location = os.path.join(os.getcwd(), rawFlncFq)
     else:
-        cmd = "cat {}/* > nanoporeRawSeq.fq".format(dataObj.data_location)
+        rawFlncFq = "rawFlnc.fq"
+        cmd = "cat {}/* > {}".format(dataObj.data_location, rawFlncFq)
         subprocess.call(cmd, shell=True)
-        dataObj.data_processed_location = os.path.join(workDir, "nanoporeRawSeq.fq")
+        dataObj.data_processed_location = os.path.join(os.getcwd(), rawFlncFq)
+    os.chdir(prevDir)
 
 
 def correctWithFmlrc2(dataObj, dirSpec=None, useFmlrc2=True, threads=None):
     if useFmlrc2:
         projectName, sampleName = dataObj.project_name, dataObj.sample_name
-        print getCurrentTime() + " Correct {} with short-reads...".format(projectName, sampleName)
+        print getCurrentTime() + " Correct long reads in project {} sample {} with short-reads...".format(projectName, sampleName)
         prevDir = os.getcwd()
         resolveDir("fmlrc")
         logDir = os.path.join(dirSpec.out_dir, projectName, sampleName, "log")
@@ -220,30 +220,30 @@ def correctWithFmlrc2(dataObj, dirSpec=None, useFmlrc2=True, threads=None):
         cmd = "fmlrc2 -t {} -C 10 comp_msbwt.npy raw.dna.fastq fmlrc_corrected.fasta 1>{}/{}.fmlrc.log 2>&1".format(
             threads, logDir, sampleName)
         subprocess.call(cmd, shell=True)
-        dataObj.data_processed_location = os.path.join(prevDir, "fmlrc_corrected.fasta")
+        dataObj.data_processed_location = os.path.join(os.getcwd(), "fmlrc_corrected.fasta")
         # removeFiles(os.getcwd(), ["leftReads.fastq", "rightReads.fastq"])
         os.chdir(prevDir)
-        print getCurrentTime() + " Correct {} with short-reads done!".format(dataObj.projectName, dataObj.sampleName)
+        print getCurrentTime() + " Correct long reads in project {} sample {} short-reads done!".format(dataObj.projectName, dataObj.sampleName)
 
 def preprocess(dataObj=None, ccsParams=None, dirSpec=None, threads=10):
-    if not dataObj.data_processed_location and validateFile(dataObj.data_processed_location):
+    if dataObj.data_processed_location and validateFile(dataObj.data_processed_location):
         if validateFaAndFqFile(dataObj.data_processed_location) in ["fastq", "fasta"]:
             print getCurrentTime() + " It seems like you provided an valid processed fasta/fastq file, we will not call reads from raw data!"
             correctWithFmlrc2(dataObj, useFmlrc2=dataObj.use_fmlrc2)
         else:
             raise Exception(getCurrentTime() + " It seems like you provided an unvalid processed fasta/fastq file, please check it!")
     else:
-        if "pacbio" and "RNA-seq":
+        if dataObj.tgs_plat.lower() == "pacbio" and (dataObj.ngs_left_reads != None or dataObj.ngs_right_reads != None):
             retrievePacbio(dataObj=dataObj, ccsParams=ccsParams, dirSpec=dirSpec, threads=threads)
             correctWithFmlrc2(dataObj, useFmlrc2=dataObj.use_fmlrc2)
             processRnaseq(dataObj=dataObj, threads=threads, max_reads_length_tirmmed=0)
             renameNGSdata2fastp(dataObj=dataObj)
-        elif "nanopore" and "RNA-seq":
+        elif dataObj.tgs_plat.lower() == "nanopore" and (dataObj.ngs_left_reads != None or dataObj.ngs_right_reads != None):
             retrieveNanopore(dataObj=dataObj, dirSpec=dirSpec, threads=threads)
             correctWithFmlrc2(dataObj, useFmlrc2=dataObj.use_fmlrc2)
             processRnaseq(dataObj=dataObj, threads=threads, max_reads_length_tirmmed=0)
             renameNGSdata2fastp(dataObj=dataObj)
-        elif not "pacbio" and not "nanopore" and "RNA-seq":
+        elif dataObj.tgs_plat == None and (dataObj.ngs_left_reads != None or dataObj.ngs_right_reads != None):
             processRnaseq(dataObj=dataObj, threads=threads, max_reads_length_tirmmed=0)
             renameNGSdata2fastp(dataObj=dataObj)
         else:

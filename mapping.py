@@ -15,9 +15,9 @@ def minimap2mapping(dataObj=None, minimap2Params=None, refParams=None, dirSpec=N
     prevDir = os.getcwd()
     workDir = os.path.join(dirSpec.out_dir, projectName, sampleName, "mapping")
     resolveDir(workDir)
-    if dataObj.mm2index != None:
+    if dataObj.mm2index != None and validateFile(dataObj.mm2index):
         mm2index = minimap2Params.mm2index
-    elif refParams.ref_mm2_index != None:
+    elif refParams.ref_mm2_index != None and validateFile(refParams.ref_mm2_index):
         mm2index = refParams.ref_mm2_index
     else:
         cmd = "minimap2 -d {} -t {} {}".format("ref.mm2", threads, refParams.ref_genome)
@@ -26,39 +26,60 @@ def minimap2mapping(dataObj=None, minimap2Params=None, refParams=None, dirSpec=N
         dataObj.mm2index = mm2index
     sampleName = dataObj.sample_name
     processedFlncFq = dataObj.data_processed_location
-    logDir = os.path.join(dirSpec.out_dir, dataObj.project_name, dataObj.sample_name, "log")
+    logDir = os.path.join(dirSpec.out_dir, projectName, sampleName, "log")
     if dataObj.tgs_plat == "pacbio":
         cmd = "minimap2 -ax splice:hq -G {} -uf {} --secondary=no --MD {} -t {} >flnc.mm2.sam 2>{}/{}.mm2.log".format(
-            minimap2Params.max_reads_length, mm2index, processedFlncFq, threads, logDir, sampleName)
+            minimap2Params.max_intron_length, mm2index, processedFlncFq, threads, logDir, sampleName)
+        subprocess.call(cmd, shell=True)
+        rawFlncFq = os.path.join(dirSpec.out_dir, projectName, sampleName, "preprocess", "pacbio", "rawFlnc.fq")
+        cmd = "minimap2 -ax splice:hq -G {} -uf {} --secondary=no --MD {} -t {} >rawFlnc.mm2.sam 2>{}/{}.rawFlnc.mm2.log".format(
+            minimap2Params.max_intron_length, mm2index, rawFlncFq, threads, logDir, sampleName)
+        subprocess.call(cmd, shell=True)
     else:
         cmd = "minimap2 -ax splice -G {} -k14 -uf {} --secondary=no --MD {} -t {} >flnc.mm2.sam 2>{}/{}.mm2.log".format(
-            minimap2Params.max_reads_length, mm2index, processedFlncFq, threads, logDir, sampleName)
+            minimap2Params.max_intron_length, mm2index, processedFlncFq, threads, logDir, sampleName)
+        subprocess.call(cmd, shell=True)
+        rawFlncFq = os.path.join(dirSpec.out_dir, projectName, sampleName, "preprocess", "nanopore", "rawFlnc.fq")
+        cmd = "minimap2 -ax splice -G {} -k14 -uf {} --secondary=no --MD {} -t {} >rawFlnc.mm2.sam 2>{}/{}.rawFlnc.mm2.log".format(
+            minimap2Params.max_intron_length, mm2index, rawFlncFq, threads, logDir, sampleName)
+        subprocess.call(cmd, shell=True)
+
+    cmd = "bamToBed -i <(samtools view -bS flnc.mm2.sam) -bed12 > tmp.bed12"
+    subprocess.call(cmd, shell=True)
+    cmd = '''filter.pl -o <(awk 'OFS="\t"{if($3-$2>'''
+    cmd += str(minimap2Params.max_intron_length)
+    cmd += '''){print}}' tmp.bed12) flnc.mm2.sam -1 4 > tmp.sam'''
+    subprocess.call(cmd, shell=True, executable="/bin/bash")
+    cmd = "(samtools view -H tmp.sam; samtools view -f 16 -F 4079 tmp.sam; samtools view -f 0 -F 4095 tmp.sam) > flnc.mm2.sam"
     subprocess.call(cmd, shell=True)
     cmd = "samtools sort -@ {} flnc.mm2.sam > flnc.mm2.sorted.bam".format(threads)
     subprocess.call(cmd, shell=True)
+    removeFiles(os.getcwd(), ["tmp.sam", "tmp.bed12"])
+    # cmd = "samtools sort -@ {} flnc.mm2.sam > flnc.mm2.sorted.bam".format(threads)
+    # subprocess.call(cmd, shell=True)
     # cmd = "samtools fasta -@ {} {}.flnc.mm2.sorted.bam > {}.flnc.fa"
     # subprocess.call(cmd, shell=True)
     print getCurrentTime() + " Mapping flnc reads to reference genome for project {} sample {} done!".format(projectName, sampleName)
     os.chdir(prevDir)
 
-def hisat2mapping(dataObj=None, refParams=None, dirSpec=None, optionTools=None, threads=10):
+def hisat2mapping(dataObj=None, refParams=None, dirSpec=None, threads=10):
     projectName, sampleName = dataObj.project_name, dataObj.sample_name
     print getCurrentTime() + " Mapping rna-seq short reads to reference genome with hisat2 for project {} sample {}...".format(projectName, sampleName)
     prevDir = os.getcwd()
     workDir = os.path.join(dirSpec.out_dir, projectName, sampleName, "mapping", "rna-seq")
     resolveDir(workDir)
     logDir = os.path.join(dirSpec.out_dir, projectName, sampleName, "log")
-    hisat2indexDir = os.path.join(workDir, "hisat2indexDir")
+    hisat2indexDir = os.path.join(dirSpec.out_dir, "hisat2indexDir")
     gtfPrefix = os.path.splitext(os.path.basename(refParams.ref_gtf))[0]
-    makeHisat2Index(refParams=refParams, hisat2indexDir=hisat2indexDir, indexPrefix=gtfPrefix, optionTools=optionTools)
+    makeHisat2Index(refParams=refParams, hisat2indexDir=hisat2indexDir, indexPrefix=gtfPrefix, threads=threads)
 
     batchCreateDir(["alignment", "reassembly"])
     resolveDir("alignment")
     bamList = []
     mergeList = []
-    if dataObj.ngsReadPair == "paired":
-        leftReadsRepeats = dataObj.ngsLeftReads.split(";")
-        rightReadsRepeats = dataObj.ngsRightReads.split(";")
+    if dataObj.ngs_reads_paired == "paired":
+        leftReadsRepeats = dataObj.ngs_left_reads.split(";")
+        rightReadsRepeats = dataObj.ngs_right_reads.split(";")
         for i in range(len(leftReadsRepeats)):
             leftReads = ",".join([r.strip() for r in leftReadsRepeats[i].split(",")])
             rightReads = ",".join([r.strip() for r in rightReadsRepeats[i].split(",")])
@@ -78,10 +99,10 @@ def hisat2mapping(dataObj=None, refParams=None, dirSpec=None, optionTools=None, 
             mergeList.append("{}/{}.gtf".format(os.getcwd(), repeatName))
             os.chdir("../")
     else:
-        if dataObj.leftReads and dataObj.rightReads == None:
-            singleReadsRepeats = dataObj.leftReads.split(";")
-        elif dataObj.leftReads == None and dataObj.rightReads:
-            singleReadsRepeats = dataObj.rightReads.split(";")
+        if dataObj.ngs_left_reads and dataObj.ngs_right_reads == None:
+            singleReadsRepeats = dataObj.ngs_left_reads.split(";")
+        elif dataObj.ngs_left_reads == None and dataObj.ngs_right_reads:
+            singleReadsRepeats = dataObj.ngs_right_reads.split(";")
         else:
             raise Exception("The NGS reads type you input is 'single', but the actually it seems like 'paired' one, please check it!")
 
@@ -102,7 +123,7 @@ def hisat2mapping(dataObj=None, refParams=None, dirSpec=None, optionTools=None, 
             mergeList.append("{}/{}.gtf".format(os.getcwd(), repeatName))
             os.chdir("../")
 
-    os.chdir("../reassembly")
+    os.chdir(os.path.join(workDir, "reassembly"))
     gtfStr = " ".join(mergeList)
     bamStr = " ".join(bamList)
     cmd = "stringtie --merge -p {} -o stringtie_merged.gtf {}".format(threads, gtfStr)
