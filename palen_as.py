@@ -201,7 +201,7 @@ def palen_as(dataObj=None, refParams=None, dirSpec=None, filterByCount=10, sampl
     print getCurrentTime() + " Identify functional poly(A) tail length related to AS for project {} sample {}...".format(projectName, sampleName)
     prevDir = os.getcwd()
     baseDir = os.path.join(dirSpec.out_dir, projectName, sampleName)
-    resolveDir(os.path.join(baseDir, "palenRelatedAS"))
+    resolveDir(os.path.join(baseDir, "palenAS"))
 
     collapsedGroupFile = os.path.join(baseDir, "collapse", "tofu.collapsed.group.txt")
     isoBedFile = os.path.join(baseDir, "collapse", "tofu.collapsed.assigned.unambi.bed12+")

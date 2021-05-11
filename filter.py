@@ -140,7 +140,7 @@ def getJuncFromRegtools(dataObj=None, dirSpec=None, filterByCount=10):
     rnaseqSortedBam = os.path.join(dirSpec.out_dir, projectName, sampleName, "mapping", "rna-seq", "reassembly", "tmp.bam")
     cmd = "regtools junctions extract -a 5 -m 50 -M 50000 {} > tmp.bed".format(rnaseqSortedBam)
     subprocess.call(cmd, shell=True)
-    cmd = '''awk '{if($5>10){print}}' tmp.bed > junctions.bed'''
+    cmd = '''awk '{if($5>''' + str(filterByCount) + '''){print}}' tmp.bed > junctions.bed'''
     subprocess.call(cmd, shell=True, executable="/bin/bash")
     dataObj.ngs_junctions = os.path.join(os.getcwd(), "junctions.bed")
     print getCurrentTime() + " Get junctions from RNA-seq with Regtools for project {} sample {} done!".format(projectName, sampleName)
@@ -187,7 +187,7 @@ def filter(dataObj=None, refParams=None, dirSpec=None):
     projectName, sampleName = dataObj.project_name, dataObj.sample_name
     workDir = os.path.join(dataObj.out_dir, projectName, sampleName, "filtration")
     resolveDir(workDir)
-    if dataObj.ngs_junctions == None:
+    if dataObj.ngs_junctions == None and (dataObj.ngs_left_reads != None or dataObj.ngs_right_reads != None):
         getJuncFromRegtools(dataObj=dataObj, dirSpec=dirSpec)
     filterByJunc(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, threads=dataObj.single_run_threads)
 

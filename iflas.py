@@ -7,7 +7,7 @@ Created on: 2021-04-29 14:19:36
 Last modified: 2021-04-29 14:19:36
 '''
 
-import sys, argparse, time
+import sys, argparse, time, pybedtools
 from multiprocessing import Pool
 from commonFuncs import *
 from Config import *
@@ -76,14 +76,16 @@ def iflas(args):
         initRefSetting(refParams=refParams, dirSpec=dirSpec)
     initSysResourceSetting(optionTools=optionTools)
 
-    pool = Pool(processes=len(dataToProcess))
-    for dataObj in dataToProcess:
-        dataObj.single_run_threads = int(optionTools.threads/float(len(dataToProcess)))
-        if args.command == 'preproc':
-            from preprocess import preprocess
+    pybedtools.set_tempdir(dirSpec.out_dir)
+    if args.command == 'preproc':
+        pool = Pool(processes=len(dataToProcess))
+        from preprocess import preprocess
+        for dataObj in dataToProcess:
+            dataObj.single_run_threads = int(optionTools.threads / float(len(dataToProcess)))
+            # preprocess(dataObj=dataObj, ccsParams=ccsParams, dirSpec=dirSpec, threads=dataObj.single_run_threads)
             pool.apply_async(preprocess, (dataObj, ccsParams, dirSpec, dataObj.single_run_threads))
-    pool.close()
-    pool.join()
+        pool.close()
+        pool.join()
 
     strain2data = {}
     for dataObj in dataToProcess:
@@ -174,14 +176,14 @@ def iflas(args):
                 from report import report
                 report(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
         if args.command == 'diff_as':
-            from diff_as import diff_as, diff_as1
+            from diff_as import diff_as1
             # diff_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
             compCond = args.compCond
             diff_as1(dataToProcess, compCondFile=compCond, dirSpec=dirSpec, sampleMerged=optionTools.merge_data_from_same_strain)
         if args.command == 'go':
             from go import go
             go(args)
-
+    pybedtools.cleanup(remove_all=True)
 
 if __name__ == "__main__":
     USAGE = ' iFLAS: integrated Full Length Alternative Splicing analysis '
@@ -205,7 +207,7 @@ if __name__ == "__main__":
 
     parser_visualAS = subparsers.add_parser('visual_as', help='Visualize the specific gene structure with details including isoform mapping, short reads coverage and AS types identified', usage='%(prog)s [options]')
     parser_visualAS.add_argument('-c', dest="default_cfg", help="The config file used for init setting.")
-    parser_visualAS.add_argument('-g', dest="genes", help="The gene list separated by comma or a single file contain genes one per line.")
+    parser_visualAS.add_argument('-g', dest="genes", type=str, help="The gene list separated by comma or a single file contain genes one per line.")
 
     parser_rankAS = subparsers.add_parser('rank_as', help='Score the isoform by the produce of each inclusion/exclusion ratio in that isoform, and rank all the isoforms from high to low', usage='%(prog)s [options]')
     parser_rankAS.add_argument('-c', dest="default_cfg", help="The config file used for init setting.")
@@ -218,13 +220,13 @@ if __name__ == "__main__":
 
     parser_diffAS = subparsers.add_parser('diff_as', help='Carry out differential AS ananlysis among conditions', usage='%(prog)s [options]')
     parser_diffAS.add_argument('-c', dest="default_cfg", help="The config file used for init setting.")
-    parser_diffAS.add_argument('-d', dest="compCond", help="The condition file used to detect differential AS between samples.")
+    parser_diffAS.add_argument('-d', dest="compCond", type=str, help="The condition file used to detect differential AS between samples.")
 
     parser_goAS = subparsers.add_parser('go', help='Perform GO enrichment analysis and plot results for the specified gene set or multiple gene sets', usage='%(prog)s [options]')
-    parser_goAS.add_argument('-c', dest="default_cfg", help="The config file used for init setting.")
-    parser_goAS.add_argument('-tg', dest="targetGeneFile", help="The target gene file or file list separated by comma.")
-    parser_goAS.add_argument('-bg', dest="gene2goFile", help="The mapping file between gene and go term.")
-    parser_goAS.add_argument('-s', dest="sampleName", help="The sample name used plot the track, multi-sample should be separated by commma.")
+    parser_goAS.add_argument('-c', dest="default_cfg", type=str, help="The config file used for init setting.")
+    parser_goAS.add_argument('-tg', dest="targetGeneFile", type=str, help="The target gene file or file list separated by comma.")
+    parser_goAS.add_argument('-bg', dest="gene2goFile", type=str, help="The mapping file between gene and go term.")
+    parser_goAS.add_argument('-s', dest="sampleName", type=str, help="The sample name used plot the track, multi-sample should be separated by commma.")
 
     parser_report = subparsers.add_parser('report', help='Automatic detect the plots generated in each step, and merge them into a report file', usage='%(prog)s [options]')
     parser_report.add_argument('-c', dest="default_cfg", help="The config file used for init setting.")

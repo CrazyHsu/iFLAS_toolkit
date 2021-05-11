@@ -436,18 +436,18 @@ def validateFaAndFqFile(myFile):
 
 def validateFile(myFile):
     if not os.path.exists(myFile):
-        raise Exception("File '%s' not found! Please input again!" % myFile)
+        return False
 
     if not os.path.isfile(myFile):
-        raise Exception("File '%s' is not a file! Please input again!" % myFile)
+        return False
 
     return True
 
 def validateDir(myDir):
     if not os.path.exists(myDir):
-        raise Exception("Dir '%s' not found! Please input again!" % myDir)
+        return False
 
     if not os.path.isdir(myDir):
-        raise Exception("Dir '%s' is not a directory! Please input again!" % myDir)
+        return False
 
     return True

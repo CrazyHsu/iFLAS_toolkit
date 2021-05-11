@@ -36,10 +36,10 @@ MINIMAP2_TAGS = [MM2INDEX, MAXINTRONLENGTH] \
     = ["mm2_index", "max_intron_length"]
 DATA_TAGS = [PROJECTNAME, SAMPLENAME, STRAIN, CONDITION, TGSPLAT, STRATEGY, DATALOTAION, PRIMER, DATAPROCESSEDLOCATION,
              POLYALOCATION, NGSLEFTREADS, NGSRIGHTREADS, NGSREADSPAIRED, NGSREADSLENGTH, NGSJUNCTIONS, USEFMLRC2,
-             SINGLERUNTHREADS, DATAMERGED] \
+             SINGLERUNTHREADS] \
     = ["project_name", "sample_name", "strain", "condition", "tgs_plat", "strategy", "data_location", "primer",
        "data_processed_location", "polya_location", "ngs_left_reads", "ngs_right_reads", "ngs_reads_paired",
-       "ngs_reads_length", "ngs_junctions", "use_fmlrc2", "single_run_threads", "data_merged"]
+       "ngs_reads_length", "ngs_junctions", "use_fmlrc2", "single_run_threads"]
 COLLAPSE_TAGS = [MINIDENTITY, MINCOVERAGE, FLCOVERAGE, MAXFUZZYJUNCTION, MAX5DIFF, MAX3DIFF, DUNMERGE5SHORTER] \
     = ["min_identity", "min_coverage", "fl_coverage", "max_fuzzy_junction", "max_5_diff", "max_3_diff", "dun_merge_5_shorter"]
 OPTION_TAGS = [THREADS, MEMORY, GENE2GO, MERGEDATAFROMSAMESTRAIN] \
@@ -59,13 +59,14 @@ BUILDIN_TAGS = [SECTIONTYPE] + BUILDIN_TAGS
 DIR_TAGS = [SECTIONTYPE] + DIR_TAGS
 VALID_TAGS = [SECTIONTYPE] + REF_TAGS + CCS_TAGS + DATA_TAGS + MINIMAP2_TAGS + COLLAPSE_TAGS + OPTION_TAGS + BUILDIN_TAGS + DIR_TAGS
 
-BOOLEAN_TAGS = [USEFMLRC2, DUNMERGE5SHORTER, DATAMERGED, MERGEDATAFROMSAMESTRAIN]
-FLOAT_TAGS = [CCSMINREADSCORE, CCSMINPREDICTEDACCURACY, MINIMAP2_TAGS, MINCOVERAGE]
+BOOLEAN_TAGS = [USEFMLRC2, DUNMERGE5SHORTER, MERGEDATAFROMSAMESTRAIN, DUNMERGE5SHORTER]
+FLOAT_TAGS = [CCSMINREADSCORE, CCSMINPREDICTEDACCURACY, MINIDENTITY, MINCOVERAGE]
 INTEGER_TAGS = [CCSMINREADLENGTH, CCSMINSUBREADLENGTH, CCSMINCCSLENGTH, CCSMINPASS, FLCOVERAGE, MAXFUZZYJUNCTION,
                 MAX5DIFF, MAX3DIFF, MAXINTRONLENGTH, THREADS, SINGLERUNTHREADS, NGSREADSLENGTH]
 STRING_TAGS = [SECTIONTYPE, REFSTRAIN, STRAIN, CONDITION, REFGENOME, REFSIZE, REFANNOGFF, REFANNOGTF, REFBED, REFMM2INDEX, OUTDIR, MEMORY]
 
 FILE_TAGS = [REFGENOME, REFSIZE, REFANNOGFF, REFANNOGTF, REFBED]
+NONE_TAG = "None"
 
 TAG_TYPE = {}
 for t in BOOLEAN_TAGS: TAG_TYPE[t] = 'boolean'
@@ -313,7 +314,12 @@ class Config(object):
             elif tag in INTEGER_TAGS:
                 return int(value)
             elif tag in BOOLEAN_TAGS:
-                return value.lower() in ['t', 'true', '0']
+                if value.lower() in ['t', 'true']:
+                    return True
+                elif value.lower() in ['0', 'f', 'false']:
+                    return False
+            elif tag == NONE_TAG:
+                return None
             else:  # STRING_TAGS
                 return value
         except ValueError as e:
@@ -386,366 +392,3 @@ class Config(object):
                     validateFile(value)
                 # elif o in DIR_TAGS:
                 #     validateDir(value)
-
-
-# class NGSsample(object):
-#     def __init__(self, cfgLine):
-#         self.records = cfgLine.strip().split("\t")
-#         self.projectName = self.records[0]
-#         self.groupName = self.records[1]
-#         self.sampleName = self.records[2]
-#         self.leftReads = self.records[3]
-#         self.rightReads = self.records[4]
-#         try:
-#             self.ngsReadPair = self.records[5].lower()
-#         except IndexError as e:
-#             self.ngsReadPair = "paired"
-#         self.readLength = self.records[6]
-#
-#     def __str__(self):
-#         return "%s:%s:%s:%s-%s; %s-end sequencing" % (
-#             self.projectName, self.groupName, self.sampleName, self.leftReads, self.rightReads, self.ngsReadPair)
-#
-#     __repr__ = __str__
-#
-#
-# class NGSsample1():
-#     def __init__(self, cfgLine):
-#         self.records = cfgLine.strip().split("\t")
-#         self.projectName = self.records[0]
-#         self.strainName = self.records[1]
-#         self.sampleName = self.records[2]
-#         self.leftReads = self.records[3]
-#         self.rightReads = self.records[4]
-#         try:
-#             self.ngsReadPair = self.records[5].lower()
-#         except IndexError as e:
-#             self.ngsReadPair = "paired"
-#         self.readLength = self.records[6]
-#
-#     def __str__(self):
-#         return "%s:%s:%s:%s-%s; %s-end sequencing" % (
-#             self.projectName, self.strainName, self.sampleName, self.leftReads, self.rightReads, self.ngsReadPair)
-#
-#     __repr__ = __str__
-#
-#
-# class TGSsample(object):
-#     def __init__(self, cfgLine):
-#         self.records = cfgLine.strip().split("\t")
-#         if len(self.records) < 4:
-#             raise Exception("You should provide valid TGS config file with at least 4 columns, the format like: "
-#                             "project\tgroup\tsampleName\tdataDir. And if you dont't provide the value in the "
-#                             "field of 5th, 6th, 7th, we will use the default setting which can broke the "
-#                             "pipeline for some unknown reasons.")
-#         self.projectName = self.records[0]
-#         self.groupName = self.records[1]
-#         self.sampleName = self.records[2]
-#         self.dataDir = self.records[3]
-#         self.primer = self.records[4]
-#         self.tgsPlat = self.records[5]
-#         self.strategy = self.records[6]
-#
-#     def __str__(self):
-#         return "%s:%s:%s:%s:%s:%s:%s" % (
-#             self.projectName, self.groupName, self.sampleName, self.dataDir, self.tgsPlat, self.strategy, self.primer)
-#
-#     __repr__ = __str__
-#
-#
-# class TGSsample1():
-#     def __init__(self, cfgLine):
-#         self.records = cfgLine.strip().split("\t")
-#         if len(self.records) < 4:
-#             raise Exception("You should provide valid TGS config file with at least 4 columns, the format like: "
-#                             "project\tgroup\tsampleName\tdataDir. And if you dont't provide the value in the "
-#                             "field of 5th, 6th, 7th, we will use the default setting which can broke the "
-#                             "pipeline for some unknown reasons.")
-#         self.projectName = self.records[0]
-#         self.refStrain = self.records[1]
-#         self.strainName = self.records[2]
-#         self.groupedSampleName = self.records[3]
-#         self.dataLocation = self.records[4]
-#         self.tgsPlat = self.records[5].lower()
-#         self.tgsStrategy = self.records[6]
-#         self.primers = self.records[7]
-#         if len(self.records) == 9:
-#             self.subPrimers = self.records[8]
-#         else:
-#             self.subPrimers = 1
-#         self.primersUsed = None
-#
-#     def getUniqName(self):
-#         self.uniqName = "{}_{}_{}".format(self.projectName, self.strainName, self.groupedSampleName)
-#
-#     def __str__(self):
-#         return "%s:%s:%s:%s:%s:%s:%s:%s" % (
-#             self.projectName, self.refStrain, self.strainName, self.groupedSampleName, self.dataLocation, self.tgsPlat,
-#             self.tgsStrategy, self.primers)
-#
-#     __repr__ = __str__
-#
-#
-# class Project(object):
-#     def __init__(self):
-#         self.projectName = None
-#         self.group = None
-#         self.sampleName = None
-#
-#         self.tgsProject = None
-#         self.tgsDataDir = None
-#         self.tgsPrimer = None
-#         self.tgsPlat = None
-#         self.tgsStrategy = None
-#
-#         self.ngsProject = None
-#         self.ngsLeftReads = None
-#         self.ngsRightReads = None
-#         self.ngsSingleReads = None
-#         self.ngsReadPair = None
-#         self.ngsJunctions = None
-#
-#
-# class ProjectCfg(object):
-#     def __init__(self, tgsCfgFile, ngsCfgFile):
-#         self.tgsCfgFile = tgsCfgFile
-#         self.ngsCfgFile = ngsCfgFile
-#         self.projects = self.mergeCfg()
-#         self.projectsDict = self.getProjectBound()
-#
-#     def mergeCfg(self):
-#         projects = []
-#         if self.tgsCfgFile:
-#             validateFile(self.tgsCfgFile)
-#             tgsCfgDict = getCfg(self.tgsCfgFile, seqStrategy="tgs")
-#             if self.ngsCfgFile:
-#                 validateFile(self.ngsCfgFile)
-#                 ngsCfgDict = getCfg(self.ngsCfgFile, seqStrategy="ngs")
-#             else:
-#                 ngsCfgDict = {}
-#             for projectName in tgsCfgDict:
-#                 for group in tgsCfgDict[projectName]:
-#                     for sampleName in tgsCfgDict[projectName][group]:
-#                         tgsProject = tgsCfgDict[projectName][group][sampleName]
-#                         myProject = Project()
-#                         myProject.projectName = projectName
-#                         myProject.group = group
-#                         myProject.sampleName = sampleName
-#
-#                         myProject.tgsProject = tgsProject
-#                         myProject.tgsDataDir = tgsProject.dataDir
-#                         myProject.tgsPrimer = tgsProject.primer
-#                         myProject.tgsPlat = tgsProject.tgsPlat
-#                         myProject.tgsStrategy = tgsProject.strategy
-#                         if projectName in ngsCfgDict and group in ngsCfgDict[projectName] and sampleName in \
-#                                 ngsCfgDict[projectName][group]:
-#                             ngsProject = ngsCfgDict[projectName][group][sampleName]
-#                             myProject.ngsProject = ngsProject
-#                             myProject.ngsLeftReads = ngsProject.leftReads
-#                             myProject.ngsRightReads = ngsProject.rightReads
-#                             myProject.ngsReadPair = ngsProject.ngsReadPair
-#                         projects.append(myProject)
-#         else:
-#             if self.ngsCfgFile:
-#                 validateFile(self.ngsCfgFile)
-#                 ngsCfgDict = getCfg(self.ngsCfgFile, seqStrategy="ngs")
-#             else:
-#                 raise Exception("You should write either valid tgs or ngs file path in the config file")
-#             for projectName in ngsCfgDict:
-#                 for group in ngsCfgDict[projectName]:
-#                     for sampleName in ngsCfgDict[projectName][group]:
-#                         ngsProject = ngsCfgDict[projectName][group][sampleName]
-#                         myProject = Project()
-#                         myProject.projectName = projectName
-#                         myProject.group = group
-#                         myProject.sampleName = sampleName
-#
-#                         myProject.ngsProject = ngsProject
-#                         myProject.ngsLeftReads = ngsProject.leftReads
-#                         myProject.ngsRightReads = ngsProject.rightReads
-#                         myProject.ngsReadPair = ngsProject.ngsReadPair
-#                         projects.append(myProject)
-#         return projects
-#
-#     def getProjectBound(self):
-#         projectsDict = {}
-#         for project in self.projects:
-#             if project.projectName not in projectsDict:
-#                 projectsDict[project.projectName] = {
-#                     project.group: {project.sampleName: {"tgs": project.tgsProject, "ngs": project.ngsProject}}}
-#             elif project.group not in projectsDict[project.projectName]:
-#                 projectsDict[project.projectName].update(
-#                     {project.group: {project.sampleName: {"tgs": project.tgsProject, "ngs": project.ngsProject}}})
-#             else:
-#                 projectsDict[project.projectName][project.group].update(
-#                     {project.sampleName: {"tgs": project.tgsProject, "ngs": project.ngsProject}})
-#         return projectsDict
-#
-#
-# class ProjectCfg1(object):
-#     def __init__(self, tgsCfgFile, ngsCfgFile):
-#         self.tgsCfgFile = tgsCfgFile
-#         self.ngsCfgFile = ngsCfgFile
-#         self.tgsDict, self.tgsList, self.tgsStrain2sample, self.tgsPlat2sample, self.tgsRefStrain2sample, self.tgsGroupedSample = self.getTgsCfg()
-#         self.ngsDict, self.ngsList = self.getNgsCfg()
-#         # self.projects = self.mergeCfg()
-#         # self.projectsDict = self.getProjectBound()
-#
-#     def getTgsCfg(self):
-#         validateFile(self.tgsCfgFile)
-#         tgsDict = {}
-#         tgsList = []
-#         tgsStrain2sample = {}
-#         tgsPlat2sample = {}
-#         tgsGroupedSample = {}
-#         tgsRefStrain2sample = {}
-#         with open(self.tgsCfgFile) as f:
-#             for i in f.readlines():
-#                 if i.startswith("#"): continue
-#                 t = TGSsample1(i)
-#                 if t.tgsPlat == "pacbio":
-#                     self.getGroupedPrimersFile(t)
-#                 t.getUniqName()
-#
-#                 if t.projectName not in tgsDict:
-#                     tgsDict[t.projectName] = {t.refStrain: {t.strainName: {t.groupedSampleName: t}}}
-#                 elif t.refStrain not in tgsDict[t.projectName]:
-#                     tgsDict[t.projectName][t.refStrain] = {t.strainName: {t.groupedSampleName: t}}
-#                 elif t.strainName not in tgsDict[t.projectName][t.refStrain]:
-#                     tgsDict[t.projectName][t.refStrain][t.strainName] = {t.groupedSampleName: t}
-#                 else:
-#                     tgsDict[t.projectName][t.refStrain][t.strainName][t.groupedSampleName] = t
-#
-#                 tgsList.append(t)
-#
-#                 if t.projectName not in tgsPlat2sample:
-#                     tgsPlat2sample[t.projectName] = {t.tgsPlat: [t]}
-#                 elif t.tgsPlat not in tgsPlat2sample[t.projectName]:
-#                     tgsPlat2sample[t.projectName][t.tgsPlat] = [t]
-#                 else:
-#                     tgsPlat2sample[t.projectName][t.tgsPlat].append(t)
-#
-#                 if t.projectName not in tgsStrain2sample:
-#                     tgsStrain2sample[t.projectName] = {t.strainName: [t]}
-#                 elif t.strainName not in tgsStrain2sample[t.projectName]:
-#                     tgsStrain2sample[t.projectName][t.strainName] = [t]
-#                 else:
-#                     tgsStrain2sample[t.projectName][t.strainName].append(t)
-#
-#                 if t.projectName not in tgsRefStrain2sample:
-#                     tgsRefStrain2sample[t.projectName] = {t.refStrain: [t]}
-#                 elif t.refStrain not in tgsRefStrain2sample[t.projectName]:
-#                     tgsRefStrain2sample[t.projectName][t.refStrain] = [t]
-#                 else:
-#                     tgsRefStrain2sample[t.projectName][t.refStrain].append(t)
-#
-#                 if t.projectName not in tgsGroupedSample:
-#                     tgsGroupedSample[t.projectName] = {t.groupedSampleName: t}
-#                 else:
-#                     tgsGroupedSample[t.projectName][t.groupedSampleName] = t
-#         return tgsDict, tgsList, tgsStrain2sample, tgsPlat2sample, tgsRefStrain2sample, tgsGroupedSample
-#
-#     def getNgsCfg(self):
-#         validateFile(self.ngsCfgFile)
-#         ngsDict = {}
-#         ngsList = []
-#         with open(self.ngsCfgFile) as f:
-#             for i in f.readlines():
-#                 if i.startswith("#"): continue
-#                 n = NGSsample1(i)
-#                 if n.projectName not in ngsDict:
-#                     ngsDict[n.projectName] = {n.strainName: {n.sampleName: n}}
-#                 elif n.strainName not in ngsDict[n.projectName]:
-#                     ngsDict[n.projectName][n.strainName] = {n.sampleName: n}
-#                 else:
-#                     ngsDict[n.projectName][n.strainName][n.sampleName] = n
-#                 ngsList.append(n)
-#         return ngsDict, ngsList
-#
-#     def getGroupedPrimersFile(self, tmpRun):
-#         from Bio import SeqIO
-#         records = SeqIO.parse(tmpRun.primers, "fasta")
-#         primerDir = os.path.dirname(os.path.abspath(tmpRun.primers))
-#         if tmpRun.subPrimers == 1:
-#             primersUsed = os.path.join(primerDir, tmpRun.projectName + tmpRun.groupedSampleName + ".primers.fa")
-#         else:
-#             primersUsed = tmpRun.primers
-#
-#         if not os.path.exists(primersUsed):
-#             primersOut = open(primersUsed, "w")
-#             recordsDict = SeqIO.to_dict(records)
-#             ids = ["5p"]
-#             for i in tmpRun.groupedSampleName.split("_"):
-#                 ids.append("_".join([tmpRun.strainName, i, "3p"]))
-#             resultRecords = [recordsDict[id_] for id_ in ids]
-#             SeqIO.write(resultRecords, primersOut, "fasta")
-#             primersOut.close()
-#         tmpRun.primersUsed = primersUsed
-#
-#     def mergeCfg(self):
-#         projects = []
-#         if self.tgsCfgFile:
-#             validateFile(self.tgsCfgFile)
-#             tgsCfgDict = getCfg(self.tgsCfgFile, seqStrategy="tgs")
-#             if self.ngsCfgFile:
-#                 validateFile(self.ngsCfgFile)
-#                 ngsCfgDict = getCfg(self.ngsCfgFile, seqStrategy="ngs")
-#             else:
-#                 ngsCfgDict = {}
-#             for projectName in tgsCfgDict:
-#                 for group in tgsCfgDict[projectName]:
-#                     for sampleName in tgsCfgDict[projectName][group]:
-#                         tgsProject = tgsCfgDict[projectName][group][sampleName]
-#                         myProject = Project()
-#                         myProject.projectName = projectName
-#                         myProject.group = group
-#                         myProject.sampleName = sampleName
-#
-#                         myProject.tgsProject = tgsProject
-#                         myProject.tgsDataDir = tgsProject.dataDir
-#                         myProject.tgsPrimer = tgsProject.primer
-#                         myProject.tgsPlat = tgsProject.tgsPlat
-#                         myProject.tgsStrategy = tgsProject.strategy
-#                         if projectName in ngsCfgDict and group in ngsCfgDict[projectName] and sampleName in \
-#                                 ngsCfgDict[projectName][group]:
-#                             ngsProject = ngsCfgDict[projectName][group][sampleName]
-#                             myProject.ngsProject = ngsProject
-#                             myProject.ngsLeftReads = ngsProject.leftReads
-#                             myProject.ngsRightReads = ngsProject.rightReads
-#                             myProject.ngsReadPair = ngsProject.ngsReadPair
-#                         projects.append(myProject)
-#         else:
-#             if self.ngsCfgFile:
-#                 validateFile(self.ngsCfgFile)
-#                 ngsCfgDict = getCfg(self.ngsCfgFile, seqStrategy="ngs")
-#             else:
-#                 raise Exception("You should write either valid tgs or ngs file path in the config file")
-#             for projectName in ngsCfgDict:
-#                 for group in ngsCfgDict[projectName]:
-#                     for sampleName in ngsCfgDict[projectName][group]:
-#                         ngsProject = ngsCfgDict[projectName][group][sampleName]
-#                         myProject = Project()
-#                         myProject.projectName = projectName
-#                         myProject.group = group
-#                         myProject.sampleName = sampleName
-#
-#                         myProject.ngsProject = ngsProject
-#                         myProject.ngsLeftReads = ngsProject.leftReads
-#                         myProject.ngsRightReads = ngsProject.rightReads
-#                         myProject.ngsReadPair = ngsProject.ngsReadPair
-#                         projects.append(myProject)
-#         return projects
-#
-#     def getProjectBound(self):
-#         projectsDict = {}
-#         for project in self.projects:
-#             if project.projectName not in projectsDict:
-#                 projectsDict[project.projectName] = {
-#                     project.group: {project.sampleName: {"tgs": project.tgsProject, "ngs": project.ngsProject}}}
-#             elif project.group not in projectsDict[project.projectName]:
-#                 projectsDict[project.projectName].update(
-#                     {project.group: {project.sampleName: {"tgs": project.tgsProject, "ngs": project.ngsProject}}})
-#             else:
-#                 projectsDict[project.projectName][project.group].update(
-#                     {project.sampleName: {"tgs": project.tgsProject, "ngs": project.ngsProject}})
-#         return projectsDict

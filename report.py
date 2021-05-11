@@ -65,6 +65,10 @@ def readsContentEval(dataObj=None, refParams=None):
 def report(dataObj=None, refParams=None, dirSpec=None):
     projectName, sampleName = dataObj.project_name, dataObj.sample_name
     print getCurrentTime() + " Generate plot report for project {} sample {}...".format(projectName, sampleName)
+    baseDir = os.path.join(dirSpec.out_dir, projectName, sampleName)
+    prevDir = os.getcwd()
+    reportDir = os.path.join(baseDir, "reports")
+    resolveDir(reportDir)
     if dataObj.use_fmlrc2:
         readsCorrectedEval(dataObj=dataObj)
     readsContentEval(dataObj=dataObj)
@@ -79,4 +83,5 @@ def report(dataObj=None, refParams=None, dirSpec=None):
     # palen_as (polyaTailLength.pdf, asTypeCountDistribute.pdf)
     # diff_as (as_distribute.pdf)
     # go (go_enrichment.pdf)
+    os.chdir(prevDir)
     print getCurrentTime() + " Generate plot report for project {} sample {} done!".format(projectName, sampleName)

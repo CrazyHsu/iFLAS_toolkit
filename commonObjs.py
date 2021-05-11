@@ -493,110 +493,110 @@ class Gene2Reads(object):
         self.reads.update(gene2ReadsObj.reads)
         self.readNames.append(gene2ReadsObj.readNames)
 
-    def getCombinationEvents(self):
-        asType2asKey = {"A5SS": "exc", "A3SS": "exc", "SE": "skip", "IR": "spliced"}
-        combineEvent = "combineEvent"
-        read2AS = {}
-        self.asDict[combineEvent] = {}
-        for asType in self.asDict:
-            for event in self.asDict[asType]:
-                if asType2asKey[asType] in self.asDict[asType][event]:
-                    for read in self.asDict[asType][event][asType2asKey[asType]]:
-                        if read not in read2AS:
-                            read2AS[read] = {asType: [event]}
-                        elif asType not in read2AS[read]:
-                            read2AS[read].update({asType: [event]})
-                        else:
-                            read2AS[read][asType].append(event)
-        for r in read2AS:
-            if len(read2AS[r]) == 1: continue
-            for t, l in read2AS[r].items():
-                for e in l:
-                    self.asDict[t][e][asType2asKey[t]].remove(r)
-                    if r not in self.asDict[combineEvent]:
-                        self.asDict[combineEvent][r] = {t: [e]}
-                    elif t not in self.asDict[combineEvent][r]:
-                        self.asDict[combineEvent][r].update({t: [e]})
-                    else:
-                        self.asDict[combineEvent][r][t].append(e)
-                    # self.asDict[combineEvent].add(r)
-                    if len(self.asDict[t][e][asType2asKey[t]]) == 0:
-                        del self.asDict[t][e]
-
-    def construcFakeRef(self):
-        asType2asKey = {"A5SS": "exc", "A3SS": "exc", "SE": "skip", "IR": "spliced"}
-        for asType in asType2asKey:
-            for event in self.asDict[asType]:
-                reads = self.asDict[asType][event][asType2asKey[asType]]
-                maxLen = reads[0].exonLen
-                maxLenRead = reads[0]
-                for i in range(1, len(reads)):
-                    if reads[i].exonLen > maxLen:
-                        maxLen = reads[i].exonLen
-                        maxLenRead = reads[i]
-                records = copy.deepcopy(maxLenRead.record)
-                if asType == "SE":
-                    excExonList = map(lambda x: (int(x.split("-")[0]), int(x.split("-")[1])), event.split("@")[1].split(";"))
-                    excExonStarts = map(lambda x: x[0], excExonList)
-                    excExonEnds = map(lambda x: x[1], excExonList)
-                    newExonStarts = sorted(maxLenRead.blockStarts + excExonStarts)
-                    newExonEnds = sorted(maxLenRead.blockEnds + excExonEnds)
-                    # newExonSizes = map(lambda x: newExonEnds[x] - newExonStarts[x], range(len(newExonStarts)))
-                    # newExonRelStarts = map(lambda x: newExonEnds[x] - maxLenRead.start, range(len(newExonStarts)))
-                    # records[3] = records[3]+"_"+asType+"_fake"
-                    # records[9] = len(newExonSizes)
-                    # records[10] = newExonRelStarts
-                    # recordLine = "\t".join(records)
-                    # fakeRead = ReadLineStruc(recordLine)
-                else:
-                    # records = maxLenRead.records
-                    excStart, excEnd = map(int, re.split("-", event))
-                    mergedExonList = mergeTupleList(maxLenRead.readExonList + [(excStart, excEnd)])
-                    newExonStarts = map(lambda x: x[0], mergedExonList)
-                    newExonEnds = map(lambda x: x[1], mergedExonList)
-                newExonSizes = map(lambda x: newExonEnds[x] - newExonStarts[x], range(len(newExonStarts)))
-                newExonRelStarts = map(lambda x: newExonStarts[x] - maxLenRead.start, range(len(newExonStarts)))
-                records[3] = records[3] + "_" + asType + "_fake"
-                records[9] = len(newExonSizes)
-                records[10] = ",".join(map(str, newExonSizes))
-                records[11] = ",".join(map(str, newExonRelStarts))
-                recordLine = "\t".join(map(str, records))
-                fakeRead = ReadLineStruc(recordLine)
-                self.asDict[asType][event][asType2asKey[asType]].append(fakeRead)
-        fakeReadDict = {}
-        for r in self.asDict["combineEvent"]:
-            newExonStarts = r.blockStarts
-            newExonEnds = r.blockStarts
-            records = copy.deepcopy(r.record)
-            newExonList = []
-            for t in self.asDict["combineEvent"][r]:
-                for e in self.asDict["combineEvent"][r][t]:
-                    if t == "SE":
-                        excExonList = map(lambda x: (int(x.split("-")[0]), int(x.split("-")[1])),
-                                          e.split("@")[1].split(";"))
-                        newExonList.extend(excExonList)
-                        # excExonStarts = map(lambda x: int(x.split("-")[0]), e.split("@")[1].split(";"))
-                        # excExonEnds = map(lambda x: int(x.split("-")[1]), e.split("@")[1].split(";"))
-                        # newExonStarts = sorted(newExonStarts + excExonStarts)
-                        # newExonEnds = sorted(newExonEnds + excExonEnds)
-                        # newExonSizes = map(lambda x: newExonEnds[x] - newExonStarts[x], range(len(newExonStarts)))
-                        # newExonRelStarts = map(lambda x: newExonEnds[x] - maxLenRead.start, range(len(newExonStarts)))
-                    else:
-                        excStart, excEnd = map(int, re.split("-", e))
-                        newExonList.append((excStart, excEnd))
-            mergedExonList = mergeTupleList(r.readExonList + newExonList)
-            newExonStarts = map(lambda x: x[0], mergedExonList)
-            newExonEnds = map(lambda x: x[1], mergedExonList)
-            newExonSizes = map(lambda x: newExonEnds[x] - newExonStarts[x], range(len(newExonStarts)))
-            newExonRelStarts = map(lambda x: newExonStarts[x] - r.start, range(len(newExonStarts)))
-            records[3] = records[3] + "_combineEvent_fake11"
-            records[9] = len(newExonSizes)
-            records[10] = ",".join(map(str, newExonSizes))
-            records[11] = ",".join(map(str, newExonRelStarts))
-            recordLine = "\t".join(map(str, records))
-            fakeRead = ReadLineStruc(recordLine)
-            fakeReadDict[fakeRead] = {}
-        self.asDict["combineEvent"].update(fakeReadDict)
+    # def getCombinationEvents(self):
+    #     asType2asKey = {"A5SS": "exc", "A3SS": "exc", "SE": "skip", "IR": "spliced"}
+    #     combineEvent = "combineEvent"
+    #     read2AS = {}
+    #     self.asDict[combineEvent] = {}
+    #     for asType in self.asDict:
+    #         for event in self.asDict[asType]:
+    #             if asType2asKey[asType] in self.asDict[asType][event]:
+    #                 for read in self.asDict[asType][event][asType2asKey[asType]]:
+    #                     if read not in read2AS:
+    #                         read2AS[read] = {asType: [event]}
+    #                     elif asType not in read2AS[read]:
+    #                         read2AS[read].update({asType: [event]})
+    #                     else:
+    #                         read2AS[read][asType].append(event)
+    #     for r in read2AS:
+    #         if len(read2AS[r]) == 1: continue
+    #         for t, l in read2AS[r].items():
+    #             for e in l:
+    #                 self.asDict[t][e][asType2asKey[t]].remove(r)
+    #                 if r not in self.asDict[combineEvent]:
+    #                     self.asDict[combineEvent][r] = {t: [e]}
+    #                 elif t not in self.asDict[combineEvent][r]:
+    #                     self.asDict[combineEvent][r].update({t: [e]})
+    #                 else:
+    #                     self.asDict[combineEvent][r][t].append(e)
+    #                 # self.asDict[combineEvent].add(r)
+    #                 if len(self.asDict[t][e][asType2asKey[t]]) == 0:
+    #                     del self.asDict[t][e]
+    #
+    # def construcFakeRef(self):
+    #     asType2asKey = {"A5SS": "exc", "A3SS": "exc", "SE": "skip", "IR": "spliced"}
+    #     for asType in asType2asKey:
+    #         for event in self.asDict[asType]:
+    #             reads = self.asDict[asType][event][asType2asKey[asType]]
+    #             maxLen = reads[0].exonLen
+    #             maxLenRead = reads[0]
+    #             for i in range(1, len(reads)):
+    #                 if reads[i].exonLen > maxLen:
+    #                     maxLen = reads[i].exonLen
+    #                     maxLenRead = reads[i]
+    #             records = copy.deepcopy(maxLenRead.record)
+    #             if asType == "SE":
+    #                 excExonList = map(lambda x: (int(x.split("-")[0]), int(x.split("-")[1])), event.split("@")[1].split(";"))
+    #                 excExonStarts = map(lambda x: x[0], excExonList)
+    #                 excExonEnds = map(lambda x: x[1], excExonList)
+    #                 newExonStarts = sorted(maxLenRead.blockStarts + excExonStarts)
+    #                 newExonEnds = sorted(maxLenRead.blockEnds + excExonEnds)
+    #                 # newExonSizes = map(lambda x: newExonEnds[x] - newExonStarts[x], range(len(newExonStarts)))
+    #                 # newExonRelStarts = map(lambda x: newExonEnds[x] - maxLenRead.start, range(len(newExonStarts)))
+    #                 # records[3] = records[3]+"_"+asType+"_fake"
+    #                 # records[9] = len(newExonSizes)
+    #                 # records[10] = newExonRelStarts
+    #                 # recordLine = "\t".join(records)
+    #                 # fakeRead = ReadLineStruc(recordLine)
+    #             else:
+    #                 # records = maxLenRead.records
+    #                 excStart, excEnd = map(int, re.split("-", event))
+    #                 mergedExonList = mergeTupleList(maxLenRead.readExonList + [(excStart, excEnd)])
+    #                 newExonStarts = map(lambda x: x[0], mergedExonList)
+    #                 newExonEnds = map(lambda x: x[1], mergedExonList)
+    #             newExonSizes = map(lambda x: newExonEnds[x] - newExonStarts[x], range(len(newExonStarts)))
+    #             newExonRelStarts = map(lambda x: newExonStarts[x] - maxLenRead.start, range(len(newExonStarts)))
+    #             records[3] = records[3] + "_" + asType + "_fake"
+    #             records[9] = len(newExonSizes)
+    #             records[10] = ",".join(map(str, newExonSizes))
+    #             records[11] = ",".join(map(str, newExonRelStarts))
+    #             recordLine = "\t".join(map(str, records))
+    #             fakeRead = ReadLineStruc(recordLine)
+    #             self.asDict[asType][event][asType2asKey[asType]].append(fakeRead)
+    #     fakeReadDict = {}
+    #     for r in self.asDict["combineEvent"]:
+    #         newExonStarts = r.blockStarts
+    #         newExonEnds = r.blockStarts
+    #         records = copy.deepcopy(r.record)
+    #         newExonList = []
+    #         for t in self.asDict["combineEvent"][r]:
+    #             for e in self.asDict["combineEvent"][r][t]:
+    #                 if t == "SE":
+    #                     excExonList = map(lambda x: (int(x.split("-")[0]), int(x.split("-")[1])),
+    #                                       e.split("@")[1].split(";"))
+    #                     newExonList.extend(excExonList)
+    #                     # excExonStarts = map(lambda x: int(x.split("-")[0]), e.split("@")[1].split(";"))
+    #                     # excExonEnds = map(lambda x: int(x.split("-")[1]), e.split("@")[1].split(";"))
+    #                     # newExonStarts = sorted(newExonStarts + excExonStarts)
+    #                     # newExonEnds = sorted(newExonEnds + excExonEnds)
+    #                     # newExonSizes = map(lambda x: newExonEnds[x] - newExonStarts[x], range(len(newExonStarts)))
+    #                     # newExonRelStarts = map(lambda x: newExonEnds[x] - maxLenRead.start, range(len(newExonStarts)))
+    #                 else:
+    #                     excStart, excEnd = map(int, re.split("-", e))
+    #                     newExonList.append((excStart, excEnd))
+    #         mergedExonList = mergeTupleList(r.readExonList + newExonList)
+    #         newExonStarts = map(lambda x: x[0], mergedExonList)
+    #         newExonEnds = map(lambda x: x[1], mergedExonList)
+    #         newExonSizes = map(lambda x: newExonEnds[x] - newExonStarts[x], range(len(newExonStarts)))
+    #         newExonRelStarts = map(lambda x: newExonStarts[x] - r.start, range(len(newExonStarts)))
+    #         records[3] = records[3] + "_combineEvent_fake11"
+    #         records[9] = len(newExonSizes)
+    #         records[10] = ",".join(map(str, newExonSizes))
+    #         records[11] = ",".join(map(str, newExonRelStarts))
+    #         recordLine = "\t".join(map(str, records))
+    #         fakeRead = ReadLineStruc(recordLine)
+    #         fakeReadDict[fakeRead] = {}
+    #     self.asDict["combineEvent"].update(fakeReadDict)
 
     def __str__(self):
         return "%s:%s-%s (%s) (%s) (%d reads)" % \
@@ -795,6 +795,41 @@ class ReadLineStruc(Bed12):
         self.readLen = abs(self.chromStart - self.chromEnd)
         self.geneName = self.record[12]
 
+    def getExonFramesForGPE(self, gpeObj):
+        exonFrame, exonFrames = 0, []
+        if gpeObj.strand == "+":
+            for i in range(gpeObj.exonCount):
+                if gpeObj.exonStarts[i] < gpeObj.cdsStart:
+                    exonFrame = -1 if gpeObj.exonEnds[i] < gpeObj.cdsStart else 0
+                elif gpeObj.exonStarts[i] == gpeObj.cdsStart:
+                    exonFrame = 0
+                else:
+                    if gpeObj.exonStarts[i] < gpeObj.cdsEnd:
+                        if gpeObj.exonStarts[i - 1] < gpeObj.cdsStart:
+                            exonFrame = (gpeObj.exonEnds[i - 1] - gpeObj.cdsStart) % 3
+                        else:
+                            exonFrame = (gpeObj.exonEnds[i - 1] - gpeObj.exonStarts[i - 1] + exonFrames[i - 1] - 3) % 3
+                    else:
+                        exonFrame = -1
+                exonFrames.append(exonFrame)
+        else:
+            for i in range(gpeObj.exonCount - 1, -1, -1):
+                if gpeObj.exonEnds[i] > gpeObj.cdsEnd:
+                    exonFrame = -1 if gpeObj.exonStarts[i] > gpeObj.cdsEnd else 0
+                elif gpeObj.exonEnds[i] == gpeObj.cdsEnd:
+                    exonFrame = -1 if gpeObj.cdsStart == gpeObj.cdsEnd else 0
+                else:
+                    if gpeObj.exonEnds[i] > gpeObj.cdsStart:
+                        if gpeObj.exonEnds[i + 1] > gpeObj.cdsEnd:
+                            exonFrame = (gpeObj.cdsEnd - gpeObj.exonStarts[i + 1]) % 3
+                        else:
+                            exonFrame = (gpeObj.exonEnds[i + 1] - gpeObj.exonStarts[i + 1] + exonFrames[
+                                gpeObj.exonCount - i - 2] - 3) % 3
+                    else:
+                        exonFrame = -1
+                exonFrames.append(exonFrame)
+        return exonFrames
+
     def go_to_gpe(self):
         gpe = GenePredExtLine()
         gpe.bin = None
@@ -812,7 +847,7 @@ class ReadLineStruc(Bed12):
         gpe.geneName = self.geneName
         gpe.cdsStartStat = "unk"
         gpe.cdsEndStat = "unk"
-        gpe.exonFrames = getExonFramesForGPE(gpe)
+        gpe.exonFrames = self.getExonFramesForGPE(gpe)
         return gpe
 
     def __str__(self):

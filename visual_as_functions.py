@@ -59,10 +59,10 @@ def resizeTrackRatio(itemCounts):
         return originRelativeSize * 3
 
 def processTargetGenes(targetGenes):
-    if isinstance(targetGenes, basestring):
-        return targetGenes.split(",")
-    elif os.path.isfile(targetGenes):
+    if os.path.isfile(targetGenes):
         return getDictFromFile(targetGenes)
+    elif "," in targetGenes:
+        return targetGenes.split(",")
     else:
         raise Exception("Please input target genes in corrected format: "
                         "1. Input the genes in string split by comma; "
@@ -81,9 +81,9 @@ def parallelPlotterAnno(gene, gpeTargetGenePickle, sampleTargetGenePickle, dataO
     targetGeneStrand = sampleTargetGeneObj.strand
 
     # Gene model section
-    geneModelGPE = "%s.gpe" % (gene)
-    geneModelGTF = "%s.gtf" % (gene)
-    geneModelGFF = "%s.gff" % (gene)
+    geneModelGPE = "{}.gpe".format(gene)
+    geneModelGTF = "{}.gtf".format(gene)
+    geneModelGFF = "{}.gff".format(gene)
 
     gpeTargetGene = pickle.loads(gpeTargetGenePickle)
     geneModelGPEOut = open(geneModelGPE, "w")
@@ -96,8 +96,8 @@ def parallelPlotterAnno(gene, gpeTargetGenePickle, sampleTargetGenePickle, dataO
     plotMinpos = min(gpeMinposList)
     plotMaxpos = max(gpeMaxposList)
     targetGeneRegion = "{}:{}-{}".format(targetGeneChrom, plotMinpos, plotMaxpos)
-    os.system("genePredToGtf file %s %s -source=iFLAS" % (geneModelGPE, geneModelGTF))
-    os.system("gene_model_to_splicegraph.py -m %s -o %s" % (geneModelGTF, geneModelGFF))
+    os.system("genePredToGtf file {} {} -source=iFLAS".format(geneModelGPE, geneModelGTF))
+    os.system("gene_model_to_splicegraph.py -m {} -o {}".format(geneModelGTF, geneModelGFF))
     geneModelHidePlot = PlotSection(section_name="[GeneModelGraph]", source_file=geneModelGTF,
                                     gene_name=gene, relative_size=5.0,
                                     title_string="Gene Model for %gene", hide=True)
@@ -110,17 +110,17 @@ def parallelPlotterAnno(gene, gpeTargetGenePickle, sampleTargetGenePickle, dataO
 
     # Corrected tgs reads from the pipeline
     postCorrIsoforms = sampleTargetGeneObj.reads
-    postCorrIsoGPE = "%s.iFLAS.gpe" % gene
-    postCorrIsoGTF = "%s.iFLAS.gtf" % gene
-    postCorrIsoGFF = "%s.iFLAS.gff" % gene
+    postCorrIsoGPE = "{}.iFLAS.gpe".format(gene)
+    postCorrIsoGTF = "{}.iFLAS.gtf".format(gene)
+    postCorrIsoGFF = "{}.iFLAS.gff".format(gene)
     postCorrIsoGPEOut = open(postCorrIsoGPE, "w")
     for read in postCorrIsoforms:
         print >> postCorrIsoGPEOut, postCorrIsoforms[read].go_to_gpe()
     postCorrIsoGPEOut.close()
-    os.system("genePredToGtf file %s %s -source=iFLAS" % (postCorrIsoGPE, postCorrIsoGTF))
+    os.system("genePredToGtf file {} {} -source=iFLAS".format(postCorrIsoGPE, postCorrIsoGTF))
     postCorrIsoItemCounts = len(postCorrIsoforms)
     postCorrIsoRelativeSize = resizeTrackRatio(postCorrIsoItemCounts)
-    os.system("gene_model_to_splicegraph.py -m %s -o %s -a" % (postCorrIsoGTF, postCorrIsoGFF))
+    os.system("gene_model_to_splicegraph.py -m {} -o {} -a".format(postCorrIsoGTF, postCorrIsoGFF))
     postCorrIsoPlotType = "splice_graph" if postCorrIsoItemCounts < 30 else "isoforms"
     postCorrIsoPlot = PlotSection(section_name="[AllReadsCollapse]", plot_type=postCorrIsoPlotType,
                                   source_file=postCorrIsoGFF, relative_size=postCorrIsoRelativeSize,
@@ -136,17 +136,15 @@ def parallelPlotterAnno(gene, gpeTargetGenePickle, sampleTargetGenePickle, dataO
     print >> cfgOut, geneModelHidePlot.printStr()
     print >> cfgOut, geneModelVisiblePlot.printStr()
     print >> cfgOut, postCorrIsoPlot.printStr()
-    # print >> cfgOut, preCorrIsoPlot.printStr()
-    # print >> cfgOut, ngsAssemblePlot.printStr()
 
     # Abundance from sam file in NGS pipeline
-    if dataObjs.ngs_left_reads or dataObjs.ngs_right_reads:
+    if dataObjs.ngs_left_reads != None or dataObjs.ngs_right_reads != None:
         ngsSams = []
         for n in range(len(dataObjs.ngs_left_reads.split(";"))):
             repeatName = "repeat" + str(n)
             bamFile = os.path.join(baseDir, "RNA-seq", "alignment", "{}/{}.sorted.bam".format(repeatName, repeatName))
             targetSam = "{}.{}.sam".format(repeatName, gene)
-            cmd = "samtools view %s %s > %s" % (bamFile, targetGeneRegion, targetSam)
+            cmd = "samtools view {} {} > {}".format(bamFile, targetGeneRegion, targetSam)
             subprocess.call(cmd, shell=True)
             ngsSams.append(targetSam)
             readsPlot = PlotSection(section_name="[Reads_%s]" % (repeatName), plot_type="read_depth",

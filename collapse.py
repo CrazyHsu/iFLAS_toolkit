@@ -195,6 +195,7 @@ def collapse(dataObj=None, collapseParams=None, refParams=None, dirSpec=None, th
 
     resolveDir(baseDir, "collapse")
     logDir = os.path.join(baseDir, "log")
+    resolveDir(logDir, chdir=False)
     processedFa = os.path.join(baseDir, "filtration", "processed.fa")
     processedBed = os.path.join(baseDir, "filtration", "processed.bed12+")
     flncSam = os.path.join(baseDir, "mapping", "flnc.mm2.sam")

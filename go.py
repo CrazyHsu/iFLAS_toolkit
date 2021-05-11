@@ -31,6 +31,6 @@ def go(args):
     else:
         validateTargetGeneFiles = targetGeneFile
         validateSampleNames = sampleName
-    cmd = "Rscript {}/goEnrich.R -g {} -s {} -bg {} -o {}".format(scriptDir, ",".join(validateTargetGeneFiles), ",".join(validateSampleNames), gene2goFile, args.out)
+    cmd = "Rscript {}/goEnrich.R -g={} -s={} -bg={} -o={}".format(scriptDir, ",".join(validateTargetGeneFiles), ",".join(validateSampleNames), gene2goFile, args.out)
     subprocess.call(cmd, shell=True)
     print getCurrentTime() + " Perform GO enrichment for target genes done!"

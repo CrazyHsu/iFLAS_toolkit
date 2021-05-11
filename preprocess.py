@@ -84,7 +84,7 @@ def retrievePacbio(dataObj=None, ccsParams=None, dirSpec=None, threads=10):
         raise Exception("You should input the right PacBio sequencing strategy!!")
 
     print getCurrentTime() + " Demultiplex CCS bam for project {} sample {}...".format(projectName, sampleName)
-    cmd = "lima CCS.bam {} fl.bam --isoseq --dump-clips -j {}".format(dataObj.primer, sampleName, threads)
+    cmd = "lima CCS.bam {} fl.bam --isoseq --dump-clips -j {}".format(dataObj.primer, threads)
     subprocess.call(cmd, shell=True)
     print getCurrentTime() + " Demultiplex CCS bam for project {} sample {} done!".format(projectName, sampleName)
 
@@ -192,7 +192,7 @@ def retrieveNanopore(dataObj=None, dirSpec=None, threads=10, flowcellType="FLO-M
               " --number_callers {}".format(flowcellType, kitType, fast5Dir, basecallingOut, threads, 1)
         subprocess.call(cmd, shell=True)
         rawFlncFq = "rawFlnc.fq"
-        cmd = "cat {}/workspace/pass/* > {}".format(basecallingOut, rawFlncFq)
+        cmd = "cat {}/*.fastq > {}".format(basecallingOut, rawFlncFq)
         subprocess.call(cmd, shell=True)
         dataObj.data_processed_location = os.path.join(os.getcwd(), rawFlncFq)
     else:
@@ -244,7 +244,7 @@ def correctWithFmlrc2(dataObj, dirSpec=None, useFmlrc2=True, threads=None):
         print getCurrentTime() + " Correct long reads in project {} sample {} short-reads done!".format(projectName, sampleName)
 
 def preprocess(dataObj=None, ccsParams=None, dirSpec=None, threads=10):
-    if dataObj.data_processed_location and validateFile(dataObj.data_processed_location):
+    if dataObj.data_processed_location != None and validateFile(dataObj.data_processed_location):
         if validateFaAndFqFile(dataObj.data_processed_location) in ["fastq", "fasta"]:
             print getCurrentTime() + " It seems like you provided an valid processed fasta/fastq file, we will not call reads from raw data!"
             if dataObj.ngs_left_reads != None or dataObj.ngs_right_reads != None:

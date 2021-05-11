@@ -143,7 +143,7 @@ def allelic_as(dataObj=None, refParams=None, dirSpec=None):
     print getCurrentTime() + " Identify allelic-specific AS events for project {} sample {}...".format(projectName, sampleName)
     prevDir = os.getcwd()
     baseDir = os.path.join(dirSpec.out_dir, projectName, sampleName)
-    resolveDir(os.path.join(baseDir, "allelicSpecificRelatedAS"))
+    resolveDir(os.path.join(baseDir, "allelicAS"))
 
     collapsedGroupFile = os.path.join(baseDir, "collapse", "tofu.collapsed.group.txt")
     readStatFile = "tofu.collapsed.read_stat.txt"
@@ -151,7 +151,7 @@ def allelic_as(dataObj=None, refParams=None, dirSpec=None):
 
     # select_loci_to_phase = os.path.join(cDNA_Cupcake_dir, "phasing", "utils", "select_loci_to_phase.py")
     processedFa = os.path.join(baseDir, "filtration", "processed.fa")
-    collapsedGff = os.path.join(baseDir, "filtration", "collapse", "tofu.collapsed.good.gff")
+    collapsedGff = os.path.join(baseDir, "collapse", "tofu.collapsed.good.gff")
 
     seFile = os.path.join(baseDir, "as_events", "ordinary_as", "PB", "SE.confident.bed12+")
     irFile = os.path.join(baseDir, "as_events", "ordinary_as", "PB", "IR.confident.bed6+")

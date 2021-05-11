@@ -15,8 +15,8 @@ def minimap2mapping(dataObj=None, minimap2Params=None, refParams=None, dirSpec=N
     prevDir = os.getcwd()
     workDir = os.path.join(dirSpec.out_dir, projectName, sampleName, "mapping")
     resolveDir(workDir)
-    if dataObj.mm2index != None and validateFile(dataObj.mm2index):
-        mm2index = minimap2Params.mm2index
+    if minimap2Params.mm2_index != None and validateFile(minimap2Params.mm2_indexx):
+        mm2index = minimap2Params.mm2_index
     elif refParams.ref_mm2_index != None and validateFile(refParams.ref_mm2_index):
         mm2index = refParams.ref_mm2_index
     else:
@@ -27,6 +27,7 @@ def minimap2mapping(dataObj=None, minimap2Params=None, refParams=None, dirSpec=N
     sampleName = dataObj.sample_name
     processedFlncFq = dataObj.data_processed_location
     logDir = os.path.join(dirSpec.out_dir, projectName, sampleName, "log")
+    resolveDir(logDir, chdir=False)
     if dataObj.tgs_plat == "pacbio":
         cmd = "minimap2 -ax splice:hq -G {} -uf {} --secondary=no --MD {} -t {} >flnc.mm2.sam 2>{}/{}.mm2.log".format(
             minimap2Params.max_intron_length, mm2index, processedFlncFq, threads, logDir, sampleName)
@@ -69,6 +70,7 @@ def hisat2mapping(dataObj=None, refParams=None, dirSpec=None, threads=10):
     workDir = os.path.join(dirSpec.out_dir, projectName, sampleName, "mapping", "rna-seq")
     resolveDir(workDir)
     logDir = os.path.join(dirSpec.out_dir, projectName, sampleName, "log")
+    resolveDir(logDir, chdir=False)
     hisat2indexDir = os.path.join(dirSpec.out_dir, "hisat2indexDir")
     gtfPrefix = os.path.splitext(os.path.basename(refParams.ref_gtf))[0]
     makeHisat2Index(refParams=refParams, hisat2indexDir=hisat2indexDir, indexPrefix=gtfPrefix, threads=threads)
