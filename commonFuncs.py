@@ -352,6 +352,24 @@ def listStr2Int(myList):
 def listInt2Str(myList):
     return [str(i) for i in myList]
 
+
+def nestedDictValues(iterable, returned="key"):
+    if isinstance(iterable, dict):
+        for key, value in iterable.items():
+            if returned == "key":
+                yield key
+            elif returned == "value":
+                if not (isinstance(value, dict) or isinstance(value, list)):
+                    yield value
+            else:
+                raise ValueError("'returned' keyword only accepts 'key' or 'value'.")
+            for ret in nestedDictValues(value, returned=returned):
+                yield ret
+    elif isinstance(iterable, list):
+        for el in iterable:
+            for ret in nestedDictValues(el, returned=returned):
+                yield ret
+
 def resolveDir(dirName, chdir=True):
     if not os.path.exists(dirName):
         os.makedirs(dirName)

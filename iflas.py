@@ -100,81 +100,99 @@ def iflas(args):
 
     if optionTools.merge_data_from_same_strain:
         sampleMergedToProcess = mergeSample(strain2data)
+        processNum = len(list(nestedDictValues(sampleMergedToProcess)))
+        pool = Pool(processes=processNum)
         for proj in sampleMergedToProcess:
             for ref_strain in sampleMergedToProcess[proj]:
                 for strain in sampleMergedToProcess[proj][ref_strain]:
                     for dataObj in sampleMergedToProcess[proj][ref_strain][strain]:
                         refParams = refInfoParams[ref_strain]
-                        dataObj.single_run_threads = int(optionTools.threads / float(len(sampleMergedToProcess)))
+                        dataObj.single_run_threads = int(optionTools.threads / float(processNum))
                         if args.command == 'mapping':
                             from mapping import mapping
-                            mapping(dataObj=dataObj, minimap2Params=minimap2Params, refParams=refParams,
-                                    dirSpec=dirSpec, threads=dataObj.single_run_threads)
+                            # mapping(dataObj=dataObj, minimap2Params=minimap2Params, refParams=refParams, dirSpec=dirSpec, threads=dataObj.single_run_threads)
+                            pool.apply_async(mapping, (dataObj, minimap2Params, refParams, dirSpec, dataObj.single_run_threads))
                         if args.command == 'filter':
                             from filter import filter
-                            filter(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
+                            # filter(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
+                            pool.apply_async(filter, (dataObj, refParams, dirSpec))
                         if args.command == 'collapse':
                             from collapse import collapse
-                            collapse(dataObj=dataObj, collapseParams=collapseParams, refParams=refParams,
-                                     dirSpec=dirSpec, threads=dataObj.single_run_threads)
+                            # collapse(dataObj=dataObj, collapseParams=collapseParams, refParams=refParams, dirSpec=dirSpec, threads=dataObj.single_run_threads)
+                            pool.apply_async(collapse, (dataObj, collapseParams, refParams, dirSpec, dataObj.single_run_threads))
                         if args.command == 'find_as':
-                            from find_as import find_as
-                            find_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
-                            from find_pa import find_pa
-                            find_pa(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
-                            from charaterize_as import charaterize_as
-                            charaterize_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
+                            # from find_charaterize_as_functions import *
+                            from identify_as import identify_as
+                            # identify_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
+                            pool.apply_async(identify_as, (dataObj, refParams, dirSpec))
                         if args.command == 'visual_as':
                             from visual_as import visual_as
                             targetGenes = args.genes
-                            visual_as(dataObj=dataObj, targetGenes=targetGenes, refParams=refParams, dirSpec=dirSpec)
+                            # visual_as(dataObj=dataObj, targetGenes=targetGenes, refParams=refParams, dirSpec=dirSpec)
+                            pool.apply_async(visual_as, (dataObj, targetGenes, refParams, dirSpec))
                         if args.command == 'rank_as':
                             from rank_as import rank_as
-                            rank_as(dataObj=dataObj, dirSpec=dirSpec)
+                            # rank_as(dataObj=dataObj, dirSpec=dirSpec)
+                            pool.apply_async(rank_as, (dataObj, dirSpec))
                         if args.command == 'allelic_as':
                             from allelic_as import allelic_as
-                            allelic_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
+                            # allelic_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
+                            pool.apply_async(allelic_as, (dataObj, refParams, dirSpec))
                         if args.command == 'palen_as':
                             from palen_as import palen_as
-                            palen_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec,
-                                     sampleMerged=optionTools.merge_data_from_same_strain)
+                            # palen_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, sampleMerged=optionTools.merge_data_from_same_strain)
+                            pool.apply_async(palen_as, (dataObj, refParams, dirSpec, optionTools.merge_data_from_same_strain))
+                        if args.command == 'report':
+                            from report import report
+                            # report(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
+                            pool.apply_async(report, (dataObj, refParams, dirSpec))
+        pool.close()
+        pool.join()
     else:
+        pool = Pool(processes=len(dataToProcess))
         for dataObj in dataToProcess:
             refParams = refInfoParams[dataObj.ref_strain]
             dataObj.single_run_threads = len(optionTools.threads / float(len(dataToProcess)))
             if args.command == 'mapping':
                 from mapping import mapping
-                mapping(dataObj=dataObj, minimap2Params=minimap2Params, refParams=refParams, dirSpec=dirSpec, threads=dataObj.single_run_threads)
+                # mapping(dataObj=dataObj, minimap2Params=minimap2Params, refParams=refParams, dirSpec=dirSpec, threads=dataObj.single_run_threads)
+                pool.apply_async(mapping, (dataObj, minimap2Params, refParams, dirSpec, dataObj.single_run_threads))
             if args.command == 'filter':
                 from filter import filter
-                filter(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
+                # filter(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
+                pool.apply_async(filter, (dataObj, refParams, dirSpec))
             if args.command == 'collapse':
                 from collapse import collapse
-                collapse(dataObj=dataObj, collapseParams=collapseParams, refParams=refParams, dirSpec=dirSpec, threads=dataObj.single_run_threads)
+                # collapse(dataObj=dataObj, collapseParams=collapseParams, refParams=refParams, dirSpec=dirSpec, threads=dataObj.single_run_threads)
+                pool.apply_async(collapse, (dataObj, collapseParams, refParams, dirSpec, dataObj.single_run_threads))
             if args.command == 'find_as':
                 # from find_charaterize_as_functions import *
-                from find_as import find_as
-                find_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
-                from find_pa import find_pa
-                find_pa(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
-                from charaterize_as import charaterize_as
-                charaterize_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
+                from identify_as import identify_as
+                # identify_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
+                pool.apply_async(identify_as, (dataObj, refParams, dirSpec))
             if args.command == 'visual_as':
                 from visual_as import visual_as
                 targetGenes = args.genes
-                visual_as(dataObj=dataObj, targetGenes=targetGenes, refParams=refParams, dirSpec=dirSpec)
+                # visual_as(dataObj=dataObj, targetGenes=targetGenes, refParams=refParams, dirSpec=dirSpec)
+                pool.apply_async(visual_as, (dataObj, targetGenes, refParams, dirSpec))
             if args.command == 'rank_as':
                 from rank_as import rank_as
-                rank_as(dataObj=dataObj, dirSpec=dirSpec)
+                # rank_as(dataObj=dataObj, dirSpec=dirSpec)
+                pool.apply_async(rank_as, (dataObj, dirSpec))
             if args.command == 'allelic_as':
                 from allelic_as import allelic_as
-                allelic_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
+                # allelic_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
+                pool.apply_async(allelic_as, (dataObj, refParams, dirSpec))
             if args.command == 'palen_as':
                 from palen_as import palen_as
-                palen_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, sampleMerged=optionTools.merge_data_from_same_strain)
+                # palen_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, sampleMerged=optionTools.merge_data_from_same_strain)
+                pool.apply_async(palen_as, (dataObj, refParams, dirSpec, optionTools.merge_data_from_same_strain))
             if args.command == 'report':
                 from report import report
-                report(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
+                # report(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
+                pool.apply_async(report, (dataObj, refParams, dirSpec))
+        pool.close()
+        pool.join()
         if args.command == 'diff_as':
             from diff_as import diff_as1
             # diff_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)

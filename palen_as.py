@@ -12,37 +12,17 @@ import pandas as pd
 import scipy.stats as stats
 import itertools
 
-def mergeIso(isoBedFile, collapsedTrans2reads):
-    isoBedObj = BedFile(isoBedFile, type="bed12+")
-    gene2iso = {}
-    for iso in isoBedObj.reads:
-        if isoBedObj.reads[iso].otherList[0] not in gene2iso:
-            gene2iso[isoBedObj.reads[iso].otherList[0]] = []
-        gene2iso[isoBedObj.reads[iso].otherList[0]].append(isoBedObj.reads[iso])
-    mergedIsoDict = {}
-    mergedIso2ReadsGroupOut = open("mergedIso2Reads.group.txt", "w")
-    mergedIso2ReadsBed = open("mergedIso2Reads.bed12", "w")
-    for gene in gene2iso:
-        tmpDict = {}
-        for iso in gene2iso[gene]:
-            if iso.juncChain not in tmpDict:
-                tmpDict[iso.juncChain] = [iso]
+def getIsosFromAsFile(asFile, asType="IR"):
+    with open(asFile) as f:
+        for line in f.readlines():
+            records = line.strip("\n").split("\t")
+            if asType == "SE":
+                inclusionIsos = records[15].split(",")
+                exclusionIsos = records[17].split(",")
             else:
-                tmpDict[iso.juncChain].append(iso)
-
-        for tmp in tmpDict:
-            isos = tmpDict[tmp]
-            mergedIsoName = "+".join([x.name for x in isos])
-            reads = list(itertools.chain.from_iterable([collapsedTrans2reads[x.name] for x in isos]))
-            sortedIsos = sorted(isos, key=lambda x: abs(x.chromStart - x.chromEnd), reverse=True)
-            repIso = sortedIsos[0]
-            repIso.name = mergedIsoName
-            mergedIsoDict[mergedIsoName] = [reads, repIso, gene]
-            print >> mergedIso2ReadsGroupOut, "{}\t{}".format(mergedIsoName, ",".join(reads))
-            print >> mergedIso2ReadsBed, str(repIso)
-    mergedIso2ReadsBed.close()
-    mergedIso2ReadsGroupOut.close()
-    return mergedIsoDict
+                inclusionIsos = records[7].split(",")
+                exclusionIsos = records[9].split(",")
+        return inclusionIsos, exclusionIsos
 
 def polyaLenCalling(dataObj=None, refParams=None, dirSpec=None):
     baseDir = os.path.join(dirSpec.out_dir, dataObj.project_name, dataObj.sample_name)
@@ -64,137 +44,128 @@ def polyaLenCalling(dataObj=None, refParams=None, dirSpec=None):
     else:
         raise Exception("Please specify the correct directory contain fast5 files!")
 
-def relationshipBetweenPAlenAndAS(asFile, collapsedGroupFile, flncReads2Palen, asType="SE", filterByCount=5, sigFile=None, sigPicOutDir=None):
-    scriptDir = os.path.dirname(os.path.realpath(__file__))
-    # flncReads2Palen = getDictFromFile(flncFile, sep=",", valueCol=5)
-    collapsedTrans2reads = getDictFromFile(collapsedGroupFile, sep="\t", inlineSep=",", valueCol=2)
-    # isoformDict = getDictFromFile(isoformBed, keyCol=4, sep="\t")
-
-    asType = asType.upper()
-    out = open(sigFile, "w")
+def getASpairedIsoforms(asFile, collapsedGroupFile, isoformFile, asType="SE", filterByCount=0, mergeByJunc=True):
+    collapsedTrans2reads = getDictFromFile(collapsedGroupFile, sep="\t", inlineSep=",", valueCol=1)
+    isoBedObj = BedFile(isoformFile, type="bed12+")
+    asPairs = {}
     with open(asFile) as f:
         for line in f.readlines():
             records = line.strip("\n").split("\t")
             if asType == "SE":
                 inclusionIsos = records[15].split(",")
                 exclusionIsos = records[17].split(",")
-            elif asType == "PA":
-                inclusionIsos = []
-                exclusionIsos = []
             else:
                 inclusionIsos = records[7].split(",")
                 exclusionIsos = records[9].split(",")
 
-            for item in itertools.product(inclusionIsos, exclusionIsos):
-                inclusionReads = collapsedTrans2reads[item[0]]
-                exclusionReads = collapsedTrans2reads[item[1]]
-                inclusionReads2palen = [int(flncReads2Palen[i]) for i in inclusionReads if i in flncReads2Palen]
-                exclusionReads2palen = [int(flncReads2Palen[i]) for i in exclusionReads if i in flncReads2Palen]
-                if filterByCount:
-                    if len(inclusionReads2palen) < filterByCount or len(exclusionReads2palen) < filterByCount:
+            if mergeByJunc:
+                incJuncCombDict = {}
+                excJuncCombDict = {}
+                for incIso in inclusionIsos:
+                    incIsoObj = isoBedObj.reads[incIso]
+                    if len(incIsoObj.introns) > 1:
+                        if incIsoObj.juncChain not in incJuncCombDict:
+                            incJuncCombDict[incIsoObj.juncChain] = [incIso]
+                        else:
+                            incJuncCombDict[incIsoObj.juncChain].append(incIso)
+                    else:
+                        if "monoExon" not in incJuncCombDict:
+                            incJuncCombDict["monoExon"] = [incIso]
+                        else:
+                            incJuncCombDict["monoExon"].append(incIso)
+                for excIso in exclusionIsos:
+                    excIsoObj = isoBedObj.reads[excIso]
+                    if len(excIsoObj.introns) > 1:
+                        if excIsoObj.juncChain not in excJuncCombDict:
+                            excJuncCombDict[excIsoObj.juncChain] = [excIso]
+                        else:
+                            excJuncCombDict[excIsoObj.juncChain].append(excIso)
+                    else:
+                        if "monoExon" not in excJuncCombDict:
+                            excJuncCombDict["monoExon"] = [excIso]
+                        else:
+                            excJuncCombDict["monoExon"].append(excIso)
+
+                for item in itertools.product(incJuncCombDict.values(), excJuncCombDict.values()):
+                    newInclusionIsos = [x for x in item[0] if collapsedTrans2reads[x] >= filterByCount]
+                    newExclusionIsos = [x for x in item[1] if collapsedTrans2reads[x] >= filterByCount]
+                    if len(newInclusionIsos) == 0 or len(newExclusionIsos) == 0:
                         continue
-                stat_val, p_val = stats.ttest_ind(inclusionReads2palen, exclusionReads2palen)
-                if float(p_val) <= 0.001:
-                    print >> out, "\t".join(records) + "\t" + "\t".join(
-                        ["inclusion", ",".join(map(str, inclusionReads2palen)), str(len(inclusionReads2palen)), "_".join(item)])
-                    print >> out, "\t".join(records) + "\t" + "\t".join(
-                        ["exclusion", ",".join(map(str, exclusionReads2palen)), str(len(exclusionReads2palen)), "_".join(item)])
-    out.close()
+                    '''the isoform PB.x.x split by "." to determine gene PB.x'''
+                    inclusionGene = [".".join(x.split(".")[:2]) for x in newInclusionIsos]
+                    exclusionGene = [".".join(x.split(".")[:2]) for x in newExclusionIsos]
+                    uniqGene = list(set(inclusionGene+exclusionGene))
+                    if len(uniqGene) == 1:
+                        if uniqGene[0] not in asPairs:
+                            asPairs[uniqGene[0]] = [[newInclusionIsos, newExclusionIsos]]
+                        else:
+                            asPairs[uniqGene[0]].append([newInclusionIsos, newExclusionIsos])
+            else:
+                for item in itertools.product(inclusionIsos, exclusionIsos):
+                    inclusionReads = collapsedTrans2reads[item[0]]
+                    exclusionReads = collapsedTrans2reads[item[1]]
+                    if filterByCount:
+                        if len(inclusionReads) < filterByCount or len(exclusionReads) < filterByCount:
+                            continue
+                    '''the isoform PB.x.x split by "." to determine gene PB.x'''
+                    inclusionGene = ".".join(item[0].split(".")[:2])
+                    exclusionGene = ".".join(item[1].split(".")[:2])
+                    if inclusionGene == exclusionGene:
+                        if inclusionGene not in asPairs:
+                            asPairs[inclusionGene] = [[[item[0]], [item[1]]]]
+                        else:
+                            asPairs[inclusionGene].append([[item[0]], [item[1]]])
+        return asPairs
 
-    if os.stat(sigFile).st_size != 0:
-        plotGeneStructurePath = os.path.join(scriptDir, "plotGeneStructure.R")
-        cmd = "Rscript {} -sig={} -od={}".format(plotGeneStructurePath, sigFile, sigPicOutDir)
-        # subprocess.call(cmd, shell=True)
-
-
-def getPalenAS(flncReads2Palen, dataObj=None, refParams=None, dirSpec=None, collapsedTrans2reads=None, mergedIsoDict=None, filterByCount=10, merged=False):
-    baseDir = os.path.join(dirSpec.out_dir, dataObj.project_name, dataObj.sample_name)
-    gene2readPalen = {}
+def getPalenAS(flncReads2Palen, isoformFile, collapsedTrans2reads=None, asPairs=None, filterByCount=10, mergeByJunc=False):
     prevDir = os.getcwd()
-    if not merged:
-        resolveDir("no_merge")
+    if not mergeByJunc:
+        resolveDir("no_mergeByJunc")
     else:
-        resolveDir("merged")
+        resolveDir("mergeByJunc")
 
-    if not merged:
-        for isoform in collapsedTrans2reads:
-            geneId = ".".join(isoform.split(".")[0:2])
-            reads = collapsedTrans2reads[isoform]
-            readsWithPolyaLen = [i for i in reads if i in flncReads2Palen]
-            reads2palen = dict(zip(readsWithPolyaLen, [int(flncReads2Palen[i]) for i in readsWithPolyaLen]))
-            if geneId not in gene2readPalen:
-                gene2readPalen[geneId] = {isoform: reads2palen}
-            else:
-                gene2readPalen[geneId].update({isoform: reads2palen})
-    else:
-        for isoform in mergedIsoDict:
-            geneId = mergedIsoDict[isoform][2]
-            reads = mergedIsoDict[isoform][0]
-            readsWithPolyaLen = [i for i in reads if i in flncReads2Palen]
-            reads2palen = dict(zip(readsWithPolyaLen, [int(flncReads2Palen[i]) for i in readsWithPolyaLen]))
-            if geneId not in gene2readPalen:
-                gene2readPalen[geneId] = {isoform: reads2palen}
-            else:
-                gene2readPalen[geneId].update({isoform: reads2palen})
-
-    count = 0
-    for g in gene2readPalen:
-        # allReadsInGene = sum([len(gene2readPalen[g][i]) for i in gene2readPalen[g]])
-        for a, b in itertools.combinations(gene2readPalen[g].keys(), 2):
-            if len(gene2readPalen[g][a].keys()) >= filterByCount and len(
-                    gene2readPalen[g][b].keys()) >= filterByCount:
-                aPalen = map(int, gene2readPalen[g][a].values())
-                bPalen = map(int, gene2readPalen[g][b].values())
+    for asType in asPairs:
+        sigFile = "{}.palenAndAS.sig.bed12+".format(asType)
+        sigOut = open(sigFile, "w")
+        count = 0
+        for gene in asPairs[asType]:
+            for item in asPairs[asType][gene]:
+                inclusionIsos = item[0]
+                exclusionIsos = item[1]
+                inclusionReads = itertools.chain.from_iterable([collapsedTrans2reads[x] for x in inclusionIsos])
+                exclusionReads = itertools.chain.from_iterable([collapsedTrans2reads[x] for x in exclusionIsos])
+                inclusionReads2palen = [[x, flncReads2Palen[x]] for x in inclusionReads if x in flncReads2Palen]
+                exclusionReads2palen = [[x, flncReads2Palen[x]] for x in exclusionReads if x in flncReads2Palen]
+                if len(inclusionReads2palen) < filterByCount or len(exclusionReads2palen) < filterByCount: continue
+                aPalen = map(int, [x[1] for x in inclusionReads2palen])
+                bPalen = map(int, [x[1] for x in exclusionReads2palen])
                 stat_val1, p_val1 = stats.ttest_ind(aPalen, bPalen)
                 stat_val2, p_val2 = stats.kruskal(aPalen, bPalen)
                 if float(p_val1) <= 0.001 and float(p_val2) <= 0.001:
-                    # print "\t".join(map(str, [allReadsInGene, g, a, len(aPalen), np.mean(aPalen), np.median(aPalen), b, len(bPalen), np.mean(bPalen), np.median(bPalen)]))
-                    if merged:
-                        count += 1
-                        fileOut = "{}_{}.txt".format(g, count)
-                    else:
-                        fileOut = "_".join([g, a, b]) + ".txt"
+                    fileOut = "{}_{}_{}.txt".format(asType, gene, count)
                     out = open(fileOut, "w")
-                    for i in gene2readPalen[g][a]:
-                        print >> out, "\t".join(map(str, [g, a, i, gene2readPalen[g][a][i]]))
-                    for j in gene2readPalen[g][b]:
-                        print >> out, "\t".join(map(str, [g, b, j, gene2readPalen[g][b][j]]))
+                    for i in inclusionReads2palen:
+                        print >>out, "\t".join(map(str, [gene, asType, "_".join(inclusionIsos), i[0], i[1]]))
+                    for j in exclusionReads2palen:
+                        print >>out, "\t".join(map(str, [gene, asType, "_".join(exclusionIsos), j[0], j[1]]))
                     out.close()
-                    # plotGeneStructurePath = os.path.join(currentFileDir, "violin_paired.R")
-                    # cmd = "Rscript {} {}".format(plotGeneStructurePath, fileOut)
                     cmd = "Rscript violin_paired.R {}".format(fileOut)
                     # subprocess.call(cmd, shell=True)
 
-    if merged:
-        cmd = "getSingleIr.pl -g {} ../mergedIso2Reads.bed12 > mergedIso.IR.bed6+".format(refParams.ref_gpe)
-        subprocess.call(cmd, shell=True)
-        cmd = "getSE.pl -g {} ../mergedIso2Reads.bed12 > mergedIso.SE.bed12+".format(refParams.ref_gpe)
-        subprocess.call(cmd, shell=True)
-        cmd = "getA5SS.pl -g {} ../mergedIso2Reads.bed12 > mergedIso.A5SS.bed6+".format(refParams.ref_gpe)
-        subprocess.call(cmd, shell=True)
-        cmd = "getA3SS.pl -g {} ../mergedIso2Reads.bed12 > mergedIso.A3SS.bed6+".format(refParams.ref_gpe)
-        subprocess.call(cmd, shell=True)
-        irFile = os.path.join(os.getcwd(), "mergedIso.IR.bed6+")
-        seFile = os.path.join(os.getcwd(), "mergedIso.SE.bed12+")
-        a5ssFile = os.path.join(os.getcwd(), "mergedIso.A5SS.bed6+")
-        a3ssFile = os.path.join(os.getcwd(), "mergedIso.A3SS.bed6+")
-        collapsedGroupFile = os.path.join(os.getcwd(), "../mergedIso2Reads.group.txt")
-    else:
-        seFile = os.path.join(baseDir, "as_events", "ordinary_as", "PB", "SE.confident.bed12+")
-        irFile = os.path.join(baseDir, "as_events", "ordinary_as", "PB", "IR.confident.bed6+")
-        a5ssFile = os.path.join(baseDir, "as_events", "ordinary_as", "A5SS.confident.bed6+")
-        a3ssFile = os.path.join(baseDir, "as_events", "ordinary_as", "A3SS.confident.bed6+")
-        collapsedGroupFile = os.path.join(baseDir, "filtration", "collapse", "tofu.collapsed.group.txt")
-    relationshipBetweenPAlenAndAS(irFile, collapsedGroupFile, flncReads2Palen, asType="IR", filterByCount=5,
-                                  sigFile="IR.palenAndAS.sig.bed12+", sigPicOutDir="IR.sig_pics")
-    relationshipBetweenPAlenAndAS(seFile, collapsedGroupFile, flncReads2Palen, asType="SE", filterByCount=5,
-                                  sigFile="SE.palenAndAS.sig.bed12+", sigPicOutDir="SE.sig_pics")
-    relationshipBetweenPAlenAndAS(a5ssFile, collapsedGroupFile, flncReads2Palen, asType="A5SS", filterByCount=5,
-                                  sigFile="A5SS.palenAndAS.sig.bed12+", sigPicOutDir="A5SS.sig_pics")
-    relationshipBetweenPAlenAndAS(a3ssFile, collapsedGroupFile, flncReads2Palen, asType="A3SS", filterByCount=5,
-                                  sigFile="A3SS.palenAndAS.sig.bed12+", sigPicOutDir="A3SS.sig_pics")
-    os.chdir(prevDir)
+                    isoBedObj = BedFile(isoformFile, type="bed12+")
+                    inclusionIsosObj = [isoBedObj.reads[x] for x in inclusionIsos]
+                    exclusionIsosObj = [isoBedObj.reads[x] for x in exclusionIsos]
+                    incSortedIsos = sorted(inclusionIsosObj, key=lambda x: abs(x.chromStart - x.chromEnd), reverse=True)
+                    excSortedIsos = sorted(exclusionIsosObj, key=lambda x: abs(x.chromStart - x.chromEnd), reverse=True)
+                    incRepIso = copy.copy(incSortedIsos[0])
+                    excRepIso = copy.copy(excSortedIsos[0])
+                    incRepIso.name = "_".join(inclusionIsos)
+                    excRepIso.name = "_".join(exclusionIsos)
 
+                    print >> sigOut, str(incRepIso) + "\t" + "\t".join(["inclusion", "_".join(inclusionIsos), ",".join(map(str, aPalen)), str(len(aPalen))])
+                    print >> sigOut, str(excRepIso) + "\t" + "\t".join(["exclusion", "_".join(exclusionIsos), ",".join(map(str, bPalen)), str(len(bPalen))])
+        sigOut.close()
+    os.chdir(prevDir)
 
 def palen_as(dataObj=None, refParams=None, dirSpec=None, filterByCount=10, sampleMerged=False):
     projectName, sampleName = dataObj.project_name, dataObj.sample_name
@@ -204,9 +175,19 @@ def palen_as(dataObj=None, refParams=None, dirSpec=None, filterByCount=10, sampl
     resolveDir(os.path.join(baseDir, "palenAS"))
 
     collapsedGroupFile = os.path.join(baseDir, "collapse", "tofu.collapsed.group.txt")
-    isoBedFile = os.path.join(baseDir, "collapse", "tofu.collapsed.assigned.unambi.bed12+")
+    isoformFile = os.path.join(baseDir, "collapse", "isoformGrouped.bed12+")
     collapsedTrans2reads = getDictFromFile(collapsedGroupFile, sep="\t", inlineSep=",", valueCol=2)
-    mergedIsoDict = mergeIso(isoBedFile, collapsedTrans2reads)
+
+    irFile = os.path.join(baseDir, "as_events", "ordinary_as", "PB", "IR.confident.bed6+")
+    seFile = os.path.join(baseDir, "as_events", "ordinary_as", "PB", "SE.confident.bed12+")
+    a3ssFile = os.path.join(baseDir, "as_events", "ordinary_as", "PB", "A3SS.confident.bed6+")
+    a5ssFile = os.path.join(baseDir, "as_events", "ordinary_as", "PB", "A5SS.confident.bed6+")
+
+    seAsPairs = getASpairedIsoforms(seFile, collapsedGroupFile, isoformFile, asType="SE", mergeByJunc=True)
+    irAsPairs = getASpairedIsoforms(irFile, collapsedGroupFile, isoformFile, asType="IR", mergeByJunc=True)
+    a5ssAsPairs = getASpairedIsoforms(a5ssFile, collapsedGroupFile, isoformFile, asType="A5SS", mergeByJunc=True)
+    a3ssAsPairs = getASpairedIsoforms(a3ssFile, collapsedGroupFile, isoformFile, asType="A3SS", mergeByJunc=True)
+    asPairs = {"SE": seAsPairs, "IR": irAsPairs, "A5SS": a5ssAsPairs, "A3SS": a3ssAsPairs}
 
     palenFile = dataObj.polya_location
     if palenFile == None or not validateFile(palenFile):
@@ -216,8 +197,9 @@ def palen_as(dataObj=None, refParams=None, dirSpec=None, filterByCount=10, sampl
     palen_pass = palen.loc[palen.qc_tag == "PASS", ]
     flncReads2Palen = dict(zip(palen_pass.readname, palen_pass.polya_length))
 
-    getPalenAS(flncReads2Palen, dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, collapsedTrans2reads=collapsedTrans2reads, filterByCount=filterByCount, merged=False)
-    getPalenAS(flncReads2Palen, dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, mergedIsoDict=mergedIsoDict, filterByCount=filterByCount, merged=True)
+    getPalenAS(flncReads2Palen, isoformFile, collapsedTrans2reads=collapsedTrans2reads, asPairs=asPairs, filterByCount=filterByCount, mergeByJunc=True)
+    # getPalenAS(flncReads2Palen, dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, collapsedTrans2reads=collapsedTrans2reads, filterByCount=filterByCount, merged=False)
+    # getPalenAS(flncReads2Palen, dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, mergedIsoDict=mergedIsoDict, filterByCount=filterByCount, merged=True)
 
     os.chdir(prevDir)
     print getCurrentTime() + " Identify functional poly(A) tail length related to AS for project {} entry {} done!".format(projectName, sampleName)

@@ -66,7 +66,7 @@ INTEGER_TAGS = [CCSMINREADLENGTH, CCSMINSUBREADLENGTH, CCSMINCCSLENGTH, CCSMINPA
 STRING_TAGS = [SECTIONTYPE, REFSTRAIN, STRAIN, CONDITION, REFGENOME, REFSIZE, REFANNOGFF, REFANNOGTF, REFBED, REFMM2INDEX, OUTDIR, MEMORY]
 
 FILE_TAGS = [REFGENOME, REFSIZE, REFANNOGFF, REFANNOGTF, REFBED]
-NONE_TAG = "None"
+NONE_VALUE = "none"
 
 TAG_TYPE = {}
 for t in BOOLEAN_TAGS: TAG_TYPE[t] = 'boolean'
@@ -318,10 +318,11 @@ class Config(object):
                     return True
                 elif value.lower() in ['0', 'f', 'false']:
                     return False
-            elif tag == NONE_TAG:
-                return None
             else:  # STRING_TAGS
-                return value
+                if value.lower() == NONE_VALUE:
+                    return None
+                else:
+                    return value
         except ValueError as e:
             raise ValueError('Invalid assignment in config file: %s is %s, should be %s\n' % (tag, value, TAG_TYPE[tag]))
 
