@@ -12,8 +12,8 @@ import matplotlib.pyplot as plt
 import PyPDF2
 import seaborn as sns
 
-def readsCorrectedEval(dataObj=None):
-    filtrationDir = os.path.join(dataObj.out_dir, dataObj.project_name, dataObj.sample_name, "filtration")
+def readsCorrectedEval(dataObj=None, dirSpec=None):
+    filtrationDir = os.path.join(dirSpec.out_dir, dataObj.project_name, dataObj.sample_name, "filtration")
     rawMappedBed = os.path.join(filtrationDir, "raw.mapped.addCVandID.bed12+")
     correctMappedBed = os.path.join(filtrationDir, "mapped.addCVandID.bed12+")
     rawMapped = pd.read_csv(rawMappedBed, sep="\t", header=None)
@@ -70,7 +70,7 @@ def report(dataObj=None, refParams=None, dirSpec=None):
     reportDir = os.path.join(baseDir, "reports")
     resolveDir(reportDir)
     if dataObj.use_fmlrc2:
-        readsCorrectedEval(dataObj=dataObj)
+        readsCorrectedEval(dataObj=dataObj, dirSpec=dirSpec)
     readsContentEval(dataObj=dataObj)
     # preprocess (readsCorrectResult.pdf)
     # mapping

@@ -46,10 +46,8 @@ def minimap2mapping(dataObj=None, minimap2Params=None, refParams=None, dirSpec=N
         subprocess.call(cmd, shell=True)
 
     cmd = "bamToBed -i <(samtools view -bS flnc.mm2.sam) -bed12 > tmp.bed12"
-    subprocess.call(cmd, shell=True)
-    cmd = '''filter.pl -o <(awk 'OFS="\t"{if($3-$2>'''
-    cmd += str(minimap2Params.max_intron_length)
-    cmd += '''){print}}' tmp.bed12) flnc.mm2.sam -1 4 > tmp.sam'''
+    subprocess.call(cmd, shell=True, executable="/bin/bash")
+    cmd = '''filter.pl -o <(awk 'OFS="\t"{if($3-$2>%d){print}}' tmp.bed12) flnc.mm2.sam -1 4 > tmp.sam''' % (minimap2Params.max_intron_length)
     subprocess.call(cmd, shell=True, executable="/bin/bash")
     cmd = "(samtools view -H tmp.sam; samtools view -f 16 -F 4079 tmp.sam; samtools view -f 0 -F 4095 tmp.sam) > flnc.mm2.sam"
     subprocess.call(cmd, shell=True)
@@ -90,7 +88,7 @@ def hisat2mapping(dataObj=None, refParams=None, dirSpec=None, threads=10):
             cmd = "hisat2 -x {}/{} -1 {} -2 {} --dta -p {} --max-intronlen 50000 --novel-splicesite-outfile {}.ss " \
               "--un-conc-gz {}.unmapped.fastq.gz 2>{}/{}.{}.hisat2.log | samtools sort -@ {} -o {}.sorted.bam ".format(
             hisat2indexDir, gtfPrefix, leftReads, rightReads, threads, repeatName, repeatName, logDir,
-            dataObj.sampleName, repeatName, threads, repeatName)
+            sampleName, repeatName, threads, repeatName)
             subprocess.call(cmd, shell=True)
 
             cmd = "stringtie {}.sorted.bam -o {}.gtf -p {}".format(repeatName, repeatName, threads)
@@ -115,7 +113,7 @@ def hisat2mapping(dataObj=None, refParams=None, dirSpec=None, threads=10):
             cmd = "hisat2 -x {}/{} -U {} --dta -p {} --max-intronlen 50000 --novel-splicesite-outfile {}.ss " \
                   "--un-conc {}.unmmaped.fastq 2>{}/{}.{}.hisat2.log | samtools sort -@ {} -o {}.sorted.bam".format(
                 hisat2indexDir, gtfPrefix, singleReads, threads, repeatName, repeatName, logDir,
-                dataObj.sampleName, repeatName, threads, repeatName)
+                sampleName, repeatName, threads, repeatName)
             subprocess.call(cmd, shell=True)
             cmd = "stringtie {}.sorted.bam -o {}.gtf -p {}".format(repeatName, repeatName, threads)
             subprocess.call(cmd, shell=True)
@@ -150,4 +148,6 @@ def mapping(dataObj=None, minimap2Params=None, refParams=None, dirSpec=None, thr
         else:
             raise Exception("Something wrong happened for generating preprocess flnc reads! Please check it!")
     if dataObj.ngs_left_reads or dataObj.ngs_right_reads:
+        from preprocess import renameNGSdata2fastp
+        renameNGSdata2fastp(dataObj=dataObj)
         hisat2mapping(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, threads=threads)

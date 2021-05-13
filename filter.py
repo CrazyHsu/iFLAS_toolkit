@@ -137,10 +137,13 @@ def strandAdjust(genomeFasta, refGPE, bedFile, minCoverage, juncDiffScore, stran
 def getJuncFromRegtools(dataObj=None, dirSpec=None, filterByCount=10):
     projectName, sampleName = dataObj.project_name, dataObj.sample_name
     print getCurrentTime() + " Get junctions from RNA-seq with Regtools for project {} sample {}...".format(projectName, sampleName)
-    rnaseqSortedBam = os.path.join(dirSpec.out_dir, projectName, sampleName, "mapping", "rna-seq", "reassembly", "tmp.bam")
-    cmd = "regtools junctions extract -a 5 -m 50 -M 50000 {} > tmp.bed".format(rnaseqSortedBam)
+    baseDir = os.path.join(dirSpec.out_dir, projectName, sampleName)
+    logDir = os.path.join(baseDir, "log")
+    resolveDir(logDir, chdir=False)
+    rnaseqSortedBam = os.path.join(baseDir, "mapping", "rna-seq", "reassembly", "tmp.bam")
+    cmd = "regtools junctions extract -a 5 -m 50 -M 50000 {} -s 0 -o tmp.bed 2>{}/regtools.log".format(rnaseqSortedBam, logDir)
     subprocess.call(cmd, shell=True)
-    cmd = '''awk '{if($5>''' + str(filterByCount) + '''){print}}' tmp.bed > junctions.bed'''
+    cmd = '''awk '{if($5>%d){print}}' tmp.bed > junctions.bed''' % (filterByCount)
     subprocess.call(cmd, shell=True, executable="/bin/bash")
     dataObj.ngs_junctions = os.path.join(os.getcwd(), "junctions.bed")
     print getCurrentTime() + " Get junctions from RNA-seq with Regtools for project {} sample {} done!".format(projectName, sampleName)
@@ -148,8 +151,8 @@ def getJuncFromRegtools(dataObj=None, dirSpec=None, filterByCount=10):
 def filterByJunc(dataObj=None, refParams=None, dirSpec=None, threads=10):
     projectName, sampleName = dataObj.project_name, dataObj.sample_name
     print getCurrentTime() + " Filter reads by junctions information from RNA-seq for project {} sample {}...".format(projectName, sampleName)
-    mappedSam = os.path.join(dataObj.out_dir, projectName, sampleName, "mapping", "flnc.mm2.sam")
-    rawMappedSam = os.path.join(dataObj.out_dir, projectName, sampleName, "mapping", "rawFlnc.mm2.sam")
+    mappedSam = os.path.join(dirSpec.out_dir, projectName, sampleName, "mapping", "flnc.mm2.sam")
+    rawMappedSam = os.path.join(dirSpec.out_dir, projectName, sampleName, "mapping", "rawFlnc.mm2.sam")
     cmd = r'''samAddTag.pl --checkHardClip --coverage --identity {} 2>lengthInconsistent.sam | samtools sort -m 4G - >mapped.addCVandID.bam'''.format(mappedSam)
     subprocess.call(cmd, shell=True)
     cmd = "sam2bed.pl -t CV,ID mapped.addCVandID.bam >mapped.addCVandID.bed12+"
@@ -185,9 +188,11 @@ def filterByJunc(dataObj=None, refParams=None, dirSpec=None, threads=10):
 
 def filter(dataObj=None, refParams=None, dirSpec=None):
     projectName, sampleName = dataObj.project_name, dataObj.sample_name
-    workDir = os.path.join(dataObj.out_dir, projectName, sampleName, "filtration")
+    workDir = os.path.join(dirSpec.out_dir, projectName, sampleName, "filtration")
     resolveDir(workDir)
     if dataObj.ngs_junctions == None and (dataObj.ngs_left_reads != None or dataObj.ngs_right_reads != None):
+        from preprocess import renameNGSdata2fastp
+        renameNGSdata2fastp(dataObj=dataObj)
         getJuncFromRegtools(dataObj=dataObj, dirSpec=dirSpec)
     filterByJunc(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, threads=dataObj.single_run_threads)
 
