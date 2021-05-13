@@ -192,7 +192,7 @@ def collapse(dataObj=None, collapseParams=None, refParams=None, dirSpec=None, th
     prevDir = os.getcwd()
     baseDir = os.path.join(dirSpec.out_dir, projectName, sampleName)
 
-    resolveDir(baseDir, "collapse")
+    resolveDir(os.path.join(baseDir, "collapse"))
     logDir = os.path.join(baseDir, "log")
     resolveDir(logDir, chdir=False)
     processedFa = os.path.join(baseDir, "filtration", "processed.fa")
@@ -208,7 +208,7 @@ def collapse(dataObj=None, collapseParams=None, refParams=None, dirSpec=None, th
         cmd = "collapse_isoforms_by_sam.py --input {} -s processed.sorted.sam --max_5_diff {} --max_3_diff {} " \
               "--flnc_coverage {} -c {} -i {} --max_fuzzy_junction {} -o tofu 1>{}/tofu.collapse.log 2>&1"
     cmd = cmd.format(processedFa, collapseParams.max_5_diff, collapseParams.max_3_diff, collapseParams.fl_coverage,
-                     collapseParams.coverage, collapseParams.identity, collapseParams.max_fuzzy_junction, logDir)
+                     collapseParams.min_coverage, collapseParams.min_identity, collapseParams.max_fuzzy_junction, logDir)
     subprocess.call(cmd, shell=True)
 
     cmd = "gtfToGenePred tofu.collapsed.good.gff tofu.collapsed.gpe -genePredExt"
