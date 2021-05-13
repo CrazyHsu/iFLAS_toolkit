@@ -137,7 +137,17 @@ def hisat2mapping(dataObj=None, refParams=None, dirSpec=None, threads=10):
         projectName, sampleName)
 
 def mapping(dataObj=None, minimap2Params=None, refParams=None, dirSpec=None, threads=10):
+    projectName, sampleName = dataObj.project_name, dataObj.sample_name
     if dataObj.data_processed_location:
         minimap2mapping(dataObj=dataObj, minimap2Params=minimap2Params, refParams=refParams, dirSpec=dirSpec, threads=threads)
+    else:
+        if dataObj.use_fmlrc2:
+            dataObj.data_processed_location = os.path.join(dirSpec.out_dir, projectName, sampleName, "preprocess", "fmlrc", "fmlrc_corrected.fasta")
+        else:
+            dataObj.data_processed_location = os.path.join(dirSpec.out_dir, projectName, sampleName, "preprocess", dataObj.tgs_plat.lower(), "rawFlnc.fq")
+        if validateFile(dataObj.data_processed_location):
+            minimap2mapping(dataObj=dataObj, minimap2Params=minimap2Params, refParams=refParams, dirSpec=dirSpec, threads=threads)
+        else:
+            raise Exception("Something wrong happened for generating preprocess flnc reads! Please check it!")
     if dataObj.ngs_left_reads or dataObj.ngs_right_reads:
         hisat2mapping(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, threads=threads)

@@ -152,7 +152,7 @@ def iflas(args):
         pool = Pool(processes=len(dataToProcess))
         for dataObj in dataToProcess:
             refParams = refInfoParams[dataObj.ref_strain]
-            dataObj.single_run_threads = len(optionTools.threads / float(len(dataToProcess)))
+            dataObj.single_run_threads = int(optionTools.threads / float(len(dataToProcess)))
             if args.command == 'mapping':
                 from mapping import mapping
                 # mapping(dataObj=dataObj, minimap2Params=minimap2Params, refParams=refParams, dirSpec=dirSpec, threads=dataObj.single_run_threads)
