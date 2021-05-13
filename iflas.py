@@ -76,7 +76,7 @@ def iflas(args):
         initRefSetting(refParams=refParams, dirSpec=dirSpec)
     initSysResourceSetting(optionTools=optionTools)
 
-    pybedtools.set_tempdir(dirSpec.out_dir)
+    pybedtools.set_tempdir(dirSpec.tmp_dir)
     if args.command == 'preproc':
         pool = Pool(processes=len(dataToProcess))
         from preprocess import preprocess

@@ -151,13 +151,14 @@ def getJuncFromRegtools(dataObj=None, dirSpec=None, filterByCount=10):
 def filterByJunc(dataObj=None, refParams=None, dirSpec=None, threads=10):
     projectName, sampleName = dataObj.project_name, dataObj.sample_name
     print getCurrentTime() + " Filter reads by junctions information from RNA-seq for project {} sample {}...".format(projectName, sampleName)
-    mappedSam = os.path.join(dirSpec.out_dir, projectName, sampleName, "mapping", "flnc.mm2.sam")
-    rawMappedSam = os.path.join(dirSpec.out_dir, projectName, sampleName, "mapping", "rawFlnc.mm2.sam")
-    cmd = r'''samAddTag.pl --checkHardClip --coverage --identity {} 2>lengthInconsistent.sam | samtools sort -m 4G - >mapped.addCVandID.bam'''.format(mappedSam)
+    baseDir = os.path.join(dirSpec.out_dir, projectName, sampleName)
+    mappedSam = os.path.join(baseDir, "mapping", "flnc.mm2.sam")
+    rawMappedSam = os.path.join(baseDir, "mapping", "rawFlnc.mm2.sam")
+    cmd = r'''samAddTag.pl --checkHardClip --coverage --identity {} 2>lengthInconsistent.sam | samtools sort -@ {} -m 4G - >mapped.addCVandID.bam'''.format(mappedSam, threads)
     subprocess.call(cmd, shell=True)
     cmd = "sam2bed.pl -t CV,ID mapped.addCVandID.bam >mapped.addCVandID.bed12+"
     subprocess.call(cmd, shell=True)
-    cmd = r'''samAddTag.pl --checkHardClip --coverage --identity {} 2>/dev/null | samtools sort -m 4G - >raw.mapped.addCVandID.bam'''.format(rawMappedSam)
+    cmd = r'''samAddTag.pl --checkHardClip --coverage --identity {} 2>/dev/null | samtools sort -@ {} -m 4G - >raw.mapped.addCVandID.bam'''.format(rawMappedSam, threads)
     subprocess.call(cmd, shell=True)
     cmd = "sam2bed.pl -t CV,ID raw.mapped.addCVandID.bam >raw.mapped.addCVandID.bed12+"
     subprocess.call(cmd, shell=True)
@@ -180,6 +181,11 @@ def filterByJunc(dataObj=None, refParams=None, dirSpec=None, threads=10):
         juncScoringParams = "-r {} strandConfirm.bed12+".format(refParams.ref_gpe)
     cmd = "juncConsensus.pl -s <(juncScoring.pl {}) -l 10 strandConfirm.bed12+ >processed.bed12+".format(juncScoringParams)
     subprocess.call(cmd, shell=True, executable="/bin/bash")
+    if dataObj.use_fmlrc2:
+        dataObj.data_processed_location = os.path.join(baseDir, "preprocess", "fmlrc", "fmlrc_corrected.fasta")
+    else:
+        dataObj.data_processed_location = os.path.join(baseDir, "preprocess", dataObj.tgs_plat.lower(), "rawFlnc.fq")
+
     flncFx = dataObj.data_processed_location
     cmd = "seqkit grep {} -f <(cut -f4 processed.bed12+) | seqkit fq2fa - -w 0 >processed.fa".format(flncFx)
     subprocess.call(cmd, shell=True, executable="/bin/bash")

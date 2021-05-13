@@ -63,23 +63,22 @@ def find_python(isoformBed, tofuGroupFile, dataObj=None, refParams=None):
     if os.path.islink("PB/A3SS.confident.bed6+") or os.path.exists("PB/A3SS.confident.bed6+"):
         os.remove("PB/A3SS.confident.bed6+")
 
-    if dataObj.ngsLeftReads or dataObj.ngsRightReads:
+    if dataObj.ngs_left_reads or dataObj.ngs_right_reads:
         if not os.path.exists("NGS"):
             os.makedirs("NGS")
         try:
             # from scanESbyNGS import scanEsByNGS
-            scanEsByNGS(fref=refParams.ref_gpe, has_bin=False, fjunc=dataObj.ngsJunctions,
+            scanEsByNGS(fref=refParams.ref_gpe, has_bin=False, fjunc=dataObj.ngs_junctions,
                         fpb="isoformGrouped.bed12+", outFile="SEsupportByNGS.bed12+")
             assignGeneNameToSE(fref=refParams.ref_gpe, has_bin=False, fes="SEsupportByNGS.bed12+",
                                outFile="NGS/SE.bed12+", errorOutFile="NGS/novelSE2gene.log")
         except Exception as e:
             print e
         filterFile(originFile="NGS/SE.bed12+", targetFile="PB/SE.bed12+", originField=4, targetField=4,
-               outFile="PB/SE.NGS.bed12+")
+                   outFile="PB/SE.NGS.bed12+")
         filterFile(originFile="PB/SE.bed12+", targetFile="NGS/SE.bed12+", originField=4, targetField=4,
-               outFile="NGS/SE.PB.bed12+")
-        cmd = "juncAssign.pl -g {} {} | tee junction.assigned.for_IR.bed12+ | cut -f 1-12,21-22 >junction.assigned.bed12+".format(
-            refParams.ref_gpe, dataObj.ngsJunctions)
+                   outFile="NGS/SE.PB.bed12+")
+        cmd = "juncAssign.pl -g {} {} | cut -f 1-12,21-22 >junction.assigned.bed12+".format(refParams.ref_gpe, dataObj.ngs_junctions)
         subprocess.call(cmd, shell=True)
         cmd = '''
                     AnSSconfirmByJunc.pl -t 5 -j junction.assigned.bed12+ PB/A5SS.bed6+ >NGS/A5SS.PB.bed6+ 2>PB/A5SS.NGS.bed6+
@@ -141,8 +140,8 @@ def find_as(dataObj=None, refParams=None, dirSpec=None):
     resolveDir(workDir)
     isoformBed = os.path.join(baseDir, "collapse", "isoformGrouped.bed12+")
     tofuGroupFile = os.path.join(baseDir, "collapse", "tofu.collapsed.group.txt")
-    if dataObj.ngs_junctions == None:
-        dataObj.ngs_junctions = os.path.join(baseDir, "rna-seq", "reassembly", "junctions.bed")
+    if dataObj.ngs_junctions == None and (dataObj.ngs_left_reads or dataObj.ngs_right_reads):
+        dataObj.ngs_junctions = os.path.join(baseDir, "filtration", "junctions.bed")
 
     # if not os.path.exists("PB"):
     #     os.makedirs("PB")

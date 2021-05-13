@@ -49,9 +49,8 @@ def visual_as(dataObj=None, targetGenes=None, refParams=None, dirSpec=None):
                 if readStruc.geneName in targetGenes:
                     selectedGenes.update({readStruc.geneName: ""})
 
-    poolNum = dataObj.single_run_threads
     try:
-        pool = Pool(processes=poolNum)
+        pool = Pool(processes=dataObj.single_run_threads)
         for chrom in readsDict:
             for strand in readsDict[chrom]:
                 for geneName in readsDict[chrom][strand]:

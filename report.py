@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import PyPDF2
 import seaborn as sns
 
-def readsCorrectedEval(dataObj=None, dirSpec=None):
+def reportReadsCorrectedEval(dataObj=None, dirSpec=None):
     filtrationDir = os.path.join(dirSpec.out_dir, dataObj.project_name, dataObj.sample_name, "filtration")
     rawMappedBed = os.path.join(filtrationDir, "raw.mapped.addCVandID.bed12+")
     correctMappedBed = os.path.join(filtrationDir, "mapped.addCVandID.bed12+")
@@ -41,7 +41,7 @@ def gcAcrossRead(fxFile, outFile, interval=20):
         print >>out, "\t".join(map(str, gcList))
     out.close()
 
-def readsContentEval(dataObj=None, refParams=None):
+def reportReadsContentEval(dataObj=None, refParams=None):
     flncFx = dataObj.data_processed_location
 
     cmd = "seqkit fx2tab -n -g {} | cut -f 1,2 > GC_of_raw_flnc_reads.log".format(flncFx)
@@ -62,6 +62,27 @@ def readsContentEval(dataObj=None, refParams=None):
     cmd = '''boxes.R -ng -no *.lst -p=LengthDistribution.box.pdf 2>/dev/null'''
     subprocess.call(cmd, shell=True)
 
+def reportASPattern():
+    pass
+
+def reportTargetGeneStructure():
+    pass
+
+def reportNovelHqAS():
+    pass
+
+def reportAllelicAS():
+    pass
+
+def reportPaTailAS():
+    pass
+
+def reportDiffAS():
+    pass
+
+def reportTargetGeneGoEnrichment():
+    pass
+
 def report(dataObj=None, refParams=None, dirSpec=None):
     projectName, sampleName = dataObj.project_name, dataObj.sample_name
     print getCurrentTime() + " Generate plot report for project {} sample {}...".format(projectName, sampleName)
@@ -70,8 +91,8 @@ def report(dataObj=None, refParams=None, dirSpec=None):
     reportDir = os.path.join(baseDir, "reports")
     resolveDir(reportDir)
     if dataObj.use_fmlrc2:
-        readsCorrectedEval(dataObj=dataObj, dirSpec=dirSpec)
-    readsContentEval(dataObj=dataObj)
+        reportReadsCorrectedEval(dataObj=dataObj, dirSpec=dirSpec)
+    reportReadsContentEval(dataObj=dataObj)
     # preprocess (readsCorrectResult.pdf)
     # mapping
     # filtration

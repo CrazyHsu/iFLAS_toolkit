@@ -188,8 +188,7 @@ def readsAssign(transBedFile, readsBedFile, offset=10, minConsenesusIntronN=1, m
 
 def collapse(dataObj=None, collapseParams=None, refParams=None, dirSpec=None, threads=10):
     projectName, sampleName = dataObj.project_name, dataObj.sample_name
-    print getCurrentTime() + " Collapse with cDNA_cupcake for project {} sample {}...".format(
-        projectName, sampleName)
+    print getCurrentTime() + " Collapse with cDNA_cupcake for project {} sample {}...".format(projectName, sampleName)
     prevDir = os.getcwd()
     baseDir = os.path.join(dirSpec.out_dir, projectName, sampleName)
 
@@ -200,16 +199,16 @@ def collapse(dataObj=None, collapseParams=None, refParams=None, dirSpec=None, th
     processedBed = os.path.join(baseDir, "filtration", "processed.bed12+")
     flncSam = os.path.join(baseDir, "mapping", "flnc.mm2.sam")
     processedIds = getFxSequenceId(processedFa, isFa=True)
-    getSubSamByName(flncSam, nameList=processedIds, isBam=False, nameListIsFile=False,
-                    outPrefix="processed", sort=True, threads=threads)
+    getSubSamByName(flncSam, nameList=processedIds, isBam=False, nameListIsFile=False, outPrefix="processed", sort=True,
+                    threads=threads)
     if collapseParams.dun_merge_5_shorter:
         cmd = "collapse_isoforms_by_sam.py --input {} -s processed.sorted.sam --max_5_diff {} --max_3_diff {} " \
-              "--flnc_coverage {} -c {} -i {} --dun-merge-5-shorter -o tofu 1>{}/tofu.collapse.log 2>&1"
+              "--flnc_coverage {} -c {} -i {} --max_fuzzy_junction {} --dun-merge-5-shorter -o tofu 1>{}/tofu.collapse.log 2>&1"
     else:
         cmd = "collapse_isoforms_by_sam.py --input {} -s processed.sorted.sam --max_5_diff {} --max_3_diff {} " \
-              "--flnc_coverage {} -c {} -i {} -o tofu 1>{}/tofu.collapse.log 2>&1"
+              "--flnc_coverage {} -c {} -i {} --max_fuzzy_junction {} -o tofu 1>{}/tofu.collapse.log 2>&1"
     cmd = cmd.format(processedFa, collapseParams.max_5_diff, collapseParams.max_3_diff, collapseParams.fl_coverage,
-                     collapseParams.coverage, collapseParams.identity, logDir)
+                     collapseParams.coverage, collapseParams.identity, collapseParams.max_fuzzy_junction, logDir)
     subprocess.call(cmd, shell=True)
 
     cmd = "gtfToGenePred tofu.collapsed.good.gff tofu.collapsed.gpe -genePredExt"
@@ -225,8 +224,7 @@ def collapse(dataObj=None, collapseParams=None, refParams=None, dirSpec=None, th
     subprocess.call(cmd, shell=True, executable="/bin/bash")
     cmd = '''filter.pl -o <(cut -f 2 tofu.collapsed.group.txt | tr ',' '\n') {} -2 4 -m i > processed.ignore_id_removed.bed12+'''.format(processedBed)
     subprocess.call(cmd, shell=True, executable="/bin/bash")
-    readsAssign(refParams.ref_bed, "processed.ignore_id_removed.bed12+", readsColNum=14, outPrefix="reads.assigned",
-                group=True)
+    readsAssign(refParams.ref_bed, "processed.ignore_id_removed.bed12+", readsColNum=14, outPrefix="reads.assigned", group=True)
 
     cmd = "cut -f 1-12,15 reads.assigned.unambi.bed12+ | bed2gpe.pl -b 12 -g 13 - | genePredToGtf file stdin reads.unambi.gtf -source=iFLAS"
     subprocess.call(cmd, shell=True)

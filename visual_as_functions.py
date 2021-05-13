@@ -142,7 +142,7 @@ def parallelPlotterAnno(gene, gpeTargetGenePickle, sampleTargetGenePickle, dataO
         ngsSams = []
         for n in range(len(dataObjs.ngs_left_reads.split(";"))):
             repeatName = "repeat" + str(n)
-            bamFile = os.path.join(baseDir, "RNA-seq", "alignment", "{}/{}.sorted.bam".format(repeatName, repeatName))
+            bamFile = os.path.join(baseDir, "mapping", "rna-seq", "alignment", "{}/{}.sorted.bam".format(repeatName, repeatName))
             targetSam = "{}.{}.sam".format(repeatName, gene)
             cmd = "samtools view {} {} > {}".format(bamFile, targetGeneRegion, targetSam)
             subprocess.call(cmd, shell=True)
