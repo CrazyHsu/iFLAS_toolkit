@@ -1,6 +1,7 @@
 from commonObjs import *
 from commonFuncs import *
 import itertools, pybedtools
+import pandas as pd
 from itertools import combinations
 from collections import Counter
 
@@ -1083,7 +1084,7 @@ def remove_redun(seLst):
             seCodeSet.add(se.posCode)
     return newSes
 
-def union_ses(refSes, pbSes):
+def union_ses(refSes, pbSes, novel_count):
     """return a list of se which is the union of the 2 ses without redundency,
     change name of the se if necessary"""
     uSes = []
@@ -1097,9 +1098,9 @@ def union_ses(refSes, pbSes):
         if se.posCode in seCodeSet:
             continue
         else:
-            global novel_count
-            novel_count += 1
-            se.name = "NovelSE_%d:%s" % (novel_count, se.posCode)
+            # global novel_count
+            novel_count.count += 1
+            se.name = "NovelSE_%d:%s" % (novel_count.count, se.posCode)
             seCodeSet.add(se.posCode)
             uSes.append(se)
     return uSes
@@ -1110,7 +1111,7 @@ def cal_psi(se, jpos2count, dnpos2count):
     se.totalCount = sum([tup[1] for tup in dnpos2count[se.dnpos]])
     se.score = int(float(se.supCount)/se.totalCount * 1000)
 
-def identify_ses(chrom, strand, dn, ac_i, ac_o, refDct, pbDct, jpos2count, dnpos2count):
+def identify_ses(chrom, strand, dn, ac_i, ac_o, refDct, pbDct, jpos2count, dnpos2count, novel_count):
     """return a list of bed12+ of SEs, additional fields: jpos, dnpos.
     """
     # find refs or pacbio reads covering dn to ac_o
@@ -1143,7 +1144,7 @@ def identify_ses(chrom, strand, dn, ac_i, ac_o, refDct, pbDct, jpos2count, dnpos
     # remove redun in refSe and pbSe, then remove redun in between
     refSes = remove_redun(refSes)
     pbSes = remove_redun(pbSes)
-    seLst = union_ses(refSes, pbSes)
+    seLst = union_ses(refSes, pbSes, novel_count)
 
     newSeLst = []
     for se in seLst:
@@ -1152,7 +1153,7 @@ def identify_ses(chrom, strand, dn, ac_i, ac_o, refDct, pbDct, jpos2count, dnpos
         # print >>out, se
     return newSeLst
 
-def check_ses(chrom, dn, acs, refDct, pbDct, jpos2count, dnpos2count):
+def check_ses(chrom, dn, acs, refDct, pbDct, jpos2count, dnpos2count, novel_count):
     """return a list of SE(Bed12+) for enumerated dn-ac(ac is element in acs)
     that can be supported by ref in refLst or pb in pbLst.
     """
@@ -1167,7 +1168,7 @@ def check_ses(chrom, dn, acs, refDct, pbDct, jpos2count, dnpos2count):
             ac_i, ac_o = ac1, ac2
         else:
             ac_i, ac_o = ac2, ac1
-        seLst.extend(identify_ses(chrom, strand, dn, ac_i, ac_o, refDct, pbDct, jpos2count, dnpos2count))
+        seLst.extend(identify_ses(chrom, strand, dn, ac_i, ac_o, refDct, pbDct, jpos2count, dnpos2count, novel_count))
     return seLst
 
 def scanEsByNGS(fref, has_bin, fjunc, fpb, outFile):
@@ -1236,6 +1237,8 @@ def scanEsByNGS(fref, has_bin, fjunc, fpb, outFile):
     # check dn with multiple acs
     seLst_p = []
     seLst_n = []
+    p_novel_count = Number()
+    n_novel_count = Number()
     for chrom in dn2ac:
         for dn in dn2ac[chrom]:
             acs = list(set(dn2ac[chrom][dn]))
@@ -1243,9 +1246,9 @@ def scanEsByNGS(fref, has_bin, fjunc, fpb, outFile):
                 pos_acs = [ac for ac in acs if ac > dn]
                 neg_acs = [ac for ac in acs if ac < dn]
                 if len(pos_acs) > 1:
-                    seLst_p.extend(check_ses(chrom, dn, pos_acs, refDct, pbDct, jpos2count, dnpos2count))
+                    seLst_p.extend(check_ses(chrom, dn, pos_acs, refDct, pbDct, jpos2count, dnpos2count, p_novel_count))
                 if len(neg_acs) > 1:
-                    seLst_n.extend(check_ses(chrom, dn, neg_acs, refDct, pbDct, jpos2count, dnpos2count))
+                    seLst_n.extend(check_ses(chrom, dn, neg_acs, refDct, pbDct, jpos2count, dnpos2count, n_novel_count))
     out = open(outFile, "w")
     for i in seLst_p:
         print >>out, i

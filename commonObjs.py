@@ -3,6 +3,10 @@ from sys import maxint as MAXINT
 
 AStypes = ["IR", "SE", "A3SS", "A5SS"]
 
+class Number:
+    def __init__(self, count=0):
+        self.count = count
+
 class Bed6(object):
     "BED6 format gene structure"
 

@@ -69,7 +69,7 @@ def find_python(isoformBed, tofuGroupFile, dataObj=None, refParams=None):
         try:
             # from scanESbyNGS import scanEsByNGS
             scanEsByNGS(fref=refParams.ref_gpe, has_bin=False, fjunc=dataObj.ngs_junctions,
-                        fpb="isoformGrouped.bed12+", outFile="SEsupportByNGS.bed12+")
+                        fpb=isoformBed, outFile="SEsupportByNGS.bed12+")
             assignGeneNameToSE(fref=refParams.ref_gpe, has_bin=False, fes="SEsupportByNGS.bed12+",
                                outFile="NGS/SE.bed12+", errorOutFile="NGS/novelSE2gene.log")
         except Exception as e:
