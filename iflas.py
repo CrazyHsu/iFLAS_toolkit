@@ -9,6 +9,7 @@ Last modified: 2021-04-29 14:19:36
 
 import sys, argparse, time, pybedtools
 import multiprocessing
+import multiprocessing.pool
 from multiprocessing import Pool
 from commonFuncs import *
 from Config import *
