@@ -118,7 +118,7 @@ def find_python(isoformBed, tofuGroupFile, dataObj=None, refParams=None):
 
     cmd = '''(cut -f 8,10 --output-delimiter=',' PB/A3SS.confident.bed6+ PB/A5SS.confident.bed6+ PB/IR.confident.bed6+;
                   cut -f 16,18 --output-delimiter=',' PB/SE.confident.bed12+) | tr ',' '\n' | sort -u |
-                  filter.pl -o - isoformGrouped.bed12+ -2 4 -m i > isoformGrouped.AS.confident.bed12+'''
+                  filter.pl -o - {} -2 4 -m i > isoformGrouped.AS.confident.bed12+'''.format(isoformBed)
     subprocess.call(cmd, shell=True, executable="/bin/bash")
 
     cmd = '''

@@ -113,23 +113,23 @@ def charaterize_as(dataObj=None, refParams=None, dirSpec=None):
 
     getDist2TTS(refParams=refParams, paGroup="../pa/reads.paGrouped.bed6")
 
-    if dataObj.ngs_left_reads or dataObj.ngs_right_reads:
-        cmd = '''
-            skyjoin <(cut -f4,5 ../PB/SE.bed12+) <(cut -f4,5 ../NGS/SE.bed12+) 2>/dev/null | awk 'BEGIN{OFS="\t"}{$2=$2/1000;$3=1-$3/1000;print $2,$3}' \
-            | correlation.R -x=PB -y=NGS -p=SE.cor.pdf >SE.cor 2>/dev/null
-            skyjoin <(cut -f4,5 ../PB/SE.bed12+) <(cut -f4,5 ../NGS/SE.bed12+) 2>/dev/null | awk 'BEGIN{OFS="\t"}{$2=$2/1000;$3=1-$3/1000;print "PB",$2,$1;print "NGS",$3,$1}' \
-            | line.R -b=V3 -s=0.01 -a=0.05 -x=Platform -y=PSI -m="R:$(head -n1 SE.cor | cut -f2), P:$(head -n1 SE.cor | cut -f3)" -p=SE.cor2.pdf 2>/dev/null
-            skyjoin <(cut -f4,5 ../PB/A5SS.bed6+) <(cut -f4,5 ../NGS/A5SS.{known,PB}.bed6+ | sort -u) 2>/dev/null | awk 'BEGIN{OFS="\t"}{$2=$2/1000;$3=$3/1000;print $2,$3}' \
-            | correlation.R -x=PB -y=NGS -p=A5SS.cor.pdf >A5SS.cor 2>/dev/null
-            skyjoin <(cut -f4,5 ../PB/A5SS.bed6+) <(cut -f4,5 ../NGS/A5SS.{known,PB}.bed6+ | sort -u) 2>/dev/null \
-            | awk 'BEGIN{OFS="\t"}{$2=$2/1000;$3=$3/1000;print "PB",$2,$1;print "NGS",$3,$1}' \
-            | line.R -b=V3 -s=0.01 -a=0.05 -x=Platform -y=PSI -m="R:$(head -n1 A5SS.cor | cut -f2), P:$(head -n1 A5SS.cor | cut -f3)" -p=A5SS.cor2.pdf 2>/dev/null
-            skyjoin <(cut -f4,5 ../PB/A3SS.bed6+) <(cut -f4,5 ../NGS/A3SS.{known,PB}.bed6+ | sort -u) 2>/dev/null | awk 'BEGIN{OFS="\t"}{$2=$2/1000;$3=$3/1000;print $2,$3}' \
-            | correlation.R -x=PB -y=NGS -p=A3SS.cor.pdf >A3SS.cor 2>/dev/null
-            skyjoin <(cut -f4,5 ../PB/A3SS.bed6+) <(cut -f4,5 ../NGS/A3SS.{known,PB}.bed6+ | sort -u) 2>/dev/null \
-            | awk 'BEGIN{OFS="\t"}{$2=$2/1000;$3=$3/1000;print "PB",$2,$1;print "NGS",$3,$1}' \
-            | line.R -b=V3 -s=0.01 -a=0.05 -x=Platform -y=PSI -m="R:$(head -n1 A3SS.cor | cut -f2), P:$(head -n1 A3SS.cor | cut -f3)" -p=A3SS.cor2.pdf 2>/dev/null
-        '''
-        subprocess.call(cmd, shell=True, executable="/bin/bash")
+    # if dataObj.ngs_left_reads or dataObj.ngs_right_reads:
+    #     cmd = '''
+    #         skyjoin <(cut -f4,5 ../PB/SE.bed12+) <(cut -f4,5 ../NGS/SE.bed12+) 2>/dev/null | awk 'BEGIN{OFS="\t"}{$2=$2/1000;$3=1-$3/1000;print $2,$3}' \
+    #         | correlation.R -x=PB -y=NGS -p=SE.cor.pdf >SE.cor 2>/dev/null
+    #         skyjoin <(cut -f4,5 ../PB/SE.bed12+) <(cut -f4,5 ../NGS/SE.bed12+) 2>/dev/null | awk 'BEGIN{OFS="\t"}{$2=$2/1000;$3=1-$3/1000;print "PB",$2,$1;print "NGS",$3,$1}' \
+    #         | line.R -b=V3 -s=0.01 -a=0.05 -x=Platform -y=PSI -m="R:$(head -n1 SE.cor | cut -f2), P:$(head -n1 SE.cor | cut -f3)" -p=SE.cor2.pdf 2>/dev/null
+    #         skyjoin <(cut -f4,5 ../PB/A5SS.bed6+) <(cut -f4,5 ../NGS/A5SS.{known,PB}.bed6+ | sort -u) 2>/dev/null | awk 'BEGIN{OFS="\t"}{$2=$2/1000;$3=$3/1000;print $2,$3}' \
+    #         | correlation.R -x=PB -y=NGS -p=A5SS.cor.pdf >A5SS.cor 2>/dev/null
+    #         skyjoin <(cut -f4,5 ../PB/A5SS.bed6+) <(cut -f4,5 ../NGS/A5SS.{known,PB}.bed6+ | sort -u) 2>/dev/null \
+    #         | awk 'BEGIN{OFS="\t"}{$2=$2/1000;$3=$3/1000;print "PB",$2,$1;print "NGS",$3,$1}' \
+    #         | line.R -b=V3 -s=0.01 -a=0.05 -x=Platform -y=PSI -m="R:$(head -n1 A5SS.cor | cut -f2), P:$(head -n1 A5SS.cor | cut -f3)" -p=A5SS.cor2.pdf 2>/dev/null
+    #         skyjoin <(cut -f4,5 ../PB/A3SS.bed6+) <(cut -f4,5 ../NGS/A3SS.{known,PB}.bed6+ | sort -u) 2>/dev/null | awk 'BEGIN{OFS="\t"}{$2=$2/1000;$3=$3/1000;print $2,$3}' \
+    #         | correlation.R -x=PB -y=NGS -p=A3SS.cor.pdf >A3SS.cor 2>/dev/null
+    #         skyjoin <(cut -f4,5 ../PB/A3SS.bed6+) <(cut -f4,5 ../NGS/A3SS.{known,PB}.bed6+ | sort -u) 2>/dev/null \
+    #         | awk 'BEGIN{OFS="\t"}{$2=$2/1000;$3=$3/1000;print "PB",$2,$1;print "NGS",$3,$1}' \
+    #         | line.R -b=V3 -s=0.01 -a=0.05 -x=Platform -y=PSI -m="R:$(head -n1 A3SS.cor | cut -f2), P:$(head -n1 A3SS.cor | cut -f3)" -p=A3SS.cor2.pdf 2>/dev/null
+    #     '''
+    #     subprocess.call(cmd, shell=True, executable="/bin/bash")
     os.chdir(prevDir)
     print getCurrentTime() + " ASE Characterization for project {} entry {} done!".format(projectName, sampleName)

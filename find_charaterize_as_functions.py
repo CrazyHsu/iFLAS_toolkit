@@ -74,8 +74,8 @@ def drawSSmotif(asMotif=None, outPrefix=None):
         tmp.close()
         cmd = "cat tmp.txt | bar.R -fillV=V1 -fp -lgPos=top -w=12 -p={}.ssMotif.pdf 2>/dev/null".format(outPrefix)
         subprocess.call(cmd, shell=True, executable="/bin/bash")
-        os.remove("tmp.txt")
-        os.remove(asMotif)
+        # os.remove("tmp.txt")
+        # os.remove(asMotif)
 
 def getAnnoASList(inFile, outFile, PA=False, append=False, uniq=False):
     with open(inFile) as f:
