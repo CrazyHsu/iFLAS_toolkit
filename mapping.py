@@ -32,7 +32,10 @@ def minimap2mapping(dataObj=None, minimap2Params=None, refParams=None, dirSpec=N
         cmd = "minimap2 -ax splice:hq -G {} -uf {} --secondary=no --MD {} -t {} >flnc.mm2.sam 2>{}/{}.mm2.log".format(
             minimap2Params.max_intron_length, mm2index, processedFlncFq, threads, logDir, sampleName)
         subprocess.call(cmd, shell=True)
-        rawFlncFq = os.path.join(dirSpec.out_dir, projectName, sampleName, "preprocess", "pacbio", "rawFlnc.fq")
+        if dataObj.data_processed_location == None:
+            rawFlncFq = os.path.join(dirSpec.out_dir, projectName, sampleName, "preprocess", "pacbio", "rawFlnc.fq")
+        else:
+            rawFlncFq = os.path.join(dirSpec.out_dir, projectName, sampleName, "preprocess", "fmlrc", "rawFlnc.fq")
         cmd = "minimap2 -ax splice:hq -G {} -uf {} --secondary=no --MD {} -t {} >rawFlnc.mm2.sam 2>{}/{}.rawFlnc.mm2.log".format(
             minimap2Params.max_intron_length, mm2index, rawFlncFq, threads, logDir, sampleName)
         subprocess.call(cmd, shell=True)
@@ -40,7 +43,10 @@ def minimap2mapping(dataObj=None, minimap2Params=None, refParams=None, dirSpec=N
         cmd = "minimap2 -ax splice -G {} -k14 -uf {} --secondary=no --MD {} -t {} >flnc.mm2.sam 2>{}/{}.mm2.log".format(
             minimap2Params.max_intron_length, mm2index, processedFlncFq, threads, logDir, sampleName)
         subprocess.call(cmd, shell=True)
-        rawFlncFq = os.path.join(dirSpec.out_dir, projectName, sampleName, "preprocess", "nanopore", "rawFlnc.fq")
+        if dataObj.data_processed_location == None:
+            rawFlncFq = os.path.join(dirSpec.out_dir, projectName, sampleName, "preprocess", "nanopore", "rawFlnc.fq")
+        else:
+            rawFlncFq = os.path.join(dirSpec.out_dir, projectName, sampleName, "preprocess", "fmlrc", "rawFlnc.fq")
         cmd = "minimap2 -ax splice -G {} -k14 -uf {} --secondary=no --MD {} -t {} >rawFlnc.mm2.sam 2>{}/{}.rawFlnc.mm2.log".format(
             minimap2Params.max_intron_length, mm2index, rawFlncFq, threads, logDir, sampleName)
         subprocess.call(cmd, shell=True)

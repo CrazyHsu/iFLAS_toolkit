@@ -236,8 +236,10 @@ def correctWithFmlrc2(dataObj, dirSpec=None, useFmlrc2=True, threads=None):
         cmd = cmd + "ropebwt2 -LR 2>{}/{}.ropebwt2.log | tr NT TN | fmlrc2-convert comp_msbwt.npy 1>{}/{}.fmlrc_convert.log 2>&1".format(
             logDir, sampleName, logDir, sampleName)
         subprocess.call(cmd, shell=True)
-        if dataObj.data_processed_location == None:
+        if dataObj.data_processed_location == None and dataObj.data_location:
             dataObj.data_processed_location = os.path.join(baseDir, "preprocess", dataObj.tgs_plat.lower(), "rawFlnc.fq")
+        else:
+            makeLink(dataObj.data_processed_location, "rawFlnc.fq")
         cmd = "seqkit seq --rna2dna {} -w 0 > raw.dna.fastq".format(dataObj.data_processed_location)
         subprocess.call(cmd, shell=True)
         cmd = "fmlrc2 -t {} -C 10 comp_msbwt.npy raw.dna.fastq fmlrc_corrected.fasta 1>{}/{}.fmlrc.log 2>&1".format(

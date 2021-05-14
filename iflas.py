@@ -8,9 +8,20 @@ Last modified: 2021-04-29 14:19:36
 '''
 
 import sys, argparse, time, pybedtools
+import multiprocessing
 from multiprocessing import Pool
 from commonFuncs import *
 from Config import *
+
+class NoDaemonProcess(multiprocessing.Process):
+    def _get_daemon(self):
+        return False
+    def _set_daemon(self, value):
+        pass
+    daemon = property(_get_daemon, _set_daemon)
+
+class MyPool(multiprocessing.pool.Pool):
+    Process = NoDaemonProcess
 
 def mergeSample(strain2data):
     sampleMergedToProcess = {}
@@ -78,7 +89,7 @@ def iflas(args):
 
     pybedtools.set_tempdir(dirSpec.tmp_dir)
     if args.command == 'preproc':
-        pool = Pool(processes=len(dataToProcess))
+        pool = MyPool(processes=len(dataToProcess))
         from preprocess import preprocess
         for dataObj in dataToProcess:
             dataObj.single_run_threads = int(optionTools.threads / float(len(dataToProcess)))
@@ -101,7 +112,7 @@ def iflas(args):
     if optionTools.merge_data_from_same_strain:
         sampleMergedToProcess = mergeSample(strain2data)
         processNum = len(list(nestedDictValues(sampleMergedToProcess)))
-        pool = Pool(processes=processNum)
+        pool = MyPool(processes=processNum)
         for proj in sampleMergedToProcess:
             for ref_strain in sampleMergedToProcess[proj]:
                 for strain in sampleMergedToProcess[proj][ref_strain]:
@@ -142,14 +153,10 @@ def iflas(args):
                             from palen_as import palen_as
                             # palen_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, sampleMerged=optionTools.merge_data_from_same_strain)
                             pool.apply_async(palen_as, (dataObj, refParams, dirSpec, optionTools.merge_data_from_same_strain))
-                        if args.command == 'report':
-                            from report import report
-                            # report(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
-                            pool.apply_async(report, (dataObj, refParams, dirSpec))
         pool.close()
         pool.join()
     else:
-        pool = Pool(processes=len(dataToProcess))
+        pool = MyPool(processes=len(dataToProcess))
         for dataObj in dataToProcess:
             refParams = refInfoParams[dataObj.ref_strain]
             dataObj.single_run_threads = int(optionTools.threads / float(len(dataToProcess)))
@@ -187,10 +194,7 @@ def iflas(args):
                 from palen_as import palen_as
                 # palen_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, sampleMerged=optionTools.merge_data_from_same_strain)
                 pool.apply_async(palen_as, (dataObj, refParams, dirSpec, optionTools.merge_data_from_same_strain))
-            if args.command == 'report':
-                from report import report
-                # report(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
-                pool.apply_async(report, (dataObj, refParams, dirSpec))
+
         pool.close()
         pool.join()
         if args.command == 'diff_as':
@@ -201,6 +205,10 @@ def iflas(args):
         if args.command == 'go':
             from go import go
             go(args)
+        if args.command == 'report':
+            from report import report
+            # report(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
+            pool.apply_async(report, (dataToProcess, refInfoParams, dirSpec))
     pybedtools.cleanup(remove_all=True)
 
 if __name__ == "__main__":
