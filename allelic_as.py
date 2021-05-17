@@ -18,7 +18,7 @@ min_bq = 13
 ploidy = 2
 
 def getASpairedIsoforms(asFile, collapsedGroupFile, isoformFile, asType="SE", filterByCount=0, mergeByJunc=True):
-    collapsedTrans2reads = getDictFromFile(collapsedGroupFile, sep="\t", inlineSep=",", valueCol=1)
+    collapsedTrans2reads = getDictFromFile(collapsedGroupFile, sep="\t", inlineSep=",", valueCol=2)
     isoBedObj = BedFile(isoformFile, type="bed12+")
     asPairs = {}
     with open(asFile) as f:
@@ -60,8 +60,8 @@ def getASpairedIsoforms(asFile, collapsedGroupFile, isoformFile, asType="SE", fi
                             excJuncCombDict["monoExon"].append(excIso)
 
                 for item in itertools.product(incJuncCombDict.values(), excJuncCombDict.values()):
-                    newInclusionIsos = [x for x in item[0] if collapsedTrans2reads[x] >= filterByCount]
-                    newExclusionIsos = [x for x in item[1] if collapsedTrans2reads[x] >= filterByCount]
+                    newInclusionIsos = [x for x in item[0] if len(collapsedTrans2reads[x]) >= filterByCount]
+                    newExclusionIsos = [x for x in item[1] if len(collapsedTrans2reads[x]) >= filterByCount]
                     if len(newInclusionIsos) == 0 or len(newExclusionIsos) == 0:
                         continue
                     '''the isoform PB.x.x split by "." to determine gene PB.x'''
@@ -291,9 +291,12 @@ def allelic_as(dataObj=None, refParams=None, dirSpec=None):
         for asType in resultDict[gene]:
             for partial in resultDict[gene][asType]:
                 for comb in resultDict[gene][asType][partial]:
-                    for haplo in resultDict[gene][asType][partial][comb]:
-                        haplo2isos = resultDict[gene][asType][partial][comb][haplo]
-                        print >> partialOut, "\t".join([gene, asType, haplo2isos[0], haplo, haplo2isos[1]])
+                    haplos = resultDict[gene][asType][partial][comb]
+                    haplotype1, haplotype2 = haplos.keys()
+                    print >>partialOut, "\t".join([gene, asType, haplotype1, haplos[haplotype1], haplotype2, haplos[haplotype2]])
+                    # for haplo in resultDict[gene][asType][partial][comb]:
+                    #     haplo2isos = resultDict[gene][asType][partial][comb][haplo]
+                    #     print >> partialOut, "\t".join([gene, asType, haplo, haplo2isos])
     partialOut.close()
     os.chdir(prevDir)
     print getCurrentTime() + " Identify allelic-specific AS events for project {} sample {} done!".format(projectName, sampleName)

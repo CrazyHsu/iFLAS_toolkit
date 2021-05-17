@@ -56,23 +56,35 @@ class SE(Bed12):
 
 
 #########################################
-def drawSSmotif(asMotif=None, outPrefix=None):
+def drawSSmotif(asMotif=None, outPrefix=None, asType="IR"):
     with open(asMotif) as f:
         lineList = f.readlines()
         mySum = sum([int(i.strip("\n").split("\t")[1]) for i in lineList])
-        tmp = open("tmp.txt", "w")
+        tmp = open("{}.tmp.txt".format(outPrefix), "w")
         if len(lineList) < 4:
             for i in lineList:
                 lineInfo = i.strip("\n").split("\t")
-                print >> tmp, "\t".join([lineInfo[0], str(float(lineInfo[1])/mySum)])
+                if asType == "A3SS":
+                    spliceSite = "-{}".format(lineInfo[0])
+                elif asType == "A5SS":
+                    spliceSite = "{}-".format(lineInfo[0])
+                else:
+                    spliceSite = lineInfo[0]
+                print >> tmp, "\t".join([spliceSite, str(float(lineInfo[1])/mySum)])
         else:
             for i in lineList[0:3]:
                 lineInfo = i.strip("\n").split("\t")
-                print >> tmp, "\t".join([lineInfo[0], str(float(lineInfo[1]) / mySum)])
+                if asType == "A3SS":
+                    spliceSite = "-{}".format(lineInfo[0])
+                elif asType == "A5SS":
+                    spliceSite = "{}-".format(lineInfo[0])
+                else:
+                    spliceSite = lineInfo[0]
+                print >> tmp, "\t".join([spliceSite, str(float(lineInfo[1]) / mySum)])
             otherSum = sum([int(i.strip("\n").split("\t")[1]) for i in lineList[3:]])
             print >> tmp, "\t".join(["Other", str(float(otherSum)/mySum)])
         tmp.close()
-        cmd = "cat tmp.txt | bar.R -fillV=V1 -fp -lgPos=top -w=12 -p={}.ssMotif.pdf 2>/dev/null".format(outPrefix)
+        cmd = "cat {}.tmp.txt | bar.R -fillV=V1 -fp -lgPos=top -w=12 -p={}.ssMotif.pdf 2>/dev/null".format(outPrefix, outPrefix)
         subprocess.call(cmd, shell=True, executable="/bin/bash")
         # os.remove("tmp.txt")
         # os.remove(asMotif)
@@ -793,10 +805,12 @@ def motifAroundPA(bed6plus=None, up1=100, down1=100, up2=100, down2=100, refFast
             else:
                 if start > down1 and end + up1 < chrLenDict[chrom]:
                     singleNucleotideUpBedList.append(" ".join(map(str, [chrom, end, end + up1, name, ".", strand])))
-                    singleNucleotideDownBedList.append(" ".join(map(str, [chrom, start - down1 - 1, start-1, name, ".", strand])))
+                    downLeft = start - down1 - 1 if start - down1 - 1 > 0 else 0
+                    singleNucleotideDownBedList.append(" ".join(map(str, [chrom, downLeft, start-1, name, ".", strand])))
                 if start > down2 and end + up2 + 5 < chrLenDict[chrom]:
                     sixNucleotideUpBedList.append(" ".join(map(str, [chrom, end, end + up2 + 5, name, ".", strand])))
-                    sixNucleotideDownBedList.append(" ".join(map(str, [chrom, start - down2 - 5, start, name, ".", strand])))
+                    downLeft = start - down2 - 5 if start - down2 - 5 > 0 else 0
+                    sixNucleotideDownBedList.append(" ".join(map(str, [chrom, downLeft, start, name, ".", strand])))
         singleNucleotideUpBedObj = pybedtools.BedTool("\n".join(singleNucleotideUpBedList), from_string=True)
         singleNucleotideDownBedObj = pybedtools.BedTool("\n".join(singleNucleotideDownBedList), from_string=True)
         sixNucleotideUpBedObj = pybedtools.BedTool("\n".join(sixNucleotideUpBedList), from_string=True)

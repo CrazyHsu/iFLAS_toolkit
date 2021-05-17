@@ -1,0 +1,7 @@
+project sample  condition   repeat  bamFile paired  readsLength
+test    sample1 conditionA  repeat1 ./sample1_repeat1_reads.fq/bam  paired  150
+test    sample1 conditionA  repeat2 ./sample1_repeat2_reads.fq/bam  paired  150
+test    sample2 conditionB  repeat1 ./sample2_repeat1_reads.fq/bam  paired  150
+test    sample2 conditionB  repeat2 ./sample2_repeat2_reads.fq/bam  paired  150
+test    sample3 conditionC  repeat1 ./sample3_repeat1_reads.fq/bam  paired  150
+test    sample3 conditionC  repeat2 ./sample3_repeat2_reads.fq/bam  paired  150

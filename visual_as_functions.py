@@ -61,12 +61,14 @@ def resizeTrackRatio(itemCounts):
 def processTargetGenes(targetGenes):
     if os.path.isfile(targetGenes):
         return getDictFromFile(targetGenes)
-    elif "," in targetGenes:
-        return targetGenes.split(",")
     else:
-        raise Exception("Please input target genes in corrected format: "
-                        "1. Input the genes in string split by comma; "
-                        "2. Input the genes in a file one gene per line")
+        return targetGenes.split(",")
+    # elif "," in targetGenes:
+    #     return targetGenes.split(",")
+    # else:
+    #     raise Exception("Please input target genes in corrected format: "
+    #                     "1. Input the genes in string split by comma; "
+    #                     "2. Input the genes in a file one gene per line")
 
 def parallelPlotterAnno(gene, gpeTargetGenePickle, sampleTargetGenePickle, dataObjs, dirSpec):
     projectName, sampleName = dataObjs.project_name, dataObjs.sample_name
@@ -97,7 +99,7 @@ def parallelPlotterAnno(gene, gpeTargetGenePickle, sampleTargetGenePickle, dataO
     plotMaxpos = max(gpeMaxposList)
     targetGeneRegion = "{}:{}-{}".format(targetGeneChrom, plotMinpos, plotMaxpos)
     os.system("genePredToGtf file {} {} -source=iFLAS".format(geneModelGPE, geneModelGTF))
-    os.system("gene_model_to_splicegraph.py -m {} -o {}".format(geneModelGTF, geneModelGFF))
+    os.system("gene_model_to_splicegraph.py -m {} -o {} 2>/dev/null".format(geneModelGTF, geneModelGFF))
     geneModelHidePlot = PlotSection(section_name="[GeneModelGraph]", source_file=geneModelGTF,
                                     gene_name=gene, relative_size=5.0,
                                     title_string="Gene Model for %gene", hide=True)
@@ -120,8 +122,8 @@ def parallelPlotterAnno(gene, gpeTargetGenePickle, sampleTargetGenePickle, dataO
     os.system("genePredToGtf file {} {} -source=iFLAS".format(postCorrIsoGPE, postCorrIsoGTF))
     postCorrIsoItemCounts = len(postCorrIsoforms)
     postCorrIsoRelativeSize = resizeTrackRatio(postCorrIsoItemCounts)
-    os.system("gene_model_to_splicegraph.py -m {} -o {} -a".format(postCorrIsoGTF, postCorrIsoGFF))
-    postCorrIsoPlotType = "splice_graph" if postCorrIsoItemCounts < 30 else "isoforms"
+    os.system("gene_model_to_splicegraph.py -m {} -o {} -a 2>/dev/null".format(postCorrIsoGTF, postCorrIsoGFF))
+    postCorrIsoPlotType = "isoforms"
     postCorrIsoPlot = PlotSection(section_name="[AllReadsCollapse]", plot_type=postCorrIsoPlotType,
                                   source_file=postCorrIsoGFF, relative_size=postCorrIsoRelativeSize,
                                   title_string="Corrected isoforms and AS events in %s from TGS data" % gene)
@@ -153,5 +155,5 @@ def parallelPlotterAnno(gene, gpeTargetGenePickle, sampleTargetGenePickle, dataO
             print >> cfgOut, readsPlot.printStr()
 
     cfgOut.close()
-    os.system("plotter.py %s.cfg" % gene)
+    os.system("plotter.py %s.cfg 2>/dev/null" % gene)
     # removeFiles(ngsSams)

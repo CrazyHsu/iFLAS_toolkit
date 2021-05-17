@@ -21,19 +21,19 @@ def validateSamples(compCondFile, dataToProcess):
             if "condition" in compCond.columns:
                 for i, row in compCond.iterrows():
                     conditions.add(row.condition)
+                    samples.extend([x for x in dataToProcess if x.project_name == row.project and x.condition == row.condition])
             else:
                 raise Exception("Please set the condition in {}".format(compCondFile))
-            with open(compCondFile) as f:
-                for line in f.readlines()[1:]:
-                    infoList = line.strip("\n").split("\t")
-                    samples = [x for x in dataToProcess if x.project_name == infoList[0] and x.condition == infoList[2]]
-                    conditions.add(infoList[2])
-        elif isinstance(compCondFile, basestring):
+            samples = list(set(samples))
+            # with open(compCondFile) as f:
+            #     for line in f.readlines()[1:]:
+            #         infoList = line.strip("\n").split("\t")
+            #         samples = [x for x in dataToProcess if x.project_name == infoList[0] and x.condition == infoList[2]]
+            #         conditions.add(infoList[2])
+        else:
             compCondList = compCondFile.split(",")
             samples = [x for x in dataToProcess if x.condition in set(compCondList)]
             conditions = set(compCondList)
-        else:
-            raise Exception("There maybe something wrong!")
     else:
         samples = dataToProcess
     return samples, conditions
@@ -181,6 +181,20 @@ def diff_as1(dataToProcess, compCondFile=None, dirSpec=None, sampleMerged=False)
         cmd = "rmats.py --b1 {} --b2 {} --gtf {} --od {} -t {} --readLength {} --tstat {} --nthread {}"
         cmd = cmd.format(b1File, b2File, gtfFile, compOutDir, sample2bamDict[cond1][2], sample2bamDict[cond1][3], currentThreads, currentThreads)
         subprocess.call(cmd, shell=True)
+
+        resolveDir("sigDiffAS", chdir=False)
+        irDiff = pd.read_csv("{}/RI.MATS.JC.txt".format(compOutDir), sep="\t")
+        seDiff = pd.read_csv("{}/SE.MATS.JC.txt".format(compOutDir), sep="\t")
+        a3ssDiff = pd.read_csv("{}/A3SS.MATS.JC.txt".format(compOutDir), sep="\t")
+        a5ssDiff = pd.read_csv("{}/A5SS.MATS.JC.txt".format(compOutDir), sep="\t")
+        irDiff = irDiff.loc[irDiff.FDR <= 0.05]
+        seDiff = seDiff.loc[seDiff.FDR <= 0.05]
+        a3ssDiff = a3ssDiff.loc[a3ssDiff.FDR <= 0.05]
+        a5ssDiff = a5ssDiff.loc[a5ssDiff.FDR <= 0.05]
+        irDiff.to_csv("sigDiffAS/IR.sig.txt", sep="\t", header=True, index=False)
+        seDiff.to_csv("sigDiffAS/SE.sig.txt", sep="\t", header=True, index=False)
+        a3ssDiff.to_csv("sigDiffAS/A3SS.sig.txt", sep="\t", header=True, index=False)
+        a5ssDiff.to_csv("sigDiffAS/A5SS.sig.txt", sep="\t", header=True, index=False)
 
     os.chdir(prevDir)
     print getCurrentTime() + " Identify differential alternative spliced isoforms done!"

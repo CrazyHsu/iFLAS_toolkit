@@ -148,4 +148,4 @@ def find_as(dataObj=None, refParams=None, dirSpec=None):
     find_python(isoformBed, tofuGroupFile, dataObj=dataObj, refParams=refParams)
     # find_perl()
     os.chdir(prevDir)
-    print getCurrentTime() + " Alternative splicing events identifying for project {} sample {}...".format(projectName, sampleName)
+    print getCurrentTime() + " Alternative splicing events identifying for project {} sample {} done!".format(projectName, sampleName)

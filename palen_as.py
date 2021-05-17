@@ -45,7 +45,7 @@ def polyaLenCalling(dataObj=None, refParams=None, dirSpec=None):
         raise Exception("Please specify the correct directory contain fast5 files!")
 
 def getASpairedIsoforms(asFile, collapsedGroupFile, isoformFile, asType="SE", filterByCount=0, mergeByJunc=True):
-    collapsedTrans2reads = getDictFromFile(collapsedGroupFile, sep="\t", inlineSep=",", valueCol=1)
+    collapsedTrans2reads = getDictFromFile(collapsedGroupFile, sep="\t", inlineSep=",", valueCol=2)
     isoBedObj = BedFile(isoformFile, type="bed12+")
     asPairs = {}
     with open(asFile) as f:
@@ -149,7 +149,7 @@ def getPalenAS(flncReads2Palen, isoformFile, collapsedTrans2reads=None, asPairs=
                     for j in exclusionReads2palen:
                         print >>out, "\t".join(map(str, [gene, asType, "_".join(exclusionIsos), j[0], j[1]]))
                     out.close()
-                    cmd = "Rscript violin_paired.R {}".format(fileOut)
+                    # cmd = "Rscript violin_paired.R {}".format(fileOut)
                     # subprocess.call(cmd, shell=True)
 
                     isoBedObj = BedFile(isoformFile, type="bed12+")
@@ -162,8 +162,8 @@ def getPalenAS(flncReads2Palen, isoformFile, collapsedTrans2reads=None, asPairs=
                     incRepIso.name = "_".join(inclusionIsos)
                     excRepIso.name = "_".join(exclusionIsos)
 
-                    print >> sigOut, str(incRepIso) + "\t" + "\t".join(["inclusion", "_".join(inclusionIsos), ",".join(map(str, aPalen)), str(len(aPalen))])
-                    print >> sigOut, str(excRepIso) + "\t" + "\t".join(["exclusion", "_".join(exclusionIsos), ",".join(map(str, bPalen)), str(len(bPalen))])
+                    print >> sigOut, str(incRepIso) + "\t" + "\t".join(["_".join(inclusionIsos)+"+"+"_".join(exclusionIsos), "inclusion", ",".join(map(str, aPalen)), str(len(aPalen))])
+                    print >> sigOut, str(excRepIso) + "\t" + "\t".join(["_".join(inclusionIsos)+"+"+"_".join(exclusionIsos), "exclusion", ",".join(map(str, bPalen)), str(len(bPalen))])
         sigOut.close()
     os.chdir(prevDir)
 

@@ -1,0 +1,9 @@
+project	sample	condition	repeat	bamFile	paired	readsLength
+wanglab	B73	B73	repeat1	/data/CrazyHsu_data/Projects/isoseq/iFLAS_toolkit_20210510/wanglab_test/wanglab/B73/mapping/rna-seq/alignment/repeat0/repeat0.sorted.bam	paired	150
+wanglab	Chang72	Chang72	repeat1	/data/CrazyHsu_data/Projects/isoseq/iFLAS_toolkit_20210510/wanglab_test/wanglab/Chang72/mapping/rna-seq/alignment/repeat0/repeat0.sorted.bam	paired	150
+wanglab	Huangzao4	Huangzao4	repeat1	/data/CrazyHsu_data/Projects/isoseq/iFLAS_toolkit_20210510/wanglab_test/wanglab/Huangzao4/mapping/rna-seq/alignment/repeat0/repeat0.sorted.bam	paired	150
+wanglab	Mo17	Mo17	repeat1	/data/CrazyHsu_data/Projects/isoseq/iFLAS_toolkit_20210510/wanglab_test/wanglab/Mo17/mapping/rna-seq/alignment/repeat0/repeat0.sorted.bam	paired	150
+wanglab	PH207	PH207	repeat1	/data/CrazyHsu_data/Projects/isoseq/iFLAS_toolkit_20210510/wanglab_test/wanglab/PH207/mapping/rna-seq/alignment/repeat0/repeat0.sorted.bam	paired	150
+wanglab	PH4CV	PH4CV	repeat1	/data/CrazyHsu_data/Projects/isoseq/iFLAS_toolkit_20210510/wanglab_test/wanglab/PH4CV/mapping/rna-seq/alignment/repeat0/repeat0.sorted.bam	paired	150
+wanglab	PH6WC	PH6WC	repeat1	/data/CrazyHsu_data/Projects/isoseq/iFLAS_toolkit_20210510/wanglab_test/wanglab/PH6WC/mapping/rna-seq/alignment/repeat0/repeat0.sorted.bam	paired	150
+wanglab	Zheng58	Zheng58	repeat1	/data/CrazyHsu_data/Projects/isoseq/iFLAS_toolkit_20210510/wanglab_test/wanglab/Zheng58/mapping/rna-seq/alignment/repeat0/repeat0.sorted.bam	paired	150

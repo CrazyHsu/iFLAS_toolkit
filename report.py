@@ -7,10 +7,12 @@ Created on: 2021-04-29 16:20:53
 Last modified: 2021-04-29 16:20:53
 '''
 from commonFuncs import *
+from commonObjs import *
 import pandas as pd
 import matplotlib.pyplot as plt
-import PyPDF2
+import PyPDF2, glob, itertools
 import seaborn as sns
+from rpy2 import robjects
 
 def reportReadsCorrectedEval(dataObj=None, dirSpec=None):
     filtrationDir = os.path.join(dirSpec.out_dir, dataObj.project_name, dataObj.sample_name, "filtration")
@@ -23,6 +25,7 @@ def reportReadsCorrectedEval(dataObj=None, dirSpec=None):
     for x in [rawMapped, correctMapped]:
         sns.distplot(x.accuracy, kde=False, bins=range(0, 100, 10))
     plt.savefig("readsCorrectResult.pdf")
+    return ["readsCorrectResult.pdf"]
     # g.savefig("readsCorrectResult.pdf")
 
 def gcAcrossRead(fxFile, outFile, interval=20):
@@ -55,54 +58,263 @@ def reportReadsContentEval(dataObj=None, refParams=None):
 
     cmd = "seqkit fx2tab -n -l {} | cut -f 2 > readsLength.lst".format(flncFx)
     subprocess.call(cmd, shell=True)
-    cmd = "gpe2bed {} | bedLength.pl | cut -f 13 > referenceGeneLength.lst".format(refParams.ref_gpe)
+    cmd = "gpe2bed.pl {} | bedLength.pl | cut -f 13 > referenceGeneLength.lst".format(refParams.ref_gpe)
     subprocess.call(cmd, shell=True)
     cmd = '''distrCurves.R -x1=0 -x2=10000 -d -x='Binned Length (limited in 0-10000)' -w=15 *.lst -b=150 -p=LengthDistribution.curve.pdf 2>/dev/null'''
     subprocess.call(cmd, shell=True)
     cmd = '''boxes.R -ng -no *.lst -p=LengthDistribution.box.pdf 2>/dev/null'''
     subprocess.call(cmd, shell=True)
+    return ["GC_of_raw_flnc_reads.pdf", "GC_across_raw_flnc_read.pdf", "LengthDistribution.curve.pdf", "LengthDistribution.box.pdf"]
 
-def reportASPattern():
-    pass
+def reportASPattern(dataObj=None, dirSpec=None):
+    def _print(asType, annotation, count):
+        return "{}\t{}\t".format(asType, annotation, count)
 
-def reportTargetGeneStructure():
-    pass
+    def _getLineCount(myFile, sep="\t", grepStr=None, col=0, uniq=True, header=False):
+        if header == False:
+            df = pd.read_csv(myFile, sep=sep, header=None)
+        else:
+            df = pd.read_csv(myFile, sep=sep)
+        if grepStr:
+            df = df.loc[df.iloc[:, col] == grepStr]
+        else:
+            df = df.loc[df.iloc[:, col].index]
+        return len(df)
 
-def reportNovelHqAS():
-    pass
+    ######################### AS type pattern
+    baseDir = os.path.join(dirSpec.out_dir, dataObj.project_name, dataObj.sample_name)
+    characAsDir = os.path.join(baseDir, "as_events", "characterization")
+    IR_anno = os.path.join(characAsDir, "IR.anno.lst")
+    IR_novel = os.path.join(characAsDir, "IR.novel.lst")
+    SE_anno = os.path.join(characAsDir, "SE.anno.lst")
+    SE_novel = os.path.join(characAsDir, "SE.novel.lst")
+    A3SS_anno = os.path.join(characAsDir, "A3SS.anno.lst")
+    A3SS_novel = os.path.join(characAsDir, "A3SS.novel.lst")
+    A5SS_anno = os.path.join(characAsDir, "A5SS.anno.lst")
+    A5SS_novel = os.path.join(characAsDir, "A5SS.novel.lst")
+    APA_anno = os.path.join(characAsDir, "annoPA.tsv")
+    APA_novel = os.path.join(characAsDir, "novelPA.tsv")
+    PA = os.path.join(characAsDir, "statistic.APA.tsv")
 
-def reportAllelicAS():
-    pass
+    outStr = "AS_type\tannotation\tcount"
+    outStr += "\n{}".format(_print("IR", "anno", _getLineCount(IR_anno)))
+    outStr += "\n{}".format(_print("IR", "novel", _getLineCount(IR_novel)))
+    outStr += "\n{}".format(_print("SE", "anno", _getLineCount(SE_anno)))
+    outStr += "\n{}".format(_print("SE", "novel", _getLineCount(SE_novel)))
+    outStr += "\n{}".format(_print("A3SS", "anno", _getLineCount(A3SS_anno)))
+    outStr += "\n{}".format(_print("A3SS", "novel", _getLineCount(A3SS_novel)))
+    outStr += "\n{}".format(_print("A5SS", "anno", _getLineCount(A5SS_anno)))
+    outStr += "\n{}".format(_print("A5SS", "novel", _getLineCount(A5SS_novel)))
+    outStr += "\n{}".format(_print("APA", "anno", _getLineCount(APA_anno)))
+    outStr += "\n{}".format(_print("APA", "novel", _getLineCount(APA_novel)))
+    outStr += "\n{}".format(_print("PA", "anno", _getLineCount(PA, grepStr="Known", col=2)))
+    outStr += "\n{}".format(_print("PA", "novel", _getLineCount(PA, grepStr="Novel", col=2)))
+    asAnnoFile = "{}_{}.AS_annotation.txt".format(dataObj.project_name, dataObj.sample_name)
+    out = open(asAnnoFile, "w")
+    print >>out, outStr
+    out.close()
 
-def reportPaTailAS():
-    pass
+    ######################### splice site
+    irSpliceSite = pd.read_csv(os.path.join(characAsDir, "IR.tmp.txt"), sep="\t", header=None, names=["Dinucleotide", "Count"])
+    seIncSpliceSite = pd.read_csv(os.path.join(characAsDir, "SE.inc.tmp.txt"), sep="\t", header=None, names=["Dinucleotide", "Count"])
+    seExcSpliceSite = pd.read_csv(os.path.join(characAsDir, "SE.exc.tmp.txt"), sep="\t", header=None, names=["Dinucleotide", "Count"])
+    a3ssIncSpliceSite = pd.read_csv(os.path.join(characAsDir, "A3SS.inc.tmp.txt"), sep="\t", header=None, names=["Dinucleotide", "Count"])
+    a3ssExcSpliceSite = pd.read_csv(os.path.join(characAsDir, "A3SS.exc.tmp.txt"), sep="\t", header=None, names=["Dinucleotide", "Count"])
+    a5ssIncSpliceSite = pd.read_csv(os.path.join(characAsDir, "A5SS.inc.tmp.txt"), sep="\t", header=None, names=["Dinucleotide", "Count"])
+    a5ssExcSpliceSite = pd.read_csv(os.path.join(characAsDir, "A5SS.exc.tmp.txt"), sep="\t", header=None, names=["Dinucleotide", "Count"])
+    irSpliceSite["AS_type"], seIncSpliceSite["AS_type"], seExcSpliceSite["AS_type"], a3ssIncSpliceSite["AS_type"], \
+    a3ssExcSpliceSite["AS_type"], a5ssIncSpliceSite["AS_type"], a5ssExcSpliceSite["AS_type"] = \
+        "IR", "SE", "SE", "A3SS", "A3SS", "A5SS", "A5SS"
+    irSpliceSite["Category"], seIncSpliceSite["Category"], seExcSpliceSite["Category"], a3ssIncSpliceSite["Category"], \
+    a3ssExcSpliceSite["Category"], a5ssIncSpliceSite["Category"], a5ssExcSpliceSite["Category"] = \
+        "Inc", "Inc", "Exc", "Inc", "Exc", "Inc", "Exc"
+    spliceSite = pd.concat([irSpliceSite, seIncSpliceSite, seExcSpliceSite, a3ssIncSpliceSite, a3ssExcSpliceSite, a5ssIncSpliceSite, a5ssExcSpliceSite])
+    asSpliceSiteFile = "{}_{}.AS_spliceSite.txt".format(dataObj.project_name, dataObj.sample_name)
+    spliceSite.to_csv(asSpliceSiteFile, sep="\t", header=True, index=False)
 
-def reportDiffAS():
-    pass
+    ######################### plot
+    from plotRscriptStrs import plotAsCountStatisticsStr
+    robjects.r(plotAsCountStatisticsStr)
+    asAnnoPdf = "{}_{}.AS_annotation.pdf".format(dataObj.project_name, dataObj.sample_name)
+    robjects.r.plotAsCountStatistics(asAnnoFile, asAnnoPdf)
 
-def reportTargetGeneGoEnrichment():
-    pass
+    from plotRscriptStrs import plotAsDinucleotideStatisticsStr
+    robjects.r(plotAsDinucleotideStatisticsStr)
+    asSpliceSitePdf = "{}_{}.AS_spliceSite.pdf".format(dataObj.project_name, dataObj.sample_name)
+    robjects.r.plotAsCountStatistics(asSpliceSiteFile, asSpliceSitePdf)
+    return [asAnnoPdf, asSpliceSitePdf]
 
-def report(dataObj=None, refParams=None, dirSpec=None):
-    projectName, sampleName = dataObj.project_name, dataObj.sample_name
-    print getCurrentTime() + " Generate plot report for project {} sample {}...".format(projectName, sampleName)
-    baseDir = os.path.join(dirSpec.out_dir, projectName, sampleName)
-    prevDir = os.getcwd()
-    reportDir = os.path.join(baseDir, "reports")
-    resolveDir(reportDir)
-    if dataObj.use_fmlrc2:
-        reportReadsCorrectedEval(dataObj=dataObj, dirSpec=dirSpec)
-    reportReadsContentEval(dataObj=dataObj)
-    # preprocess (readsCorrectResult.pdf)
-    # mapping
-    # filtration
-    # collapse
-    # identify_as (asType_anno_novel, splice_pattern)
-    # visual_as (单独页面, all target gene visualization.pdf)
-    # rank_as (novel_as_rank.pdf)
-    # allelic_as (Gviz.pdf, 单独页面, 所有的as都存在一个pdf中)
-    # palen_as (polyaTailLength.pdf, asTypeCountDistribute.pdf)
-    # diff_as (as_distribute.pdf)
-    # go (go_enrichment.pdf)
-    os.chdir(prevDir)
-    print getCurrentTime() + " Generate plot report for project {} sample {} done!".format(projectName, sampleName)
+def reportTargetGeneStructure(dataObj=None, dirSpec=None):
+    baseDir = os.path.join(dirSpec.out_dir, dataObj.project_name, dataObj.sample_name, "isoViewer")
+    allGenePlots = glob.glob("{}/*/*.pdf".format(baseDir))
+    writer = PyPDF2.PdfFileWriter()
+    for i in allGenePlots:
+        pdf = PyPDF2.PdfFileReader(open(i, "rb"))
+        for page in range(pdf.getNumPages()):
+            writer.addPage(pdf.getPage(page))
+    output = open("allTargetGeneStructure.pdf", "wb")
+    writer.write(output)
+    output.close()
+
+def reportNovelHqAS(dataObj=None, dirSpec=None):
+    isoformScoreFile = os.path.join(dirSpec.out_dir, dataObj.project_name, dataObj.sample_name, "isoIdentity", "isoformScore.txt")
+    # isoformScore = pd.read_csv(isoformScoreFile, sep="\t", header=None, names=["gene", "isos", "count", "total_count", "freq", "annotation"])
+    from plotRscriptStrs import plotNovelHqASStr
+    robjects.r(plotNovelHqASStr)
+    robjects.r.plotNovelHqAS(isoformScoreFile, "isoformScore.pdf")
+    return ["isoformScore.pdf"]
+
+def reportAllelicAS(dataObj=None, refParams=None, dirSpec=None):
+    baseDir = os.path.join(dirSpec.out_dir, dataObj.project_name, dataObj.sample_name)
+    asHaploFile = os.path.join(baseDir, "allelicAS", "partialAsRelatedHaplotype.txt")
+    asHaplo = pd.read_csv(asHaploFile, header=None, sep="\t", names=["gene", "asType", "haplo1", "haplo1isos", "haplo2", "haplo2isos"])
+    asHaplo = asHaplo.loc[:, ["gene", "haplo1", "haplo1isos", "haplo2", "haplo2isos"]].drop_duplicates()
+    allelicAsDir = os.path.join(os.getcwd(), "allelicAsPlots")
+    resolveDir(allelicAsDir)
+    isoformFile = os.path.join(baseDir, "collapse", "isoformGrouped.bed12+")
+    collapsedGroupFile = os.path.join(baseDir, "collapse", "tofu.collapsed.group.txt")
+    flncBam = os.path.join(baseDir, "mapping", "flnc.mm2.sorted.bam")
+    isoBedObj = BedFile(isoformFile, type="bed12+")
+    collapsedTrans2reads = getDictFromFile(collapsedGroupFile, sep="\t", inlineSep=",", valueCol=2)
+    allelicAsPdfs = []
+    for i, row in asHaplo.iterrows():
+        outName = "{}.allelic_as".format(row.gene)
+        resolveDir(outName)
+        haplo1isosOut = open("haplo1isosOut.bed", "w")
+        haplo2isosOut = open("haplo2isosOut.bed", "w")
+        chromStarts = []
+        chromEnds = []
+        chrom = set()
+        for x in row.haplo1isos.split("_"):
+            chromStarts.append(isoBedObj.reads[x].chromStart)
+            chromEnds.append(isoBedObj.reads[x].chromEnd)
+            chrom.add(isoBedObj.reads[x].chrom)
+            print >>haplo1isosOut, str(isoBedObj.reads[x])
+        for x in row.haplo2isos.split("_"):
+            chromStarts.append(isoBedObj.reads[x].chromStart)
+            chromEnds.append(isoBedObj.reads[x].chromEnd)
+            chrom.add(isoBedObj.reads[x].chrom)
+            print >>haplo2isosOut, str(isoBedObj.reads[x])
+        haplo1isosOut.close()
+        haplo2isosOut.close()
+        cmd = '''
+            bed2gpe.pl -g 13 haplo1isosOut.bed > haplo1isosOut.gpe;
+            genePredToGtf file haplo1isosOut.gpe haplo1isosOut.gtf;
+            bed2gpe.pl -g 13 haplo2isosOut.bed > haplo2isosOut.gpe;
+            genePredToGtf file haplo2isosOut.gpe haplo2isosOut.gtf;
+        '''
+        subprocess.call(cmd, shell=True, executable="/bin/bash")
+
+        haplo1reads = itertools.chain.from_iterable([collapsedTrans2reads[x] for x in row.haplo1isos.split("_")])
+        haplo2reads = itertools.chain.from_iterable([collapsedTrans2reads[x] for x in row.haplo2isos.split("_")])
+        getSubSamByName(flncBam, nameList=haplo1reads, isBam=True, nameListIsFile=False, outPrefix="haplo1.flnc",
+                        sort=True, threads=dataObj.single_run_threads)
+        getSubSamByName(flncBam, nameList=haplo2reads, isBam=True, nameListIsFile=False, outPrefix="haplo2.flnc",
+                        sort=True, threads=dataObj.single_run_threads)
+        cmd = "samtools cat haplo1.flnc.sorted.bam haplo2.flnc.sorted.bam | samtools sort -@ {} > {}.flnc.sorted.bam"
+        cmd = cmd.format(dataObj.single_run_threads, outName)
+        subprocess.call(cmd, shell=True, executable="/bin/bash")
+        refGenome = refParams.ref_genome
+        gtfs = "{},{}".format(os.path.join(os.getcwd(), "haplo1.flnc.sorted.bam"), os.path.join(os.getcwd(), "haplo2.flnc.sorted.bam"))
+        mixedBam = os.path.join(os.getcwd(), "{}.flnc.sorted.bam".format(outName))
+        haploBams = "{},{}".format(os.path.join(os.getcwd(), "haplo1.flnc.sorted.bam"), os.path.join(os.getcwd(), "haplo2.flnc.sorted.bam"))
+
+        targetNgsBam = ""
+        if dataObj.ngs_left_reads or dataObj.ngs_right_reads:
+            ngsBam = os.path.join(baseDir, "mapping", "rna-seq", "reassembly", "tmp.bam")
+            cmd = "samtools view -h {} {} | samtools sort - > ngsReads.sorted.bam".format(ngsBam, "{}:{}-{}".format(list(chrom)[0], min(chromStarts), max(chromEnds)))
+            subprocess.call(cmd, shell=True, executable="/bin/bash")
+            targetNgsBam = os.path.join(os.getcwd(), "ngsReads.sorted.bam")
+
+        from plotRscriptStrs import plotAllelicAsStructureStr
+        robjects.r(plotAllelicAsStructureStr)
+        robjects.r.plotAllelicAsStructure(refGenome, gtfs, mixedBam, haploBams, targetNgsBam, list(chrom)[0], min(chromStarts), max(chromEnds), outName)
+        allelicAsPdfs.append(os.path.join("{}.pdf".format(outName)))
+        os.chdir(allelicAsDir)
+
+    writer = PyPDF2.PdfFileWriter()
+    for i in allelicAsPdfs:
+        pdf = PyPDF2.PdfFileReader(open(i, "rb"))
+        for page in range(pdf.getNumPages()):
+            writer.addPage(pdf.getPage(page))
+    output = open("allelicAS.pdf", "wb")
+    writer.write(output)
+    output.close()
+
+def reportPaTailAS(dataObj=None, dirSpec=None):
+    asType = ["IR", "SE", "A3SS", "A5SS"]
+    from plotRscriptStrs import plotPaTailASStr
+    robjects.r(plotPaTailASStr)
+    palenAsFiles = []
+    for i in asType:
+        sigFile = os.path.join(dirSpec.out_dir, dataObj.project_name, dataObj.sample_name, "palenAS", "mergeByJunc", "{}.palenAndAS.sig.bed12+".format(i))
+        palenAsFiles.append(sigFile)
+    cmd = "cat {} | sort -u > palenAndAS.sig.bed12+".format(" ".join(palenAsFiles))
+    subprocess.call(cmd, shell=True)
+    robjects.r.plotPaTailAsStructure("palenAndAS.sig.bed12+", "palenAndAS.pdf")
+
+def reportDiffAS(dirSpec=None):
+    dasDir = os.path.join(dirSpec.out_dir, "das", "sigDiffAS")
+    irSig = pd.read_csv("{}/IR.sig.txt".format(dasDir), sep="\t", header=True)
+    seSig = pd.read_csv("{}/SE.sig.txt".format(dasDir), sep="\t", header=True)
+    a3ssSig = pd.read_csv("{}/A3SS.sig.txt".format(dasDir), sep="\t", header=True)
+    a5ssSig = pd.read_csv("{}/A5SS.sig.txt".format(dasDir), sep="\t", header=True)
+    sigDict = {"IR": ["IR", len(irSig)], "SE": ["SE", len(seSig)], "A3SS": ["A3SS", len(a3ssSig)], "A5SS": ["A5SS", len(a5ssSig)]}
+    sigDf = pd.DataFrame.from_dict(sigDict, orient="index", columns=["AS_type", "Count"])
+    sigDf.to_csv("sigDiff.AS.txt", sep="\t", index=False, header=True)
+    from plotRscriptStrs import plotDiffASStr
+    robjects.r(plotDiffASStr)
+    robjects.r.plotDiffAS("sigDiff.AS.txt", "sigDiff.AS_distribution.pdf")
+
+
+def mergeAllPlots(plot2merge, outPdf):
+    writer = PyPDF2.PdfFileWriter()
+    for i in plot2merge:
+        pdf = PyPDF2.PdfFileReader(open(i, "rb"))
+        for page in range(pdf.getNumPages()):
+            writer.addPage(pdf.getPage(page))
+    output = open(outPdf, "wb")
+    writer.write(output)
+    output.close()
+
+def report(dataToProcess=None, refInfoParams=None, dirSpec=None):
+    reportDir = os.path.join(dirSpec.out_dir, "reports")
+    for dataObj in dataToProcess:
+        refParams = refInfoParams[dataObj.ref_strain]
+        projectName, sampleName = dataObj.project_name, dataObj.sample_name
+        print getCurrentTime() + " Generate plot report for project {} sample {}...".format(projectName, sampleName)
+        # baseDir = os.path.join(dirSpec.out_dir, projectName, sampleName)
+        prevDir = os.getcwd()
+        # reportDir = os.path.join(baseDir, "reports")
+        # resolveDir(reportDir)
+        subDir = os.path.join(reportDir, "{}_{}".format(projectName, sampleName))
+        resolveDir(subDir)
+
+        plots2merge = []
+        if dataObj.use_fmlrc2:
+            plots2merge.extend(reportReadsCorrectedEval(dataObj=dataObj, dirSpec=dirSpec))
+        plots2merge.extend(reportReadsContentEval(dataObj=dataObj, refParams=refParams))
+        plots2merge.extend(reportASPattern(dataObj=dataObj, dirSpec=dirSpec))
+        reportTargetGeneStructure(dataObj=dataObj, dirSpec=dirSpec)
+        plots2merge.extend(reportNovelHqAS(dataObj=dataObj, dirSpec=dirSpec))
+        reportAllelicAS(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
+        reportPaTailAS(dataObj=dataObj, dirSpec=dirSpec)
+
+        mergedPdf = "{}_{}.merged.pdf".format(projectName, sampleName)
+        mergeAllPlots(plots2merge, mergedPdf)
+        # preprocess (readsCorrectResult.pdf)
+        # mapping
+        # filtration
+        # collapse
+        # identify_as (asType_anno_novel, splice_pattern)
+        # visual_as (单独页面, all target gene visualization.pdf)
+        # rank_as (novel_as_rank.pdf)
+        # allelic_as (Gviz.pdf, 单独页面, 所有的as都存在一个pdf中)
+        # palen_as (polyaTailLength.pdf, asTypeCountDistribute.pdf)
+        # diff_as (as_distribute.pdf)
+        # go (go_enrichment.pdf)
+        os.chdir(prevDir)
+        print getCurrentTime() + " Generate plot report for project {} sample {} done!".format(projectName, sampleName)
+    reportDiffAS(dirSpec=dirSpec)
+    # reportTargetGenesGoEnrichment(dataObj=dataObj, dirSpec=dirSpec)
+

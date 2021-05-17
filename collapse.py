@@ -8,7 +8,8 @@ Last modified: 2021-04-29 16:16:07
 '''
 from commonFuncs import *
 from commonObjs import *
-import pybedtools
+import pybedtools, glob
+from multiprocessing import Pool
 
 def readsAssign(transBedFile, readsBedFile, offset=10, minConsenesusIntronN=1, minCoverageOnRead=0.9, singleLine=True, transColNum=13, readsColNum=13, outPrefix="readsAssign", group=True):
     transBedObj = pybedtools.BedTool(transBedFile)
@@ -186,6 +187,53 @@ def readsAssign(transBedFile, readsBedFile, offset=10, minConsenesusIntronN=1, m
             print >> unambiOut, "\t".join(novelItem) + "\t" + ":".join(map(str, [novelItem[0], novelItem[5], inc]))
         unambiOut.close()
 
+def collapseForSingleChrom(bamFile=None, faFile=None, tmpDir=None, collapseParams=None):
+    resolveDir(tmpDir)
+    cmd = "samtools view {} > tmp.sam".format(bamFile)
+    subprocess.call(cmd, shell=True)
+    if collapseParams.dun_merge_5_shorter:
+        cmd = "collapse_isoforms_by_sam.py --input {} -s tmp.sam --max_5_diff {} --max_3_diff {} " \
+              "--flnc_coverage {} -c {} -i {} --max_fuzzy_junction {} --dun-merge-5-shorter -o tofu 1>/dev/null 2>&1"
+    else:
+        cmd = "collapse_isoforms_by_sam.py --input {} -s tmp.sam --max_5_diff {} --max_3_diff {} " \
+              "--flnc_coverage {} -c {} -i {} --max_fuzzy_junction {} -o tofu 1>/dev/null 2>&1"
+    cmd = cmd.format(faFile, collapseParams.max_5_diff, collapseParams.max_3_diff, collapseParams.fl_coverage,
+                     collapseParams.min_coverage, collapseParams.min_identity, collapseParams.max_fuzzy_junction)
+    subprocess.call(cmd, shell=True)
+
+def splitCollapse(samFile, faFile, collapseParams, threads):
+    cmd = "samtools view -bS {} > tmp.bam; bamtools split -reference -in tmp.bam".format(samFile)
+    subprocess.call(cmd, shell=True)
+    bamFiles = glob.glob("tmp.REF_*.bam")
+    pool = Pool(processes=threads)
+    for i in range(len(bamFiles)):
+        bam = os.path.join(os.getcwd(), bamFiles[i])
+        pool.apply_async(collapseForSingleChrom, (bam, faFile, i, collapseParams))
+    pool.close()
+    pool.join()
+
+def identifyNovelIsoformsByJunctions(gpeFile, bedFile, anno="annoIsoform.bed", novel="novelIsoform.bed"):
+    annoOut = open(anno, "w")
+    novelOut = open(novel, "w")
+    gpeObj = GenePredObj(gpeFile, bincolumn=False)
+    bedObj = BedFile(bedFile, type="bed12+")
+    for i in bedObj.reads:
+        bedGene = bedObj.reads[i].otherList[0]
+        readsIntrons = bedObj.reads[i].introns
+        if len(readsIntrons) < 1: continue
+        if bedGene in gpeObj.geneName2gpeObj:
+            for trans in gpeObj.geneName2gpeObj[bedGene]:
+                transIntrons = trans.introns
+                if not len(set(readsIntrons) - set(transIntrons)):
+                    print >> annoOut, bedObj.reads[i]
+                    break
+            else:
+                print >> novelOut, bedObj.reads[i]
+        else:
+            print >> novelOut, bedObj.reads[i]
+    annoOut.close()
+    novelOut.close()
+
 def collapse(dataObj=None, collapseParams=None, refParams=None, dirSpec=None, threads=10):
     projectName, sampleName = dataObj.project_name, dataObj.sample_name
     print getCurrentTime() + " Collapse with cDNA_cupcake for project {} sample {}...".format(projectName, sampleName)
@@ -219,6 +267,8 @@ def collapse(dataObj=None, collapseParams=None, refParams=None, dirSpec=None, th
                 group=True)
     cmd = "cut -f1-12,14 tofu.collapsed.assigned.unambi.bed12+ > isoformGrouped.bed12+"
     subprocess.call(cmd, shell=True)
+    identifyNovelIsoformsByJunctions(refParams.ref_gpe, "isoformGrouped.bed12+", anno="isoformGrouped.anno.bed12+",
+                                     novel="isoformGrouped.novel.bed12+")
 
     cmd = '''seqkit grep {} -f <(cut -f 2 tofu.collapsed.group.txt | tr ',' '\n') -w 0 > processed.ignore_id_removed.fa'''.format(processedFa)
     subprocess.call(cmd, shell=True, executable="/bin/bash")
