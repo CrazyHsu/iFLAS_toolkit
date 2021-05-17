@@ -75,9 +75,9 @@ def hisat2mapping(dataObj=None, refParams=None, dirSpec=None, threads=10):
     resolveDir(workDir)
     logDir = os.path.join(dirSpec.out_dir, projectName, sampleName, "log")
     resolveDir(logDir, chdir=False)
-    hisat2indexDir = os.path.join(dirSpec.out_dir, "hisat2indexDir")
-    gtfPrefix = os.path.splitext(os.path.basename(refParams.ref_gtf))[0]
-    makeHisat2Index(refParams=refParams, hisat2indexDir=hisat2indexDir, indexPrefix=gtfPrefix, threads=threads)
+    # hisat2indexDir = os.path.join(dirSpec.out_dir, "hisat2indexDir")
+    # gtfPrefix = os.path.splitext(os.path.basename(refParams.ref_gtf))[0]
+    checkAndMakeHisat2Index(refParams=refParams, dirSpec=dirSpec, threads=threads)
 
     batchCreateDir(["alignment", "reassembly"])
     resolveDir("alignment")
@@ -91,9 +91,9 @@ def hisat2mapping(dataObj=None, refParams=None, dirSpec=None, threads=10):
             rightReads = ",".join([r.strip() for r in rightReadsRepeats[i].split(",")])
             repeatName = "repeat" + str(i)
             resolveDir(repeatName)
-            cmd = "hisat2 -x {}/{} -1 {} -2 {} --dta -p {} --max-intronlen 50000 --novel-splicesite-outfile {}.ss " \
+            cmd = "hisat2 -x {} -1 {} -2 {} --dta -p {} --max-intronlen 50000 --novel-splicesite-outfile {}.ss " \
               "--un-conc-gz {}.unmapped.fastq.gz 2>{}/{}.{}.hisat2.log | samtools sort -@ {} -o {}.sorted.bam ".format(
-            hisat2indexDir, gtfPrefix, leftReads, rightReads, threads, repeatName, repeatName, logDir,
+            refParams.hisat2_index, leftReads, rightReads, threads, repeatName, repeatName, logDir,
             sampleName, repeatName, threads, repeatName)
             subprocess.call(cmd, shell=True)
 
@@ -116,9 +116,9 @@ def hisat2mapping(dataObj=None, refParams=None, dirSpec=None, threads=10):
             singleReads = ",".join([i.strip() for i in singleReadsRepeats[i].split(",")])
             repeatName = "repeat" + str(i)
             resolveDir(repeatName)
-            cmd = "hisat2 -x {}/{} -U {} --dta -p {} --max-intronlen 50000 --novel-splicesite-outfile {}.ss " \
+            cmd = "hisat2 -x {} -U {} --dta -p {} --max-intronlen 50000 --novel-splicesite-outfile {}.ss " \
                   "--un-conc {}.unmmaped.fastq 2>{}/{}.{}.hisat2.log | samtools sort -@ {} -o {}.sorted.bam".format(
-                hisat2indexDir, gtfPrefix, singleReads, threads, repeatName, repeatName, logDir,
+                refParams.hisat_index, singleReads, threads, repeatName, repeatName, logDir,
                 sampleName, repeatName, threads, repeatName)
             subprocess.call(cmd, shell=True)
             cmd = "stringtie {}.sorted.bam -o {}.gtf -p {}".format(repeatName, repeatName, threads)

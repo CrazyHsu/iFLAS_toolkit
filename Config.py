@@ -26,8 +26,8 @@ SECTION_TYPE_LIST = [i.lower() for i in REF_SECTION, CCS_PARAMS_SECTION, DATA_CF
 SECTIONTYPE = "section_type"
 REFSTRAIN = "ref_strain"
 
-REF_TAGS = [REFGENOME, REFSIZE, REFANNOGFF, REFANNOGTF, REFANNOGPE, REFBED, REFMM2INDEX] \
-    = ["ref_genome", "ref_size", "ref_gff", "ref_gtf", "ref_gpe", "ref_bed", "ref_mm2_index"]
+REF_TAGS = [REFGENOME, REFSIZE, REFANNOGFF, REFANNOGTF, REFANNOGPE, REFBED, REFMM2INDEX, HISAT2INDEX] \
+    = ["ref_genome", "ref_size", "ref_gff", "ref_gtf", "ref_gpe", "ref_bed", "ref_mm2_index", "hisat2_index"]
 CCS_TAGS = [CCSMINREADLENGTH, CCSMINREADSCORE, CCSMINSUBREADLENGTH, CCSMINCCSLENGTH, CCSMINPREDICTEDACCURACY,
             CCSMINPASS] \
     = ["min_read_length", "min_read_score", "min_subread_length", "min_ccs_length", "min_predicted_accuracy",
@@ -193,6 +193,7 @@ class RefSection(object):
         self.ref_gtf = None
         self.ref_bed = None
         self.ref_mm2_index = "ref.mm2"
+        self.hisat2_index = None
 
     def __setattr__(self, key, value):
         if key != "section_type" and key not in REF_TAGS:

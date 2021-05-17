@@ -26,23 +26,25 @@ def checkFast5Files(fast5Dir):
         if fast5FileCount != fileCount or fqFileCount != fileCount:
             raise Exception("Please check the {} directory which is not a pure fast5 or fastq-containing directory".format(fast5Dir))
 
-def checkHisat2IndexExist(dir):
-    if len(os.listdir(dir)) == 0:
+
+def checkHisat2IndexExist(hisat2index):
+    import glob
+    hisat2indexFiles = glob.glob("ls {}*".format(hisat2index))
+
+    if len(hisat2indexFiles) == 0:
         return False
     else:
         ht2Flag = 0
-        for i in os.listdir(dir):
+        for i in hisat2indexFiles:
             if i.endswith("exon") or i.endswith("ss") or i.endswith("log"):
                 continue
             elif i.endswith("ht2"):
                 ht2Flag = 1
                 continue
             else:
-                return False
-        if ht2Flag:
-            return True
-        else:
-            return False
+                ht2Flag = 0
+                break
+        return True if ht2Flag == 1 else False
 
 def filterFile(originFile=None, targetFile=None, originField=1, targetField=1, mode="i", outFile=None, returnFlag=False):
     originList, targetList = [], []
@@ -93,26 +95,36 @@ def makeLink(sourcePath, targetPath):
         os.remove(targetPath)
     os.symlink(sourcePath, targetPath)
 
-def makeHisat2Index(refParams=None, hisat2indexDir=None, indexPrefix=None, threads=None):
-    # hisat2indexDir = os.path.join(outDir, "hisat2indexDir")
+def makeHisat2Index(refParams=None, dirSpec=None, threads=None):
+    hisat2indexDir = os.path.join(dirSpec.out_dir, "hisat2indexDir")
     if not os.path.exists(hisat2indexDir):
-        os.makedirs(hisat2indexDir)
-
-    if not checkHisat2IndexExist(hisat2indexDir):
+        resolveDir(hisat2indexDir, chdir=False)
+    refAnnoGTF = refParams.ref_gtf
+    gtfPrefix = os.path.splitext(os.path.basename(refAnnoGTF))[0]
+    hisat2index = os.path.join(hisat2indexDir, gtfPrefix)
+    if not checkHisat2IndexExist(hisat2index):
         print str(datetime.datetime.now()) + " Start Hisat2 indexing..."
-        batchCreateDir([hisat2indexDir])
-        # gtfPrefix = os.path.splitext(os.path.basename(refParams.ref_gtf))[0]
-        refAnnoGTF = refParams.ref_gtf
-        refAnnoSS = "{}/{}.ss".format(hisat2indexDir, indexPrefix)
+        resolveDir(hisat2indexDir, chdir=False)
+
+        refAnnoSS = "{}/{}.ss".format(hisat2indexDir, gtfPrefix)
         cmd = "hisat2_extract_splice_sites.py {} >{}".format(refAnnoGTF, refAnnoSS)
         subprocess.call(cmd, shell=True)
-        refAnnoExon = "{}/{}.exon".format(hisat2indexDir, indexPrefix)
+        refAnnoExon = "{}/{}.exon".format(hisat2indexDir, gtfPrefix)
         cmd = "hisat2_extract_exons.py {} >{}".format(refAnnoGTF, refAnnoExon)
         subprocess.call(cmd, shell=True)
-        cmd = "hisat2-build -p {} --ss {} --exon {} {} {}/{} 1>{}/hisat2build.log 2>&1"
-        cmd = cmd.format(threads, refAnnoSS, refAnnoExon, refParams.ref_genome, hisat2indexDir, indexPrefix, hisat2indexDir)
+        cmd = "hisat2-build -p {} --ss {} --exon {} {} {} 1>{}/hisat2build.log 2>&1"
+        cmd = cmd.format(threads, refAnnoSS, refAnnoExon, refParams.ref_genome, hisat2index, hisat2indexDir)
         subprocess.call(cmd, shell=True)
         print str(datetime.datetime.now()) + " End Hisat2 indexing!"
+    return hisat2index
+
+
+def checkAndMakeHisat2Index(refParams=None, threads=None, dirSpec=None):
+    if not refParams.hisat2_index:
+        refParams.hisat2_index = makeHisat2Index(refParams=refParams, dirSpec=dirSpec, threads=threads)
+    else:
+        if not checkHisat2IndexExist(refParams.hisat2_index):
+            refParams.hisat2_index = makeHisat2Index(refParams=refParams, dirSpec=dirSpec, threads=threads)
 
 def sortTupleList(tupleList):
     return sorted(tupleList)
