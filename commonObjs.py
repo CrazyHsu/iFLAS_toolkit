@@ -781,7 +781,7 @@ class MergedTgsSample(object):
     #     self.mergedName = "{}_all".format(self.strain)
 
     def __str__(self):
-        return "%s:%s_all:%s, %s:%s:%s, %s:%s:%s:%s:%s, %d" % \
+        return "%s:%s:%s, %s:%s:%s, %s:%s:%s:%s:%s, %d" % \
                (self.project_name, self.sample_name, self.ref_strain, self.tgs_plat, self.strategy,
                 self.data_processed_location, self.ngs_left_reads, self.ngs_right_reads, self.ngs_reads_paired,
                 self.ngs_reads_length, self.ngs_junctions, self.single_run_threads)

@@ -146,7 +146,7 @@ def parallelPlotterAnno(gene, gpeTargetGenePickle, sampleTargetGenePickle, dataO
             repeatName = "repeat" + str(n)
             bamFile = os.path.join(baseDir, "mapping", "rna-seq", "alignment", "{}/{}.sorted.bam".format(repeatName, repeatName))
             targetSam = "{}.{}.sam".format(repeatName, gene)
-            cmd = "samtools view {} {} > {}".format(bamFile, targetGeneRegion, targetSam)
+            cmd = "samtools view -h {} {} > {}".format(bamFile, targetGeneRegion, targetSam)
             subprocess.call(cmd, shell=True)
             ngsSams.append(targetSam)
             readsPlot = PlotSection(section_name="[Reads_%s]" % (repeatName), plot_type="read_depth",
