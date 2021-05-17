@@ -143,7 +143,26 @@ def hisat2mapping(dataObj=None, refParams=None, dirSpec=None, threads=10):
 def mapping(dataObj=None, minimap2Params=None, refParams=None, dirSpec=None, threads=10):
     projectName, sampleName = dataObj.project_name, dataObj.sample_name
     if dataObj.data_processed_location:
-        minimap2mapping(dataObj=dataObj, minimap2Params=minimap2Params, refParams=refParams, dirSpec=dirSpec, threads=threads)
+        if isinstance(dataObj.data_processed_location, list):
+            validFiles = []
+            for i in dataObj.data_processed_location:
+                if validateFile(i):
+                    validFiles.append(i)
+            cmd = "cat {} > merged.fx".format(" ".join(validFiles))
+            subprocess.call(cmd, shell=True)
+            dataObj.data_processed_location = os.path.join(os.getcwd(), "merged.fx")
+            if dataObj.use_fmlrc2:
+                from preprocess import correctWithFmlrc2
+                correctWithFmlrc2(dataObj, dirSpec=dirSpec, useFmlrc2=True, threads=dataObj.single_run_threads)
+            minimap2mapping(dataObj=dataObj, minimap2Params=minimap2Params, refParams=refParams, dirSpec=dirSpec,
+                            threads=threads)
+        elif isinstance(dataObj.data_processed_location, basestring):
+            if validateFile(dataObj.data_processed_location):
+                if dataObj.use_fmlrc2:
+                    from preprocess import correctWithFmlrc2
+                    correctWithFmlrc2(dataObj, dirSpec=dirSpec, useFmlrc2=True, threads=dataObj.single_run_threads)
+                minimap2mapping(dataObj=dataObj, minimap2Params=minimap2Params, refParams=refParams, dirSpec=dirSpec,
+                                threads=threads)
     else:
         if dataObj.use_fmlrc2:
             dataObj.data_processed_location = os.path.join(dirSpec.out_dir, projectName, sampleName, "preprocess", "fmlrc", "fmlrc_corrected.fasta")

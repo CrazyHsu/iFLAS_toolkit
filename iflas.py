@@ -41,17 +41,18 @@ def mergeSample(strain2data):
                 sampleMerged.data_processed_location = [x.data_processed_location for x in dataObjs]
 
                 minLeftRepeats = min([len(x.ngs_left_reads.split(";")) for x in dataObjs])
-                leftReads = []
                 leftReadsRepeats = []
                 for x1 in range(minLeftRepeats):
+                    leftReads = []
                     for x in dataObjs:
                         leftReads.append(x.ngs_left_reads.split(";")[x1])
                     leftReadsRepeats.append(",".join(leftReads))
                 sampleMerged.ngs_left_reads = ";".join(leftReadsRepeats)
-                rightReads = []
+
                 rightReadsRepeats = []
                 minRightRepeats = min([len(x.ngs_right_reads.split(";")) for x in dataObjs])
                 for x1 in range(minRightRepeats):
+                    rightReads = []
                     for x in dataObjs:
                         rightReads.append(x.ngs_right_reads.split(";")[x1])
                     rightReadsRepeats.append(",".join(rightReads))
@@ -110,7 +111,7 @@ def iflas(args):
 
     if optionTools.merge_data_from_same_strain:
         sampleMergedToProcess = mergeSample(strain2data)
-        processNum = len(list(nestedDictValues(sampleMergedToProcess)))
+        processNum = len(list(nestedDictValues(sampleMergedToProcess, returned="value")))
         pool = MyPool(processes=processNum)
         for proj in sampleMergedToProcess:
             for ref_strain in sampleMergedToProcess[proj]:
