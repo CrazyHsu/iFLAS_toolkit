@@ -241,7 +241,7 @@ def allelic_as(dataObj=None, refParams=None, dirSpec=None):
     readStatFile = "tofu.collapsed.read_stat.txt"
     makeAbundanceFile(collapsedGroupFile, outFile=readStatFile)
 
-    processedFa = os.path.join(baseDir, "filtration", "processed.fa")
+    processedFq = os.path.join(dirSpec.out_dir, projectName, sampleName, "preprocess", dataObj.tgs_plat.lower(), "rawFlnc.fq")
     collapsedGff = os.path.join(baseDir, "collapse", "tofu.collapsed.good.gff")
     isoformFile = os.path.join(baseDir, "collapse", "isoformGrouped.bed12+")
 
@@ -258,7 +258,7 @@ def allelic_as(dataObj=None, refParams=None, dirSpec=None):
     asPairs = {"SE": seAsPairs, "IR": irAsPairs, "A5SS": a5ssAsPairs, "A3SS": a3ssAsPairs}
 
     cmd = "select_loci_to_phase.py {} {} {} {} -c 10 1>/dev/null 2>&1"
-    cmd = cmd.format(refParams.ref_genome, processedFa, collapsedGff, readStatFile)
+    cmd = cmd.format(refParams.ref_genome, processedFq, collapsedGff, readStatFile)
     subprocess.call(cmd, shell=True)
 
     lociDir = glob.glob("by_loci/*size*")

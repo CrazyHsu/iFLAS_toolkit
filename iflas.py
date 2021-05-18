@@ -36,9 +36,15 @@ def mergeSample(strain2data):
                 sampleMerged.sample_name = "{}_all".format(strain)
                 sampleMerged.ref_strain = ref_strain
                 sampleMerged.strain = strain
+                sampleMerged.condition = "{}_all".format(strain)
                 sampleMerged.tgs_plat = dataObjs[0].tgs_plat
                 sampleMerged.strategy = dataObjs[0].strategy
                 sampleMerged.data_processed_location = [x.data_processed_location for x in dataObjs]
+                polyaLocationDict = {}
+                for x in dataObjs:
+                    if x.polya_location != None and validateFile(x.polya_location):
+                        polyaLocationDict.update({x.sample_name, x.polya_location})
+                sampleMerged.polya_location = polyaLocationDict if len(polyaLocationDict) else None
 
                 minLeftRepeats = min([len(x.ngs_left_reads.split(";")) for x in dataObjs])
                 leftReadsRepeats = []
@@ -152,7 +158,7 @@ def iflas(args):
                     if args.command == 'palen_as':
                         from palen_as import palen_as
                         # palen_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, sampleMerged=optionTools.merge_data_from_same_strain)
-                        pool.apply_async(palen_as, (dataObj, refParams, dirSpec, optionTools.merge_data_from_same_strain))
+                        pool.apply_async(palen_as, (dataObj, refParams, dirSpec, dataToProcess))
         pool.close()
         pool.join()
     else:
@@ -193,7 +199,7 @@ def iflas(args):
             if args.command == 'palen_as':
                 from palen_as import palen_as
                 # palen_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, sampleMerged=optionTools.merge_data_from_same_strain)
-                pool.apply_async(palen_as, (dataObj, refParams, dirSpec, optionTools.merge_data_from_same_strain))
+                pool.apply_async(palen_as, (dataObj, refParams, dirSpec, dataToProcess))
 
         pool.close()
         pool.join()
@@ -208,7 +214,7 @@ def iflas(args):
         if args.command == 'report':
             from report import report
             # report(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
-            pool.apply_async(report, (dataToProcess, refInfoParams, dirSpec))
+            report(dataToProcess=dataToProcess, refInfoParams=refInfoParams, dirSpec=dirSpec)
     pybedtools.cleanup(remove_all=True)
 
 if __name__ == "__main__":

@@ -167,7 +167,7 @@ def getPalenAS(flncReads2Palen, isoformFile, collapsedTrans2reads=None, asPairs=
         sigOut.close()
     os.chdir(prevDir)
 
-def palen_as(dataObj=None, refParams=None, dirSpec=None, filterByCount=10, sampleMerged=False):
+def palen_as(dataObj=None, refParams=None, dirSpec=None, filterByCount=10, dataToProcess=None):
     projectName, sampleName = dataObj.project_name, dataObj.sample_name
     print getCurrentTime() + " Identify functional poly(A) tail length related to AS for project {} sample {}...".format(projectName, sampleName)
     prevDir = os.getcwd()
@@ -190,10 +190,20 @@ def palen_as(dataObj=None, refParams=None, dirSpec=None, filterByCount=10, sampl
     asPairs = {"SE": seAsPairs, "IR": irAsPairs, "A5SS": a5ssAsPairs, "A3SS": a3ssAsPairs}
 
     palenFile = dataObj.polya_location
-    if palenFile == None or not validateFile(palenFile):
-        polyaLenCalling(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
+    palenFileList = []
+    if palenFile == None:
+        for tmpObj in dataToProcess:
+            polyaLenCalling(dataObj=tmpObj, refParams=refParams, dirSpec=dirSpec)
+            palenFileList.append(tmpObj.polya_location)
+    elif isinstance(palenFile, dict):
+        for tmpObj in dataToProcess:
+            if tmpObj.sample_name not in palenFile:
+                polyaLenCalling(dataObj=tmpObj, refParams=refParams, dirSpec=dirSpec)
+                palenFileList.append(tmpObj.polya_location)
+    else:
+        palenFileList.append(palenFile)
 
-    palen = pd.read_csv(palenFile, sep="\t")
+    palen = pd.concat([pd.read_csv(x, sep="\t") for x in palenFileList])
     palen_pass = palen.loc[palen.qc_tag == "PASS", ]
     flncReads2Palen = dict(zip(palen_pass.readname, palen_pass.polya_length))
 
