@@ -1,5 +1,6 @@
 from commonFuncs import *
 from commonObjs import *
+from collections import Counter
 import itertools
 
 def asEnumerate(irFile, seFile, a3ssFile, a5ssFile, paFile, isoformFile, isoform2readsFile=None):
@@ -244,7 +245,9 @@ def scoreAsIsoform(irFile, seFile, a3ssFile, a5ssFile, paFile, isoformFile, coll
             infoList = line.strip("\n").split("\t")
             chrom, retentionStart, retentionEnd, name, score, strand = infoList[0:6]
             retentionStart, retentionEnd, score = int(retentionStart), int(retentionEnd), float(score)
-            geneName = name.split(":")[0]
+            geneNameList = [".".join(x.split(".")[0:2]) for x in infoList[7].split(",") + infoList[9].split(",")]
+            geneName = Counter(geneNameList).most_common()[0][0]
+            # geneName = name.split(":")[0]
             uniqueName = "{}@{}@{}".format(chrom, strand, geneName)
             if uniqueName not in juncCombDict:
                 juncCombDict[uniqueName] = []
@@ -257,7 +260,9 @@ def scoreAsIsoform(irFile, seFile, a3ssFile, a5ssFile, paFile, isoformFile, coll
             chrom, skipedExonStart, skipedExonEnd, name, score, strand = infoList[0:6]
             juncStart = int(name.split(":")[-1].split("@")[0])
             juncEnd = int(name.split(":")[-1].split("@")[-1])
-            geneName = name.split(":")[0]
+            geneNameList = [".".join(x.split(".")[0:2]) for x in infoList[16].split(",") + infoList[18].split(",")]
+            geneName = Counter(geneNameList).most_common()[0][0]
+            # geneName = name.split(":")[0]
             uniqueName = "{}@{}@{}".format(chrom, strand, geneName)
             if uniqueName not in juncCombDict:
                 juncCombDict[uniqueName] = []
@@ -270,7 +275,9 @@ def scoreAsIsoform(irFile, seFile, a3ssFile, a5ssFile, paFile, isoformFile, coll
             chrom, a3ssStart, a3ssEnd, name, score, strand = infoList[0:6]
             excJuncStart = int(infoList[-1].split(":")[-1].split("-")[0])
             excJuncEnd = int(infoList[-1].split(":")[-1].split("-")[1])
-            geneName = name.split(":")[0]
+            geneNameList = [".".join(x.split(".")[0:2]) for x in infoList[7].split(",") + infoList[9].split(",")]
+            geneName = Counter(geneNameList).most_common()[0][0]
+            # geneName = name.split(":")[0]
             uniqueName = "{}@{}@{}".format(chrom, strand, geneName)
             if uniqueName not in juncCombDict:
                 juncCombDict[uniqueName] = []
@@ -283,7 +290,9 @@ def scoreAsIsoform(irFile, seFile, a3ssFile, a5ssFile, paFile, isoformFile, coll
             chrom, a5ssStart, a5ssEnd, name, score, strand = infoList[0:6]
             excJuncStart = int(infoList[-1].split(":")[-1].split("-")[0])
             excJuncEnd = int(infoList[-1].split(":")[-1].split("-")[1])
-            geneName = name.split(":")[0]
+            geneNameList = [".".join(x.split(".")[0:2]) for x in infoList[7].split(",") + infoList[9].split(",")]
+            geneName = Counter(geneNameList).most_common()[0][0]
+            # geneName = name.split(":")[0]
             uniqueName = "{}@{}@{}".format(chrom, strand, geneName)
             if uniqueName not in juncCombDict:
                 juncCombDict[uniqueName] = []
@@ -445,10 +454,18 @@ def scoreAsIsoform(irFile, seFile, a3ssFile, a5ssFile, paFile, isoformFile, coll
     asEnumerateOut.close()
     isoformScoreOut.close()
 
-irFile = "/home/xufeng/xufeng/iso-seq/iFLAS_toolkit/test_data/Zm00001d050245.IR.PB.bed6+"
-seFile = "/home/xufeng/xufeng/iso-seq/iFLAS_toolkit/test_data/Zm00001d050245.SE.PB.bed12+"
-a3ssFile = "/home/xufeng/xufeng/iso-seq/iFLAS_toolkit/test_data/Zm00001d050245.A3SS.PB.bed6+"
-a5ssFile = "/home/xufeng/xufeng/iso-seq/iFLAS_toolkit/test_data/Zm00001d050245.A5SS.PB.bed6+"
+# irFile = "/home/xufeng/xufeng/iso-seq/iFLAS_toolkit/test_data/Zm00001d050245.IR.PB.bed6+"
+# seFile = "/home/xufeng/xufeng/iso-seq/iFLAS_toolkit/test_data/Zm00001d050245.SE.PB.bed12+"
+# a3ssFile = "/home/xufeng/xufeng/iso-seq/iFLAS_toolkit/test_data/Zm00001d050245.A3SS.PB.bed6+"
+# a5ssFile = "/home/xufeng/xufeng/iso-seq/iFLAS_toolkit/test_data/Zm00001d050245.A5SS.PB.bed6+"
+# paFile = "/home/xufeng/xufeng/iso-seq/iFLAS_toolkit/test_data/test.pa"
+# isoformFile = "/home/xufeng/xufeng/iso-seq/iFLAS_toolkit/test_data/Zm00001d050245.deSingleExonIsoform.bed12+"
+# isoform2readsFile = "/home/xufeng/xufeng/iso-seq/iFLAS_toolkit/test_data/tofu.collapsed.group.txt"
+#
+irFile = "/home/xufeng/xufeng/iso-seq/iFLAS_toolkit/test_data/Zm00001d002801.IR.bed"
+seFile = "/home/xufeng/xufeng/iso-seq/iFLAS_toolkit/test_data/test.pa"
+a3ssFile = "/home/xufeng/xufeng/iso-seq/iFLAS_toolkit/test_data/test.pa"
+a5ssFile = "/home/xufeng/xufeng/iso-seq/iFLAS_toolkit/test_data/test.pa"
 paFile = "/home/xufeng/xufeng/iso-seq/iFLAS_toolkit/test_data/test.pa"
-isoformFile = "/home/xufeng/xufeng/iso-seq/iFLAS_toolkit/test_data/Zm00001d050245.deSingleExonIsoform.bed12+"
-isoform2readsFile = "/home/xufeng/xufeng/iso-seq/iFLAS_toolkit/test_data/tofu.collapsed.group.txt"
+isoformFile = "/home/xufeng/xufeng/iso-seq/iFLAS_toolkit/test_data/PB.4729.bed12+"
+collapsedTrans2reads = "/home/xufeng/xufeng/iso-seq/iFLAS_toolkit/test_data/Zm00001d002801.collapsed.group.txt"

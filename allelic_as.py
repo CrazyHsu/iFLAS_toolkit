@@ -137,7 +137,7 @@ def runPhaser(targetDir):
     cmd = "minimap2 -ax splice fake.fasta ccs.fastq >ccs.sam 2>/dev/null"
     subprocess.call(cmd, shell=True)
 
-    cmd = "samtools sort ccs.sam > ccs.bam; samtools mpileup --min-BQ {} -f fake.fasta -s out.bam > ccs.mpileup".format(min_bq)
+    cmd = "samtools sort ccs.sam > ccs.sorted.bam 2>/dev/null; samtools mpileup --min-BQ {} -f fake.fasta -s ccs.sorted.bam > ccs.mpileup 2>/dev/null".format(min_bq)
     subprocess.call(cmd, shell=True)
     # pysam.sort("-o", "ccs.sorted.bam", "ccs.sam", catch_stdout=False)
     # pileupRes = pysam.mpileup("--min-BQ", str(min_bq), "-f", "fake.fasta", "-s", "ccs.sorted.bam")
@@ -161,10 +161,12 @@ def relationshipBetweenAlleleSpecifiAndAS(partial=False, nopartial=False, isoPai
             partialHaplotype = "phased.partial.cleaned.human_readable.txt"
             if os.path.exists(partialHaplotype):
                 partialDF = pd.read_csv(partialHaplotype, skiprows=[0], index_col=0, sep="\t")
+                if not set(isoPair[0] + isoPair[1]).issubset(set(partialDF.columns)): continue
                 incIsoDf = partialDF.loc[:, isoPair[0]].sum(axis=1)
                 excIsoDf = partialDF.loc[:, isoPair[1]].sum(axis=1)
                 mergedDf = pd.concat([incIsoDf, excIsoDf], axis=1)
                 if (pd.DataFrame.max(mergedDf) >= 5).all() and (pd.DataFrame.min(mergedDf) <= 3).all():
+                    if len(mergedDf[(mergedDf.T != 0).any()]) == 1: continue
                     chi2Result = chi2_contingency(mergedDf)
                     chi2Pvalue = chi2Result[1]
                     if chi2Pvalue <= 0.001:
@@ -177,10 +179,12 @@ def relationshipBetweenAlleleSpecifiAndAS(partial=False, nopartial=False, isoPai
             nopartialHaplotype = "phased.nopartial.cleaned.human_readable.txt"
             if os.path.exists(nopartialHaplotype):
                 nopartialDF = pd.read_csv(nopartialHaplotype, skiprows=[0], index_col=0, sep="\t")
+                if not set(isoPair[0] + isoPair[1]).issubset(set(nopartialDF.columns)): continue
                 incIsoDf = nopartialDF.loc[:, isoPair[0]].sum(axis=1)
                 excIsoDf = nopartialDF.loc[:, isoPair[1]].sum(axis=1)
                 mergedDf = pd.concat([incIsoDf, excIsoDf], axis=1)
                 if (pd.DataFrame.max(mergedDf) >= 5).all() and (pd.DataFrame.min(mergedDf) <= 3).all():
+                    if len(mergedDf[(mergedDf.T != 0).any()]) == 1: continue
                     chi2Result = chi2_contingency(mergedDf)
                     chi2Pvalue = chi2Result[1]
                     if chi2Pvalue <= 0.001:
@@ -188,43 +192,6 @@ def relationshipBetweenAlleleSpecifiAndAS(partial=False, nopartial=False, isoPai
                         haploInc = incIsoDf.idxmax(axis=0)
                         haploExc = excIsoDf.idxmax(axis=0)
                         resultDict["nopartial"].update({combination: dict(zip([haploInc, haploExc], [["inc", "_".join(isoPair[0])], ["exc", "_".join(isoPair[1])]]))})
-
-    # for isoIndex in range(len(isoPairs)):
-    #     # partial
-    #     if partial:
-    #         partialHaplotype = "phased.partial.cleaned.human_readable.txt"
-    #         if os.path.exists(partialHaplotype):
-    #             partialDF = pd.read_csv(partialHaplotype, skiprows=[0], index_col=0, sep="\t")
-    #             indexPairs = list(itertools.combinations(partialDF.index, 2))
-    #             if len(set(isoPairs[isoIndex]) & set(partialDF.columns)) == 2:
-    #                 for pairIndex in range(len(indexPairs)):
-    #                     subPartialDF = partialDF.reindex(index=indexPairs[pairIndex], columns=isoPairs[isoIndex])
-    #                     if (pd.DataFrame.max(subPartialDF) >= 5).all() and (pd.DataFrame.min(subPartialDF) <= 3).all():
-    #                         partialChi2Results = chi2_contingency(subPartialDF)
-    #                         partialChi2Pvalue = partialChi2Results[1]
-    #                         if partialChi2Pvalue <= 0.001:
-    #                             combination = "_".join(map(str, ["partial", isoIndex, pairIndex]))
-    #                             rows = subPartialDF.index
-    #                             columns = subPartialDF.columns
-    #                             resultDict["partial"].update({combination: dict(zip(rows, columns))})
-    #
-    #
-    #     # no-partial
-    #     if nopartial:
-    #         nopartialHaplotype = "phased.nopartial.cleaned.human_readable.txt"
-    #         if os.path.exists(nopartialHaplotype):
-    #             nopartialDF = pd.read_csv(nopartialHaplotype, skiprows=[0], index_col=0, sep="\t")
-    #             indexPairs = list(itertools.combinations(nopartialDF.index, 2))
-    #             if len(set(isoPairs[isoIndex]) & set(nopartialDF.columns)) == 2:
-    #                 for pairIndex in range(len(indexPairs)):
-    #                     subNopartialDF = nopartialDF.reindex(index=indexPairs[pairIndex], columns=isoPairs[isoIndex])
-    #                     nopartialChi2Results = chi2_contingency(subNopartialDF)
-    #                     nopartialChi2Pvalue = nopartialChi2Results[1]
-    #                     if nopartialChi2Pvalue <= 0.05:
-    #                         combination = "_".join(map(str, ["nopartial", isoIndex, pairIndex]))
-    #                         rows = subNopartialDF.index
-    #                         columns = subNopartialDF.columns
-    #                         resultDict["nopartial"].update({combination: dict(zip(rows, columns))})
 
         if not partial and not nopartial:
             raise Exception("You must specify either partial or nopartial file")
@@ -257,6 +224,8 @@ def allelic_as(dataObj=None, refParams=None, dirSpec=None):
 
     asPairs = {"SE": seAsPairs, "IR": irAsPairs, "A5SS": a5ssAsPairs, "A3SS": a3ssAsPairs}
 
+    cmd = "rm -R by_loci"
+    subprocess.call(cmd, shell=True)
     cmd = "select_loci_to_phase.py {} {} {} {} -c 10 1>/dev/null 2>&1"
     cmd = cmd.format(refParams.ref_genome, processedFq, collapsedGff, readStatFile)
     subprocess.call(cmd, shell=True)
