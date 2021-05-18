@@ -157,7 +157,7 @@ def iflas(args):
                         pool.apply_async(allelic_as, (dataObj, refParams, dirSpec))
                     if args.command == 'palen_as':
                         from palen_as import palen_as
-                        # palen_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, sampleMerged=optionTools.merge_data_from_same_strain)
+                        # palen_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, dataToProcess=dataToProcess)
                         pool.apply_async(palen_as, (dataObj, refParams, dirSpec, dataToProcess))
         pool.close()
         pool.join()
@@ -198,7 +198,7 @@ def iflas(args):
                 pool.apply_async(allelic_as, (dataObj, refParams, dirSpec))
             if args.command == 'palen_as':
                 from palen_as import palen_as
-                # palen_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, sampleMerged=optionTools.merge_data_from_same_strain)
+                # palen_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, dataToProcess=dataToProcess)
                 pool.apply_async(palen_as, (dataObj, refParams, dirSpec, dataToProcess))
 
         pool.close()

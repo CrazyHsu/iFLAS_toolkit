@@ -142,6 +142,7 @@ def getPalenAS(flncReads2Palen, isoformFile, collapsedTrans2reads=None, asPairs=
                 stat_val1, p_val1 = stats.ttest_ind(aPalen, bPalen)
                 stat_val2, p_val2 = stats.kruskal(aPalen, bPalen)
                 if float(p_val1) <= 0.001 and float(p_val2) <= 0.001:
+                    count += 1
                     fileOut = "{}_{}_{}.txt".format(asType, gene, count)
                     out = open(fileOut, "w")
                     for i in inclusionReads2palen:

@@ -16,6 +16,7 @@ from rpy2 import robjects
 
 def reportReadsCorrectedEval(dataObj=None, dirSpec=None):
     filtrationDir = os.path.join(dirSpec.out_dir, dataObj.project_name, dataObj.sample_name, "filtration")
+    if not validateDir(filtrationDir): return []
     rawMappedBed = os.path.join(filtrationDir, "raw.mapped.addCVandID.bed12+")
     correctMappedBed = os.path.join(filtrationDir, "mapped.addCVandID.bed12+")
     rawMapped = pd.read_csv(rawMappedBed, sep="\t", header=None)
@@ -44,8 +45,13 @@ def gcAcrossRead(fxFile, outFile, interval=20):
         print >>out, "\t".join(map(str, gcList))
     out.close()
 
-def reportReadsContentEval(dataObj=None, refParams=None):
-    flncFx = dataObj.data_processed_location
+def reportReadsContentEval(dataObj=None, refParams=None, dirSpec=None):
+    if dataObj.data_processed_location and validateFile(dataObj.data_processed_location):
+        flncFx = dataObj.data_processed_location
+    else:
+        flncFx = os.path.join(dirSpec.out_dir, dataObj.project_name, dataObj.sample_name, "preprocess", dataObj.tgs_plat.lower(), "rawFlnc.fq")
+        if not validateFile(flncFx):
+            return []
 
     cmd = "seqkit fx2tab -n -g {} | cut -f 1,2 > GC_of_raw_flnc_reads.log".format(flncFx)
     subprocess.call(cmd, shell=True)
@@ -84,6 +90,7 @@ def reportASPattern(dataObj=None, dirSpec=None):
     ######################### AS type pattern
     baseDir = os.path.join(dirSpec.out_dir, dataObj.project_name, dataObj.sample_name)
     characAsDir = os.path.join(baseDir, "as_events", "characterization")
+    if not validateDir(characAsDir): return []
     IR_anno = os.path.join(characAsDir, "IR.anno.lst")
     IR_novel = os.path.join(characAsDir, "IR.novel.lst")
     SE_anno = os.path.join(characAsDir, "SE.anno.lst")
@@ -145,8 +152,9 @@ def reportASPattern(dataObj=None, dirSpec=None):
     return [asAnnoPdf, asSpliceSitePdf]
 
 def reportTargetGeneStructure(dataObj=None, dirSpec=None):
-    baseDir = os.path.join(dirSpec.out_dir, dataObj.project_name, dataObj.sample_name, "isoViewer")
-    allGenePlots = glob.glob("{}/*/*.pdf".format(baseDir))
+    isoViewerDir = os.path.join(dirSpec.out_dir, dataObj.project_name, dataObj.sample_name, "isoViewer")
+    if not validateDir(baseDir): return
+    allGenePlots = glob.glob("{}/*/*.pdf".format(isoViewerDir))
     writer = PyPDF2.PdfFileWriter()
     for i in allGenePlots:
         pdf = PyPDF2.PdfFileReader(open(i, "rb"))
@@ -158,6 +166,7 @@ def reportTargetGeneStructure(dataObj=None, dirSpec=None):
 
 def reportNovelHqAS(dataObj=None, dirSpec=None):
     isoformScoreFile = os.path.join(dirSpec.out_dir, dataObj.project_name, dataObj.sample_name, "isoIdentity", "isoformScore.txt")
+    if not validateFile(isoformScoreFile): return []
     # isoformScore = pd.read_csv(isoformScoreFile, sep="\t", header=None, names=["gene", "isos", "count", "total_count", "freq", "annotation"])
     from plotRscriptStrs import plotNovelHqASStr
     robjects.r(plotNovelHqASStr)
@@ -167,6 +176,7 @@ def reportNovelHqAS(dataObj=None, dirSpec=None):
 def reportAllelicAS(dataObj=None, refParams=None, dirSpec=None):
     baseDir = os.path.join(dirSpec.out_dir, dataObj.project_name, dataObj.sample_name)
     asHaploFile = os.path.join(baseDir, "allelicAS", "partialAsRelatedHaplotype.txt")
+    if not validateFile(asHaploFile): return
     asHaplo = pd.read_csv(asHaploFile, header=None, sep="\t", names=["gene", "asType", "haplo1", "haplo1isos", "haplo2", "haplo2isos"])
     asHaplo = asHaplo.loc[:, ["gene", "haplo1", "haplo1isos", "haplo2", "haplo2isos"]].drop_duplicates()
     allelicAsDir = os.path.join(os.getcwd(), "allelicAsPlots")
@@ -242,12 +252,14 @@ def reportAllelicAS(dataObj=None, refParams=None, dirSpec=None):
     output.close()
 
 def reportPaTailAS(dataObj=None, dirSpec=None):
+    palenASDir = dirSpec.out_dir, dataObj.project_name, dataObj.sample_name, "palenAS"
+    if not validateDir(baseDir): return
     asType = ["IR", "SE", "A3SS", "A5SS"]
     from plotRscriptStrs import plotPaTailASStr
     robjects.r(plotPaTailASStr)
     palenAsFiles = []
     for i in asType:
-        sigFile = os.path.join(dirSpec.out_dir, dataObj.project_name, dataObj.sample_name, "palenAS", "mergeByJunc", "{}.palenAndAS.sig.bed12+".format(i))
+        sigFile = os.path.join(palenASDir, "mergeByJunc", "{}.palenAndAS.sig.bed12+".format(i))
         palenAsFiles.append(sigFile)
     cmd = "cat {} | sort -u > palenAndAS.sig.bed12+".format(" ".join(palenAsFiles))
     subprocess.call(cmd, shell=True)
@@ -255,6 +267,7 @@ def reportPaTailAS(dataObj=None, dirSpec=None):
 
 def reportDiffAS(dirSpec=None):
     dasDir = os.path.join(dirSpec.out_dir, "das", "sigDiffAS")
+    if not validateDir(dasDir): return
     irSig = pd.read_csv("{}/IR.sig.txt".format(dasDir), sep="\t", header=True)
     seSig = pd.read_csv("{}/SE.sig.txt".format(dasDir), sep="\t", header=True)
     a3ssSig = pd.read_csv("{}/A3SS.sig.txt".format(dasDir), sep="\t", header=True)
@@ -268,6 +281,7 @@ def reportDiffAS(dirSpec=None):
 
 
 def mergeAllPlots(plot2merge, outPdf):
+    if len(plot2merge) == 0: return
     writer = PyPDF2.PdfFileWriter()
     for i in plot2merge:
         pdf = PyPDF2.PdfFileReader(open(i, "rb"))
@@ -293,7 +307,7 @@ def report(dataToProcess=None, refInfoParams=None, dirSpec=None):
         plots2merge = []
         if dataObj.use_fmlrc2:
             plots2merge.extend(reportReadsCorrectedEval(dataObj=dataObj, dirSpec=dirSpec))
-        plots2merge.extend(reportReadsContentEval(dataObj=dataObj, refParams=refParams))
+        plots2merge.extend(reportReadsContentEval(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec))
         plots2merge.extend(reportASPattern(dataObj=dataObj, dirSpec=dirSpec))
         reportTargetGeneStructure(dataObj=dataObj, dirSpec=dirSpec)
         plots2merge.extend(reportNovelHqAS(dataObj=dataObj, dirSpec=dirSpec))
