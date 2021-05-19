@@ -52,7 +52,7 @@ def mergeIsoforms(samples=None, dirSpec=None):
         gene2iso = {}
 
         for iso in isoBedObj.reads:
-            isoName = "{}_{}".format(i.sampleName, iso)
+            isoName = "{}_{}".format(i.sample_name, iso)
             isoBedObj.reads[iso].name = isoName
             if isoBedObj.reads[iso].otherList[0] not in gene2iso:
                 gene2iso[isoBedObj.reads[iso].otherList[0]] = []
@@ -77,16 +77,16 @@ def mergeIsoforms(samples=None, dirSpec=None):
 
 def getSample2Bam(samples, compCondFile, dirSpec=None):
     sample2bamDict = {"cond2bam": {}}
-    compCondHeader = ["project", "sample", "condition", "repeat", "bamFile", "paired", "readsLength"]
+    compCondHeader = ["project", "sampleName", "condition", "repeat", "bamFile", "paired", "readsLength"]
     if os.path.isfile(compCondFile):
         compCond = pd.read_csv(compCondFile, sep="\t")
         if len(compCond.columns) == 7 and len(set(compCond.columns) & set(compCondHeader)) == 7:
             for i, row in compCond.iterrows():
                 bamFile = row.bamFile
                 if row.condition not in sample2bamDict["cond2bam"]:
-                    sample2bamDict["cond2bam"][row.condition] = [(row.project + "_" + row.sample, bamFile, row.paired, row.readsLength)]
+                    sample2bamDict["cond2bam"][row.condition] = [(row.project + "_" + row.condition, bamFile, row.paired, row.readsLength)]
                 else:
-                    sample2bamDict["cond2bam"][row.condition].append((row.project + "_" + row.sample, bamFile, row.paired, row.readsLength))
+                    sample2bamDict["cond2bam"][row.condition].append((row.project + "_" + row.condition, bamFile, row.paired, row.readsLength))
         else:
             for dataObj in samples:
                 alignDir = os.path.join(dirSpec.out_dir, dataObj.project_name, dataObj.sample_name, "RNA-seq", "alignment")

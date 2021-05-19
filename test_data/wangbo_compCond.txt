@@ -1,4 +1,4 @@
-project	sample	condition	repeat	bamFile	paired	readsLength
+project	sampleName	condition	repeat	bamFile	paired	readsLength
 wangbo	B73_embryo	embryo	repeat1	/data/CrazyHsu_data/Projects/isoseq/iFLAS_toolkit_20210510/wangbo_test/wangbo/B73_embryo/mapping/rna-seq/alignment/repeat0/repeat0.sorted.bam	paired	151
 wangbo	B73_embryo	embryo	repeat2	/data/CrazyHsu_data/Projects/isoseq/iFLAS_toolkit_20210510/wangbo_test/wangbo/B73_embryo/mapping/rna-seq/alignment/repeat1/repeat1.sorted.bam	paired	151
 wangbo	B73_endosperm	endosperm	repeat1	/data/CrazyHsu_data/Projects/isoseq/iFLAS_toolkit_20210510/wangbo_test/wangbo/B73_endosperm/mapping/rna-seq/alignment/repeat0/repeat0.sorted.bam	paired	151

@@ -1,4 +1,4 @@
-project	sample	condition	repeat	bamFile	paired	readsLength
+project	sampleName	condition	repeat	bamFile	paired	readsLength
 B73_ont	B73_kernel	kernel	repeat1	/data/CrazyHsu_data/Projects/isoseq/iFLAS_toolkit_20210510/ont_test/B73_ont/B73_kernel/mapping/rna-seq/alignment/repeat0/repeat0.sorted.bam	paired	150
 B73_ont	B73_seedling	seedling	repeat1	/data/CrazyHsu_data/Projects/isoseq/iFLAS_toolkit_20210510/ont_test/B73_ont/B73_seedling/mapping/rna-seq/alignment/repeat0/repeat0.sorted.bam	paired	50
 B73_ont	B73_seedling	seedling	repeat2	/data/CrazyHsu_data/Projects/isoseq/iFLAS_toolkit_20210510/ont_test/B73_ont/B73_seedling/mapping/rna-seq/alignment/repeat1/repeat1.sorted.bam	paired	50
