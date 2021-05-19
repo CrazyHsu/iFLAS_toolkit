@@ -167,12 +167,12 @@ def diff_as1(dataToProcess, compCondFile=None, dirSpec=None, sampleMerged=False)
 
     currentThreads = 40
     for cond1, cond2 in combinations(conditions, 2):
-        comp1Name = sample2bamDict[cond1][0]
-        comp2Name = sample2bamDict[cond2][0]
+        comp1Name = list(set([x[0] for x in sample2bamDict["cond2bam"][cond1]]))[0]
+        comp2Name = list(set([x[0] for x in sample2bamDict["cond2bam"][cond2]]))[0]
         b1File = "b1File.txt"
         b2File = "b2File.txt"
-        b1List = sample2bamDict[cond1][1]
-        b2List = sample2bamDict[cond2][1]
+        b1List = list(set([x[1] for x in sample2bamDict["cond2bam"][cond1]]))
+        b2List = list(set([x[1] for x in sample2bamDict["cond2bam"][cond2]]))
         out1 = open(b1File, "w")
         print >> out1, ",".join(b1List)
         out1.close()
@@ -181,11 +181,15 @@ def diff_as1(dataToProcess, compCondFile=None, dirSpec=None, sampleMerged=False)
         out2.close()
 
         compOutDir = comp1Name + "_vs_" + comp2Name
-        if sample2bamDict[cond1][2] != sample2bamDict[cond2][2] or sample2bamDict[cond1][3] != sample2bamDict[cond2][3]:
+        cond1Paired = list(set([x[2] for x in sample2bamDict["cond2bam"][cond1]]))
+        cond2Paired = list(set([x[2] for x in sample2bamDict["cond2bam"][cond2]]))
+        cond1Length = list(set([x[3] for x in sample2bamDict["cond2bam"][cond1]]))
+        cond2Length = list(set([x[3] for x in sample2bamDict["cond2bam"][cond2]]))
+        if cond1Paired != cond2Paired or len(cond1Paired) > 1 or len(cond2Paired) > 1 or cond1Length != cond2Length or len(cond1Length) > 1 or len(cond2Length) > 1:
             print "rMATS can't resolve the situation where condition {} and {} with different ngs sequencing strategy or read length!".format(comp1Name, comp2Name)
             continue
         cmd = "rmats.py --b1 {} --b2 {} --gtf {} --od {} -t {} --readLength {} --tstat {} --nthread {}"
-        cmd = cmd.format(b1File, b2File, gtfFile, compOutDir, sample2bamDict[cond1][2], sample2bamDict[cond1][3], currentThreads, currentThreads)
+        cmd = cmd.format(b1File, b2File, gtfFile, compOutDir, cond1Paired[0], cond1Length[0], currentThreads, currentThreads)
         subprocess.call(cmd, shell=True)
 
         resolveDir("sigDiffAS", chdir=False)
