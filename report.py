@@ -9,9 +9,7 @@ Last modified: 2021-04-29 16:20:53
 from commonFuncs import *
 from commonObjs import *
 import pandas as pd
-import matplotlib.pyplot as plt
 import PyPDF2, glob, itertools
-import seaborn as sns
 from rpy2 import robjects
 
 def reportReadsCorrectedEval(dataObj=None, dirSpec=None):
@@ -19,13 +17,16 @@ def reportReadsCorrectedEval(dataObj=None, dirSpec=None):
     if not validateDir(filtrationDir): return []
     rawMappedBed = os.path.join(filtrationDir, "raw.mapped.addCVandID.bed12+")
     correctMappedBed = os.path.join(filtrationDir, "mapped.addCVandID.bed12+")
-    rawMapped = pd.read_csv(rawMappedBed, sep="\t", header=None)
-    correctMapped = pd.read_csv(correctMappedBed, sep="\t", header=None)
-    rawMapped["accuracy"] = rawMapped.iloc[:, 12] * rawMapped.iloc[:, 13]
-    correctMapped["accuracy"] = correctMapped.iloc[:, 12] * correctMapped.iloc[:, 13]
-    for x in [rawMapped, correctMapped]:
-        sns.distplot(x.accuracy, kde=False, bins=range(0, 100, 10))
-    plt.savefig("readsCorrectResult.pdf")
+    from plotRscriptStrs import plotReadsCorrectedEvalStr
+    robjects.r(plotReadsCorrectedEvalStr)
+    robjects.r.plotReadsCorrectedEvalStr(rawMappedBed, correctMappedBed, "readsCorrectResult.pdf")
+    # rawMapped = pd.read_csv(rawMappedBed, sep="\t", header=None)
+    # correctMapped = pd.read_csv(correctMappedBed, sep="\t", header=None)
+    # rawMapped["accuracy"] = (rawMapped.iloc[:, 12] * rawMapped.iloc[:, 13])/100
+    # correctMapped["accuracy"] = (correctMapped.iloc[:, 12] * correctMapped.iloc[:, 13])/100
+    # for x in [rawMapped, correctMapped]:
+    #     sns.distplot(x.accuracy, kde=False, bins=range(0, 100, 10))
+    # plt.savefig("readsCorrectResult.pdf")
     return ["readsCorrectResult.pdf"]
     # g.savefig("readsCorrectResult.pdf")
 
@@ -153,7 +154,7 @@ def reportASPattern(dataObj=None, dirSpec=None):
 
 def reportTargetGeneStructure(dataObj=None, dirSpec=None):
     isoViewerDir = os.path.join(dirSpec.out_dir, dataObj.project_name, dataObj.sample_name, "isoViewer")
-    if not validateDir(baseDir): return
+    if not validateDir(isoViewerDir): return
     allGenePlots = glob.glob("{}/*/*.pdf".format(isoViewerDir))
     writer = PyPDF2.PdfFileWriter()
     for i in allGenePlots:
@@ -253,7 +254,7 @@ def reportAllelicAS(dataObj=None, refParams=None, dirSpec=None):
 
 def reportPaTailAS(dataObj=None, dirSpec=None):
     palenASDir = dirSpec.out_dir, dataObj.project_name, dataObj.sample_name, "palenAS"
-    if not validateDir(baseDir): return
+    if not validateDir(palenASDir): return
     asType = ["IR", "SE", "A3SS", "A5SS"]
     from plotRscriptStrs import plotPaTailASStr
     robjects.r(plotPaTailASStr)

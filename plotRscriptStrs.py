@@ -7,6 +7,36 @@ Created on: 2021-05-13 21:53:28
 Last modified: 2021-05-13 21:53:28
 '''
 
+plotReadsCorrectedEvalStr = '''
+    library(ggplot2)
+    plotReadsCorrectedEval <- function(rawMappedBed, correctMappedBed, outPdf){
+        rawMapped <- read.csv(rawMappedBed, sep="\t", header=FALSE)
+        correctMapped <- read.csv(correctMappedBed, sep="\t", header=FALSE)
+        rawMapped$accuracy <- (rawMapped$V13 * rawMapped$V14)/100
+        correctMapped$accuracy <- (correctMapped$V13 * correctMapped$V14)/100
+        rawMapped$type <- "raw"
+        correctMapped$type <- "corrected"
+        pdf(outPdf)
+        ggplot(rbind(rawMapped,correctMapped), aes(x=accuracy, fill=type)) + 
+        geom_density(alpha=0.2) + ggtitle("Raw Reads Correction Evaluation") + xlab("Accuracy (%)")
+        theme_bw() + 
+        theme(plot.title = element_text(hjust = 0.5, size=20), text = element_text(size=12), panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"), strip.background = element_blank(), strip.text.x = element_blank(), legend.title = element_blank(), legend.text = element_text(size = 8), legend.key.size = unit(0.5, "cm"), panel.spacing = unit(0, "lines"))
+        dev.off()
+    }
+    # filtrationDir = os.path.join(dirSpec.out_dir, dataObj.project_name, dataObj.sample_name, "filtration")
+    # if not validateDir(filtrationDir): return []
+    # rawMappedBed = os.path.join(filtrationDir, "raw.mapped.addCVandID.bed12+")
+    # correctMappedBed = os.path.join(filtrationDir, "mapped.addCVandID.bed12+")
+    # rawMapped = pd.read_csv(rawMappedBed, sep="\t", header=None)
+    # correctMapped = pd.read_csv(correctMappedBed, sep="\t", header=None)
+    # rawMapped["accuracy"] = (rawMapped.iloc[:, 12] * rawMapped.iloc[:, 13])/100
+    # correctMapped["accuracy"] = (correctMapped.iloc[:, 12] * correctMapped.iloc[:, 13])/100
+    # for x in [rawMapped, correctMapped]:
+    #     sns.distplot(x.accuracy, kde=False, bins=range(0, 100, 10))
+    # plt.savefig("readsCorrectResult.pdf")
+    # return ["readsCorrectResult.pdf"]
+'''
+
 plotAllelicAsStructureStr = '''
     library(rtracklayer)
     library(GenomicFeatures)

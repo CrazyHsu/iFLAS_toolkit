@@ -44,7 +44,7 @@ def mergeIsoforms(samples=None, dirSpec=None):
     for i in samples:
         isoformGroupedBed12 = os.path.join(dirSpec.out_dir, i.project_name, i.sample_name, "collapse", "isoformGrouped.bed12+")
         aseDir = os.path.join(dirSpec.out_dir, i.project_name, i.sample_name, "as_events", "ordinary_as")
-        cmd = '''(cut -f 8,10 --output-delimiter=',' {}/PB/A3SS.confident.bed6+ {}/PB/A5SS.confident.bed6+ {}/PB/IR.bed6+;
+        cmd = '''(cut -f 8,10 --output-delimiter=',' {}/PB/A3SS.confident.bed6+ {}/PB/A5SS.confident.bed6+ {}/PB/IR.confident.bed6+;
               cut -f 16,18 --output-delimiter=',' {}/PB/SE.confident.bed12+) | tr ',' '\n' | sort -u |
               filter.pl -o - {} -2 4 -m i > as_isoform.bed12+'''.format(aseDir, aseDir, aseDir, aseDir, isoformGroupedBed12)
         subprocess.call(cmd, shell=True)
@@ -78,7 +78,7 @@ def mergeIsoforms(samples=None, dirSpec=None):
 def getSample2Bam(samples, compCondFile, dirSpec=None):
     sample2bamDict = {"cond2bam": {}}
     compCondHeader = ["project", "sample", "condition", "repeat", "bamFile", "paired", "readsLength"]
-    if validateFile(compCondFile):
+    if os.path.isfile(compCondFile):
         compCond = pd.read_csv(compCondFile, sep="\t")
         if len(compCond.columns) == 7 and len(set(compCond.columns) & set(compCondHeader)) == 7:
             for i, row in compCond.iterrows():
@@ -145,10 +145,16 @@ def getSample2Bam(samples, compCondFile, dirSpec=None):
 
 def diff_as1(dataToProcess, compCondFile=None, dirSpec=None, sampleMerged=False):
     print getCurrentTime() + " Identify differential alternative spliced isoforms..."
+    if validateFile(compCondFile):
+        compCondFile = os.path.abspath(compCondFile)
+    else:
+        compCondFile = compCondFile.split(",")
     prevDir = os.getcwd()
     dasDir = os.path.join(dirSpec.out_dir, "das")
     resolveDir(dasDir)
     samples, conditions = validateSamples(compCondFile, dataToProcess)
+    if len(samples) == 0:
+        raise Exception("May be you provide wrong sample comparison condition, please check it!")
     mergedIsoBed = mergeIsoforms(samples=samples, dirSpec=dirSpec)
     cmd = "bed2gpe.pl -g 13 {} > all_sample_merged_iso.gpe".format(mergedIsoBed)
     subprocess.call(cmd, shell=True)
