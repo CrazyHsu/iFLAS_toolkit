@@ -192,7 +192,7 @@ def diff_as1(dataToProcess, compCondFile=None, dirSpec=None, sampleMerged=False)
         cmd = cmd.format(b1File, b2File, gtfFile, compOutDir, cond1Paired[0], cond1Length[0], currentThreads, currentThreads)
         subprocess.call(cmd, shell=True)
 
-        resolveDir("sigDiffAS", chdir=False)
+        resolveDir("{}.sigDiffAS".format(compOutDir), chdir=False)
         irDiff = pd.read_csv("{}/RI.MATS.JC.txt".format(compOutDir), sep="\t")
         seDiff = pd.read_csv("{}/SE.MATS.JC.txt".format(compOutDir), sep="\t")
         a3ssDiff = pd.read_csv("{}/A3SS.MATS.JC.txt".format(compOutDir), sep="\t")
@@ -201,10 +201,10 @@ def diff_as1(dataToProcess, compCondFile=None, dirSpec=None, sampleMerged=False)
         seDiff = seDiff.loc[seDiff.FDR <= 0.05]
         a3ssDiff = a3ssDiff.loc[a3ssDiff.FDR <= 0.05]
         a5ssDiff = a5ssDiff.loc[a5ssDiff.FDR <= 0.05]
-        irDiff.to_csv("sigDiffAS/IR.sig.txt", sep="\t", header=True, index=False)
-        seDiff.to_csv("sigDiffAS/SE.sig.txt", sep="\t", header=True, index=False)
-        a3ssDiff.to_csv("sigDiffAS/A3SS.sig.txt", sep="\t", header=True, index=False)
-        a5ssDiff.to_csv("sigDiffAS/A5SS.sig.txt", sep="\t", header=True, index=False)
+        irDiff.to_csv("{}.sigDiffAS/IR.sig.txt".format(compOutDir), sep="\t", header=True, index=False)
+        seDiff.to_csv("{}.sigDiffAS/SE.sig.txt".format(compOutDir), sep="\t", header=True, index=False)
+        a3ssDiff.to_csv("{}.sigDiffAS/A3SS.sig.txt".format(compOutDir), sep="\t", header=True, index=False)
+        a5ssDiff.to_csv("{}.sigDiffAS/A5SS.sig.txt".format(compOutDir), sep="\t", header=True, index=False)
 
     os.chdir(prevDir)
     print getCurrentTime() + " Identify differential alternative spliced isoforms done!"

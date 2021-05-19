@@ -210,7 +210,7 @@ def iflas(args):
             diff_as1(dataToProcess, compCondFile=compCond, dirSpec=dirSpec, sampleMerged=optionTools.merge_data_from_same_strain)
         if args.command == 'go':
             from go import go
-            go(args)
+            go(args, optionTools=optionTools, dirSpec=dirSpec)
         if args.command == 'report':
             from report import report
             # report(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
@@ -257,7 +257,7 @@ if __name__ == "__main__":
     parser_goAS = subparsers.add_parser('go', help='Perform GO enrichment analysis and plot results for the specified gene set or multiple gene sets', usage='%(prog)s [options]')
     parser_goAS.add_argument('-c', dest="default_cfg", type=str, help="The config file used for init setting.")
     parser_goAS.add_argument('-tg', dest="targetGeneFile", type=str, help="The target gene file or file list separated by comma.")
-    parser_goAS.add_argument('-bg', dest="gene2goFile", type=str, help="The mapping file between gene and go term.")
+    parser_goAS.add_argument('-bg', dest="gene2goFile", type=str, default=None, help="The mapping file between gene and go term.")
     parser_goAS.add_argument('-s', dest="sampleName", type=str, help="The sample name used plot the track, multi-sample should be separated by commma.")
 
     parser_report = subparsers.add_parser('report', help='Automatic detect the plots generated in each step, and merge them into a report file', usage='%(prog)s [options]')

@@ -156,7 +156,7 @@ plotTargetGenesGoEnrichmentStr = '''
     library(AnnotationDbi)
     library(clusterProfiler)
     
-    plotTargetGenesGoEnrichment <- function(targetGeneFiles, sampleNames, gene2goFile, outPdf){
+    plotTargetGenesGoEnrichment <- function(targetGeneFiles, sampleNames, gene2goFile, outName){
         targetGeneFiles <- strsplit(targetGeneFiles, ",")
         sampleNames <- unlist(strsplit(sampleNames, ","))
         gene2go <- read.delim(gene2goFile, header=T, sep="\t")
@@ -164,6 +164,7 @@ plotTargetGenesGoEnrichmentStr = '''
         go2gene <- gene2go[,c(2,1)]
         names(targetGeneFiles) <- sampleNames
         r_bind <- data.frame()
+        outPdf <- paste0(outName, ".pdf")
         if(length(sampleNames)>1){
             for (i in seq(length(targetGeneFiles))){
                 sample <- names(targetGeneFiles[i])
@@ -177,6 +178,8 @@ plotTargetGenesGoEnrichmentStr = '''
                 goResult$Ontology <- revalue(goResult$Ontology, c("BP"="Biological process", "MF"="Molecular function", "CC"="Cellular component"))
                 goResult <- goResult[order(goResult$Ontology, goResult$pvalue),]
                 goResult$Description <- factor(goResult$Description, levels = as.vector(goResult$Description))
+                outFile <- paste(sample, ".goEnrichResults.txt")
+                write.table(goResult, file=outFile, sep = "\t", row.names = FALSE, col.names = TRUE, quote = F)
                 goResult$Cluster <- sample
                 goResult$group <- sample
                 goResult$level <- sample
@@ -196,6 +199,15 @@ plotTargetGenesGoEnrichmentStr = '''
             sample <- sampleNames
             genes <- read.csv(targetGeneFiles[[1]][1], header=FALSE)
             goRes <- enricher(genes, TERM2GENE = go2gene, TERM2NAME = go2term, pvalueCutoff = 1, qvalueCutoff=0.05, maxGSSize = 100000)
+            goResult <- summary(goRes)
+            goResult <- goResult[which(goResult$p.adjust<=0.05),]
+            goResult$Ontology <- Ontology(as.vector(goResult$ID))
+            goResult <- goResult[c(1, ncol(goResult), 2:(ncol(goResult)-1))]
+            goResult$Ontology <- revalue(goResult$Ontology, c("BP"="Biological process", "MF"="Molecular function", "CC"="Cellular component"))
+            goResult <- goResult[order(goResult$Ontology, goResult$pvalue),]
+            goResult$Description <- factor(goResult$Description, levels = as.vector(goResult$Description))
+            outFile <- paste(sample, ".goEnrichResults.txt")
+            write.table(goResult, file=outFile, sep = "\t", row.names = FALSE, col.names = TRUE, quote = F)
             pdf(outPdf, width=10, height=8)
             p <- dotplot(goRes, showCategory=30) + scale_color_continuous(low='purple', high='green') + scale_y_discrete(labels=function(x) str_wrap(x, width=100)) + scale_size(range=c(0, 5)) + ggplot2::facet_grid(~level)
             print(p)
