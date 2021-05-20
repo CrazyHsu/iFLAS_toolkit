@@ -259,6 +259,7 @@ if __name__ == "__main__":
     parser_goAS.add_argument('-tg', dest="targetGeneFile", type=str, help="The target gene file or file list separated by comma.")
     parser_goAS.add_argument('-bg', dest="gene2goFile", type=str, default=None, help="The mapping file between gene and go term.")
     parser_goAS.add_argument('-s', dest="sampleName", type=str, help="The sample name used plot the track, multi-sample should be separated by commma.")
+    parser_goAS.add_argument('-o', dest="outName", type=str, default="goEnrichment", help="The prefix of the output file.")
 
     parser_report = subparsers.add_parser('report', help='Automatic detect the plots generated in each step, and merge them into a report file', usage='%(prog)s [options]')
     parser_report.add_argument('-c', dest="default_cfg", help="The config file used for init setting.")

@@ -16,13 +16,14 @@ from rpy2.rinterface import RRuntimeWarning
 warnings.filterwarnings("ignore", category=RRuntimeWarning)
 
 def reportReadsCorrectedEval(dataObj=None, dirSpec=None):
+    print getCurrentTime() + " Start plotting Reads Corrected Evaluation for project {} sample {}...".format(dataObj.project_name, dataObj.sample_name)
     filtrationDir = os.path.join(dirSpec.out_dir, dataObj.project_name, dataObj.sample_name, "filtration")
     if not validateDir(filtrationDir): return []
     rawMappedBed = os.path.join(filtrationDir, "raw.mapped.addCVandID.bed12+")
     correctMappedBed = os.path.join(filtrationDir, "mapped.addCVandID.bed12+")
     from plotRscriptStrs import plotReadsCorrectedEvalStr
     robjects.r(plotReadsCorrectedEvalStr)
-    robjects.r.plotReadsCorrectedEvalStr(rawMappedBed, correctMappedBed, "readsCorrectResult.pdf")
+    robjects.r.plotReadsCorrectedEval(rawMappedBed, correctMappedBed, "readsCorrectResult.pdf")
     # rawMapped = pd.read_csv(rawMappedBed, sep="\t", header=None)
     # correctMapped = pd.read_csv(correctMappedBed, sep="\t", header=None)
     # rawMapped["accuracy"] = (rawMapped.iloc[:, 12] * rawMapped.iloc[:, 13])/100
@@ -30,6 +31,7 @@ def reportReadsCorrectedEval(dataObj=None, dirSpec=None):
     # for x in [rawMapped, correctMapped]:
     #     sns.distplot(x.accuracy, kde=False, bins=range(0, 100, 10))
     # plt.savefig("readsCorrectResult.pdf")
+    print getCurrentTime() + " Plotting Reads Corrected Evaluation for project {} sample {} done!".format(dataObj.project_name, dataObj.sample_name)
     return ["readsCorrectResult.pdf"]
     # g.savefig("readsCorrectResult.pdf")
 
@@ -50,6 +52,7 @@ def gcAcrossRead(fxFile, outFile, interval=20):
     out.close()
 
 def reportReadsContentEval(dataObj=None, refParams=None, dirSpec=None):
+    print getCurrentTime() + " Start plotting Reads Content Evaluation for project {} sample {}...".format(dataObj.project_name, dataObj.sample_name)
     if dataObj.data_processed_location and validateFile(dataObj.data_processed_location):
         flncFx = dataObj.data_processed_location
     else:
@@ -74,9 +77,11 @@ def reportReadsContentEval(dataObj=None, refParams=None, dirSpec=None):
     subprocess.call(cmd, shell=True)
     cmd = '''boxes.R -ng -no *.lst -p=LengthDistribution.box.pdf 2>/dev/null'''
     subprocess.call(cmd, shell=True)
+    print getCurrentTime() + " Plotting Reads Content Evaluation for project {} sample {} done!".format(dataObj.project_name, dataObj.sample_name)
     return ["GC_of_raw_flnc_reads.pdf", "GC_across_raw_flnc_read.pdf", "LengthDistribution.curve.pdf", "LengthDistribution.box.pdf"]
 
 def reportASPattern(dataObj=None, dirSpec=None):
+    print getCurrentTime() + " Start plotting AS Pattern for project {} sample {}...".format(dataObj.project_name, dataObj.sample_name)
     def _print(asType, annotation, count):
         return "{}\t{}\t".format(asType, annotation, count)
 
@@ -153,9 +158,11 @@ def reportASPattern(dataObj=None, dirSpec=None):
     robjects.r(plotAsDinucleotideStatisticsStr)
     asSpliceSitePdf = "{}_{}.AS_spliceSite.pdf".format(dataObj.project_name, dataObj.sample_name)
     robjects.r.plotAsCountStatistics(asSpliceSiteFile, asSpliceSitePdf)
+    print getCurrentTime() + " Plotting AS Pattern for project {} sample {} done!".format(dataObj.project_name, dataObj.sample_name)
     return [asAnnoPdf, asSpliceSitePdf]
 
 def reportTargetGeneStructure(dataObj=None, dirSpec=None):
+    print getCurrentTime() + " Start plotting Target Gene Structure for project {} sample {}...".format(dataObj.project_name, dataObj.sample_name)
     isoViewerDir = os.path.join(dirSpec.out_dir, dataObj.project_name, dataObj.sample_name, "isoViewer")
     if not validateDir(isoViewerDir): return
     allGenePlots = glob.glob("{}/*/*.pdf".format(isoViewerDir))
@@ -167,17 +174,21 @@ def reportTargetGeneStructure(dataObj=None, dirSpec=None):
     output = open("allTargetGeneStructure.pdf", "wb")
     writer.write(output)
     output.close()
+    print getCurrentTime() + " Plotting Target Gene Structure for project {} sample {} done!".format(dataObj.project_name, dataObj.sample_name)
 
 def reportNovelHqAS(dataObj=None, dirSpec=None):
+    print getCurrentTime() + " Start plotting Novel High-quality Isoform scores for project {} sample {}...".format(dataObj.project_name, dataObj.sample_name)
     isoformScoreFile = os.path.join(dirSpec.out_dir, dataObj.project_name, dataObj.sample_name, "isoIdentity", "isoformScore.txt")
     if not validateFile(isoformScoreFile): return []
     # isoformScore = pd.read_csv(isoformScoreFile, sep="\t", header=None, names=["gene", "isos", "count", "total_count", "freq", "annotation"])
     from plotRscriptStrs import plotNovelHqASStr
     robjects.r(plotNovelHqASStr)
     robjects.r.plotNovelHqAS(isoformScoreFile, "isoformScore.pdf")
+    print getCurrentTime() + " Plotting Novel High-quality Isoform scores for project {} sample {} done!".format(dataObj.project_name, dataObj.sample_name)
     return ["isoformScore.pdf"]
 
 def reportAllelicAS(dataObj=None, refParams=None, dirSpec=None):
+    print getCurrentTime() + " Start plotting Allelic-Specific AS for project {} sample {}...".format(dataObj.project_name, dataObj.sample_name)
     baseDir = os.path.join(dirSpec.out_dir, dataObj.project_name, dataObj.sample_name)
     asHaploFile = os.path.join(baseDir, "allelicAS", "partialAsRelatedHaplotype.txt")
     if not validateFile(asHaploFile): return
@@ -254,8 +265,10 @@ def reportAllelicAS(dataObj=None, refParams=None, dirSpec=None):
     output = open("allelicAS.pdf", "wb")
     writer.write(output)
     output.close()
+    print getCurrentTime() + " Plotting Allelic-Specific AS for project {} sample {} done!".format(dataObj.project_name, dataObj.sample_name)
 
 def reportPaTailAS(dataObj=None, dirSpec=None):
+    print getCurrentTime() + " Start plotting Differential poly(A) tail length related AS for project {} sample {}...".format(dataObj.project_name, dataObj.sample_name)
     palenASDir = dirSpec.out_dir, dataObj.project_name, dataObj.sample_name, "palenAS"
     if not validateDir(palenASDir): return
     asType = ["IR", "SE", "A3SS", "A5SS"]
@@ -268,8 +281,10 @@ def reportPaTailAS(dataObj=None, dirSpec=None):
     cmd = "cat {} | sort -u > palenAndAS.sig.bed12+".format(" ".join(palenAsFiles))
     subprocess.call(cmd, shell=True)
     robjects.r.plotPaTailAsStructure("palenAndAS.sig.bed12+", "palenAndAS.pdf")
+    print getCurrentTime() + " Plotting Differential poly(A) tail length related AS for project {} sample {} done!".format(dataObj.project_name, dataObj.sample_name)
 
 def reportDiffAS(dirSpec=None):
+    print getCurrentTime() + " Start plotting Differential-related AS summary..."
     dasDir = os.path.join(dirSpec.out_dir, "das", "sigDiffAS")
     if not validateDir(dasDir): return
     irSig = pd.read_csv("{}/IR.sig.txt".format(dasDir), sep="\t", header=True)
@@ -282,9 +297,10 @@ def reportDiffAS(dirSpec=None):
     from plotRscriptStrs import plotDiffASStr
     robjects.r(plotDiffASStr)
     robjects.r.plotDiffAS("sigDiff.AS.txt", "sigDiff.AS_distribution.pdf")
-
+    print getCurrentTime() + " Plotting Differential-related AS summary done!"
 
 def mergeAllPlots(plot2merge, outPdf):
+    print getCurrentTime() + " Start merging plots..."
     if len(plot2merge) == 0: return
     writer = PyPDF2.PdfFileWriter()
     for i in plot2merge:
@@ -294,6 +310,7 @@ def mergeAllPlots(plot2merge, outPdf):
     output = open(outPdf, "wb")
     writer.write(output)
     output.close()
+    print getCurrentTime() + " Merging plots done!"
 
 def report(dataToProcess=None, refInfoParams=None, dirSpec=None):
     reportDir = os.path.join(dirSpec.out_dir, "reports")

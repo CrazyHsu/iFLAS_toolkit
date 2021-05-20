@@ -13,7 +13,7 @@ conda install -y -c bioconda bioconductor-deseq2=1.26.0 bioconductor-clusterprof
 #conda install -y -c bcbio bx-python
 conda install -y r-stringi=1.4.6 r-dplyr=1.0.0 r-tibble=3.0.0 r-gridBase
 
-pip install pandas matplotlib==2.2.3 psutil biopython==1.76 pybedtools PyVCF PyPDF
+pip install pandas matplotlib==2.2.3 psutil biopython==1.76 pybedtools PyVCF PyPDF2
 
 R -e "install.packages('tidyr', repos='https://mirrors.tuna.tsinghua.edu.cn/CRAN/')"
 R -e "install.packages('valr', repos='https://mirrors.tuna.tsinghua.edu.cn/CRAN/')"

@@ -43,7 +43,7 @@ def go(args, optionTools=None, dirSpec=None):
     goDir = os.path.join(dirSpec.out_dir, "GO")
     resolveDir(goDir)
     from plotRscriptStrs import plotTargetGenesGoEnrichmentStr
-    outName = "goEnrichment"
+    outName = args.outName
     robjects.r(plotTargetGenesGoEnrichmentStr)
     if isinstance(validateTargetGeneFiles, list) and isinstance(validateSampleNames, list):
         robjects.r.plotTargetGenesGoEnrichment(",".join(validateTargetGeneFiles), ",".join(validateSampleNames), gene2goFile, outName)
