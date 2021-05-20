@@ -73,7 +73,7 @@ def retrievePacbio(dataObj=None, ccsParams=None, dirSpec=None, threads=10):
                   "{} --force".format(subreads, threads, ccsParams.min_pass, ccsParams.min_subread_length,
                                       ccsParams.min_predicted_accuracy, ccsParams.min_read_score)
             subprocess.call(cmd, shell=True)
-        elif "ccs 4." in ccsOut:
+        elif "ccs 4." in ccsOut or "ccs 5." in ccsOut or "ccs 6." in ccsOut:
             cmd = "ccs {} CCS.bam -j {} --min-passes {} --min-length {} " \
                   "--min-rq {}".format(subreads, threads, ccsParams.min_pass, ccsParams.min_subread_length,
                                        ccsParams.min_predicted_accuracy)

@@ -10,7 +10,10 @@ from commonFuncs import *
 from commonObjs import *
 import pandas as pd
 import PyPDF2, glob, itertools
+import warnings
 from rpy2 import robjects
+from rpy2.rinterface import RRuntimeWarning
+warnings.filterwarnings("ignore", category=RRuntimeWarning)
 
 def reportReadsCorrectedEval(dataObj=None, dirSpec=None):
     filtrationDir = os.path.join(dirSpec.out_dir, dataObj.project_name, dataObj.sample_name, "filtration")

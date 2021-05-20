@@ -1,4 +1,4 @@
-#!/bin/env Rscript
+#!/usr/bin/env Rscript
 args <- commandArgs()
 scriptPath = strsplit(args[4], '=', fixed = T)[[1]][2]
 scriptName = basename(scriptPath)

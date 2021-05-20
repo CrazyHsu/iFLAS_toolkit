@@ -13,9 +13,10 @@ Option:
     Common:
     -p|pdf          FILE    The output figure in pdf[figure.pdf]
     -w|width        INT     The figure width
+       height       INT     The figure height
     -m|main         STR     The main title
-    -mainS          DOU     The size of main title[22 for ggplot]
-    -x|xlab         STR     The xlab[Binned Values]
+    -mainS          DOU     The size of main title[20 for ggplot]
+    -x|xlab         STR     The xlab
     -y|ylab         STR     The ylab
     -xl|xlog        INT     Transform the X scale to INT base log
     -yl|ylog        INT     Transform the Y scale to INT base log
@@ -25,32 +26,38 @@ Option:
     -y2             INT     The ylim end
     -xLblS          DOU     The X-axis label size[20 for ggplot]
     -xTxtS          DOU     The X-axis text size[18 for ggplot]
-    -xAngle         [0,360] The angle of tick labels[0]
-    -vJust          [0,1]   The vertical justification of tick labels[0.5]
-    -yLblS          DOU     The Y-axis label size[20 for ggplot]
     -yTxtS          DOU     The Y-axis text size[18 for ggplot]
+    -xAngle         [0,360] The angle of tick labels[0]
     -ng|noGgplot            Draw figure in the style of R base rather than ggplot
+    -ho|horizontal  DOU     Draw a horizontal line
+    -t|tp                   Transpose the input table
+    -dL|drawLine            Use the values in last line to draw a line across the boxes
     -h|help                 Show help
 
-    ggplot specific:
-    -v|vertical     DOUs    The comma-separated X values at which vertical lines are drawn
-    -b|binWidth     DOU     The bin width[1/30 of the range of the data]
-    -d|density              Draw Y axis in density
+    R base specific:
+    -no|noOutlier           Don't draw outlier
 
-    -a|alpha        DOU     The alpha of hist body
+    ggplot specific:
+    -stack                  Stack the data
+    -nJ|nJitter             Do not draw jitter
+    -n|notch                Draw notch
+    -oC|oColor      STR     Outlier color
+    -oS|oSize       DOU     Outlier size
+
+    -a|alpha        DOU     The alpha of box body
     -alphaV         STR     The column name to apply alpha (V3, V4, ...)
     -alphaT         STR     The title of alpha legend[Alpha]
     -alphaTP        POS     The title position of alpha legend[horizontal: top, vertical:right]
     -alphaLP        POS     The label position of alpha legend[horizontal: top, vertical:right]
     -alphaD         STR     The direction of alpha legend (horizontal, vertical)
-    -c|color        STR     The color of hist boundary
+    -c|color        STR     The color of box boundary
     -colorV         STR     The column name to apply color (V3, V4,...)
     -colorC                 Continuous color mapping
     -colorT         STR     The title of color legend[Color]
     -colorTP        POS     The title position of color legend[horizontal: top, vertical:right]
     -colorLP        POS     The label position of color legend[horizontal: top, vertical:right]
     -colorD         STR     The direction of color legend (horizontal, vertical)
-    -f|fill         STR     The color of hist body
+    -f|fill         STR     The color of box body
     -fillV          STR     The column name to apply fill (V3, V4,...)
     -fillT          STR     The title of fill legend[Fill]
     -fillTP         POS     The title position of fill legend[horizontal: top, vertical:right]
@@ -62,13 +69,19 @@ Option:
     -linetypeTP     POS     The title position of linetype legend[horizontal: top, vertical:right]
     -linetypeLP     POS     The label position of linetype legend[horizontal: top, vertical:right]
     -linetypeD      STR     The direction of linetype legend (horizontal, vertical)
-    -s|size         DOU     The size of hist body
+    -shape          STR     The shape of box
+    -shapeV         STR     The column name to apply shape (V3, V4,...)
+    -shapeT         STR     The title of shape legend[Shape]
+    -shapeTP        POS     The title position of shape legend[horizontal: top, vertical:right]
+    -shapeLP        POS     The label position of shape legend[horizontal: top, vertical:right]
+    -shapeD         STR     The direction of shape legend (horizontal, vertical)
+    -s|size         DOU     The size of box body
     -sizeV          STR     The column name to apply size (V3, V4,...)
     -sizeT          STR     The title of size legend[Size]
     -sizeTP         POS     The title position of size legend[horizontal: top, vertical:right]
     -sizeLP         POS     The label position of size legend[horizontal: top, vertical:right]
     -sizeD          STR     The direction of size legend (horizontal, vertical)
-    -weight         DOU     The weight of hist
+    -weight         DOU     The weight of box
     -weightV        STR     The column name to apply weight (V3, V4,...)
     -weightT        STR     The title of weight legend[weight]
     -weightTP       POS     The title position of weight legend[horizontal: top, vertical:right]
@@ -79,16 +92,14 @@ Option:
     -lgPos          POS     The legend position[horizontal: top, vertical:right]
     -lgPosX         [0,1]   The legend relative postion on X
     -lgPosY         [0,1]   The legend relative postion on Y
-    -lgTtlS         INT     The legend title size[22]
-    -lgTxtS         INT     The legend text size[20]
+    -lgTtlS         INT     The legend title size[15]
+    -lgTxtS         INT     The legend text size[15]
     -lgBox          STR     The legend box style (horizontal, vertical)
 
     -fp|flip                Flip the Y axis to horizontal
     -facet          STR     The facet type (facet_wrap, facet_grid)
     -facetM         STR     The facet model (eg: '. ~ V3', 'V3 ~ .', 'V3 ~ V4', '. ~ V3 + V4', ...)
     -facetScl       STR     The axis scale in each facet ([fixed], free, free_x or free_y)
-    -facetCol       INT     ncol for facet_wrap
-    -facetRow       INT     nrow for facet_wrap
 
     -xPer                   Show X label in percentage
     -yPer                   Show Y label in percentage
@@ -110,29 +121,37 @@ alphaT = 'Alpha'
 colorT = 'Color'
 fillT = 'Fill'
 linetypeT = 'Line Type'
+shape = 'Shape'
 sizeT = 'Size'
 weightT = 'Weight'
-lgTtlS = 22
-lgTxtS = 20
+lgTtlS = 15
+lgTxtS = 15
 showGuide = TRUE
 myPdf = 'figure.pdf'
-mainS = 22
+mainS = 20
 xLblS = 20
 xTxtS = 18
+yTxtS = 18
 xAngle = 0
 vJust = 0.5
-yLblS = 20
-yTxtS = 18
-xLab='Binned Values'
+outlier = TRUE
+notch = FALSE
+oColor = 'red'
 
 if(length(args) >= 1){
     for(i in 1:length(args)){
         arg = args[i]
         
-        tmp = parseArgNums(arg, 'v(ertical)?', 'vertical'); if(!is.null(tmp)) verticals = tmp
-        tmp = parseArgAsNum(arg, 'b(inWidth)?', 'b'); if(!is.null(tmp)) binWidth = tmp
-        if(arg == '-d' || arg == '-density') drawDensity = TRUE
-        
+        if(arg == '-dL' || arg == '-drawLine') drawLine = TRUE
+        if(arg == '-t' || arg == '-tp') tp = TRUE
+        if(arg == '-stack') toStack = TRUE
+        if(arg == '-no' || arg == '-noOutlier') outlier = FALSE
+        tmp = parseArgAsNum(arg, 'ho(rizontal)?', 'ho'); if(!is.null(tmp)) horizontal = tmp
+        if(arg == '-nJ' || arg == '-nJitter') noJitter = TRUE
+        if(arg == '-n' || arg == '-notch') notch = TRUE
+        tmp = parseArg(arg, 'oC(olor)?', 'oC'); if(!is.null(tmp)) oColor = tmp
+        tmp = parseArgAsNum(arg, 'oS(ize)?', 'oS'); if(!is.null(tmp)) oSize = tmp
+
         tmp = parseArgAsNum(arg, 'a(lpha)?', 'a'); if(!is.null(tmp)) myAlpha = tmp
         tmp = parseArg(arg, 'alphaV', 'alphaV'); if(!is.null(tmp)) alphaV = tmp
         tmp = parseArg(arg, 'alphaT', 'alphaT'); if(!is.null(tmp)) alphaT = tmp
@@ -146,6 +165,7 @@ if(length(args) >= 1){
         tmp = parseArg(arg, 'colorTP', 'colorTP'); if(!is.null(tmp)) colorTP = tmp
         tmp = parseArg(arg, 'colorLP', 'colorLP'); if(!is.null(tmp)) colorLP = tmp
         tmp = parseArg(arg, 'colorD', 'colorD'); if(!is.null(tmp)) colorD = tmp
+        tmp = parseArgAsNum(arg, 'f(ill)?', 'l'); if(!is.null(tmp)) fill = tmp
         tmp = parseArg(arg, 'f(ill)?', 'f'); if(!is.null(tmp)) fill = tmp
         tmp = parseArg(arg, 'fillV', 'fillV'); if(!is.null(tmp)) fillV = tmp
         tmp = parseArg(arg, 'fillT', 'fillT'); if(!is.null(tmp)) fillT = tmp
@@ -158,6 +178,12 @@ if(length(args) >= 1){
         tmp = parseArg(arg, 'linetypeTP', 'linetypeTP'); if(!is.null(tmp)) linetypeTP = tmp
         tmp = parseArg(arg, 'linetypeLP', 'linetypeLP'); if(!is.null(tmp)) linetypeLP = tmp
         tmp = parseArg(arg, 'linetypeD', 'linetypeD'); if(!is.null(tmp)) linetypeD = tmp
+        tmp = parseArgAsNum(arg, 'shape', 'shape'); if(!is.null(tmp)) shape = tmp
+        tmp = parseArg(arg, 'shapeV', 'shapeV'); if(!is.null(tmp)) shapeV = tmp
+        tmp = parseArg(arg, 'shapeT', 'shapeT'); if(!is.null(tmp)) shapeT = tmp
+        tmp = parseArg(arg, 'shapeTP', 'shapeTP'); if(!is.null(tmp)) shapeTP = tmp
+        tmp = parseArg(arg, 'shapeLP', 'shapeLP'); if(!is.null(tmp)) shapeLP = tmp
+        tmp = parseArg(arg, 'shapeD', 'shapeD'); if(!is.null(tmp)) shapeD = tmp
         tmp = parseArgAsNum(arg, 's(ize)?', 's'); if(!is.null(tmp)) size = tmp
         tmp = parseArg(arg, 'sizeV', 'sizeV'); if(!is.null(tmp)) sizeV = tmp
         tmp = parseArg(arg, 'sizeT', 'sizeT'); if(!is.null(tmp)) sizeT = tmp
@@ -183,20 +209,19 @@ if(length(args) >= 1){
         tmp = parseArg(arg, 'facet', 'facet'); if(!is.null(tmp)) myFacet = tmp
         tmp = parseArg(arg, 'facetM', 'facetM'); if(!is.null(tmp)) facetM = tmp
         tmp = parseArg(arg, 'facetScl', 'facetScl'); if(!is.null(tmp)) facetScl = tmp
-        tmp = parseArgAsNum(arg, 'facetCol', 'facetCol'); if(!is.null(tmp)) facetCol = tmp
-        tmp = parseArgAsNum(arg, 'facetRow', 'facetRow'); if(!is.null(tmp)) facetRow = tmp
         if(arg == '-xPer') xPer = TRUE
         if(arg == '-yPer') yPer = TRUE
         if(arg == '-xComma') xComma = TRUE
         if(arg == '-yComma') yComma = TRUE
         tmp = parseArgAsNum(arg, 'axisRatio', 'axisRatio'); if(!is.null(tmp)) axisRatio = tmp
-        tmp = parseArgStrs(arg, 'annoTxt', 'annoTxt'); if(!is.null(tmp)) annoTxt = tmp
-        tmp = parseArgNums(arg, 'annoTxtX', 'annoTxtX'); if(!is.null(tmp)) annoTxtX = tmp
-        tmp = parseArgNums(arg, 'annoTxtY', 'annoTxtY'); if(!is.null(tmp)) annoTxtY = tmp
+        tmp = parseArg(arg, 'annoTxt', 'annoTxt'); if(!is.null(tmp)) annoTxt = tmp
+        tmp = parseArg(arg, 'annoTxtX', 'annoTxtX'); if(!is.null(tmp)) annoTxtX = tmp
+        tmp = parseArg(arg, 'annoTxtY', 'annoTxtY'); if(!is.null(tmp)) annoTxtY = tmp
         
         if(arg == '-h' || arg == '-help') usage()
         tmp = parseArg(arg, 'p(df)?', 'p'); if(!is.null(tmp)) myPdf = tmp
         tmp = parseArgAsNum(arg, 'w(idth)?', 'w'); if(!is.null(tmp)) width = tmp
+        tmp = parseArgAsNum(arg, 'h(eight)?', 'w'); if(!is.null(tmp)) height = tmp
         if(arg == '-ng' || arg == '-noGgplot') noGgplot = TRUE
         tmp = parseArgAsNum(arg, 'x1', 'x1'); if(!is.null(tmp)) x1 = tmp
         tmp = parseArgAsNum(arg, 'x2', 'x2'); if(!is.null(tmp)) x2 = tmp
@@ -212,44 +237,41 @@ if(length(args) >= 1){
         tmp = parseArgAsNum(arg, 'vJust', 'vJust'); if(!is.null(tmp)) vJust = tmp
         tmp = parseArgAsNum(arg, 'xLblS', 'xLblS'); if(!is.null(tmp)) xLblS = tmp
         tmp = parseArgAsNum(arg, 'xTxtS', 'xTxtS'); if(!is.null(tmp)) xTxtS = tmp
-        tmp = parseArgAsNum(arg, 'yLblS', 'yLblS'); if(!is.null(tmp)) yLblS = tmp
         tmp = parseArgAsNum(arg, 'yTxtS', 'yTxtS'); if(!is.null(tmp)) yTxtS = tmp
     }
 }
 
-if(exists('width')){
-    pdf(myPdf, width = width)
-}else{
-    pdf(myPdf)
-}
+myCmd = 'pdf(myPdf'
+if(exists('width')) myCmd = paste0(myCmd, ', width = width')
+if(exists('height')) myCmd = paste0(myCmd, ', height = height')
+myCmd = paste0(myCmd, ')')
+eval(parse(text = myCmd))
 
 data = read.delim(file('stdin'), header = F)
-
+if(exists('tp')) data = t(data)
+if(exists('drawLine')){
+    line.df = as.data.frame(data[nrow(data),])
+    colnames(line.df) = c('V1')
+    data = as.data.frame(data[-nrow(data), ])
+}
 if(exists('noGgplot')){
-    myCmd = 'hist(data[[1]], xlab = myXlab';
-    if(exists('myBinWidth')){
-        myCmd = paste0(myCmd, ', breaks=myBinWidth')
-    }
-    if(exists('drawDensity')){
-        myCmd = paste0(myCmd, ', freq=F')
-    }
-    if(exists('x1') && exists('x2')){
-        myCmd = paste0(myCmd, ', x1=x1, x2=x2')
-    }
-    if(exists('myMain')){
-        myCmd = paste0(myCmd, ', main = myMain')
-    }else{
-        myCmd = paste0(myCmd, ', main="Histogram"')
-    }
-    if(exists('myYlab')){
-        myCmd = paste0(myCmd, ', ylab = myYlab')
-    }
+    myCmd = 'boxplot(data, outline = outlier'
+    if(exists('main')) myCmd = paste0(myCmd, ', main = main')
+    if(exists('xLab')) myCmd = paste0(myCmd, ', xlab = xLab')
+    if(exists('yLab')) myCmd = paste0(myCmd, ', ylab = yLab')
     myCmd = paste0(myCmd, ')')
     eval(parse(text = myCmd))
+    
+    if(exists('drawLine')) lines(line.df)
+    if(exists('horizontal')) abline(h = horizontal, lty = 2)
 }else{
     library(ggplot2)
-    p = ggplot(data, aes(x = V1))
-    
+    library(scales) # for xPer, yPer
+    if(exists('toStack')){
+        data = stack(data)
+        colnames(data) = c('V2', 'V1')
+    }
+    p = ggplot(data, aes(factor(V1, levels = unique(V1)), V2))
     if(exists('alphaV')){
         p = p + aes_string(alpha = alphaV)
         myCmd = 'p = p + guides(alpha = guide_legend(alphaT'
@@ -273,7 +295,7 @@ if(exists('noGgplot')){
         eval(parse(text = myCmd))
     }
     if(exists('fillV')){
-        myCmd = paste0('p = p + aes(fill = ', fillV, ')'); eval(parse(text = myCmd))
+        myCmd = paste0('p = p + aes(fill = factor(', fillV, '))'); eval(parse(text = myCmd))
         myCmd = 'p = p + guides(fill = guide_legend(fillT'
         if(exists('fillTP')) myCmd = paste0(myCmd, ', title.position = fillTP')
         if(exists('fillLP')) myCmd = paste0(myCmd, ', label.position = fillLP')
@@ -287,6 +309,15 @@ if(exists('noGgplot')){
         if(exists('linetypeTP')) myCmd = paste0(myCmd, ', title.position = linetypeTP')
         if(exists('linetypeLP')) myCmd = paste0(myCmd, ', label.position = linetypeLP')
         if(exists('linetypeD')) myCmd = paste0(myCmd, ', direction = linetypeD')
+        myCmd = paste0(myCmd, '))')
+        eval(parse(text = myCmd))
+    }
+    if(exists('shapeV')){
+        myCmd = paste0('p = p + aes(shape = factor(', shapeV, '))'); eval(parse(text = myCmd))
+        myCmd = 'p = p + guides(shape = guide_legend(shapeT'
+        if(exists('shapeTP')) myCmd = paste0(myCmd, ', title.position = shapeTP')
+        if(exists('shapeLP')) myCmd = paste0(myCmd, ', label.position = shapeLP')
+        if(exists('shapeD')) myCmd = paste0(myCmd, ', direction = shapeD')
         myCmd = paste0(myCmd, '))')
         eval(parse(text = myCmd))
     }
@@ -309,30 +340,25 @@ if(exists('noGgplot')){
         eval(parse(text = myCmd))
     }
     
-    myCmd = paste0('p = p + geom_histogram(show.legend = showGuide')
+    myCmd = paste0('p = p + geom_boxplot(show.legend = showGuide, notch = notch, outlier.colour = oColor')
+    if(exists('oSize')) myCmd = paste0(myCmd, ', outlier.size = oSize')
+    
     if(exists('myAlpha')) myCmd = paste0(myCmd, ', alpha = myAlpha')
     if(exists('color')) myCmd = paste0(myCmd, ', color = color')
     if(exists('fill')) myCmd = paste0(myCmd, ', fill = fill')
+    if(exists('shape')) myCmd = paste0(myCmd, ', shape = shape')
     if(exists('size')) myCmd = paste0(myCmd, ', size = size')
-    if(exists('binWidth')) myCmd = paste0(myCmd, ', binwidth = binWidth')
     myCmd = paste0(myCmd, ')')
     if(exists('myFacet')){
-        myCmd = paste0(myCmd, ' + ', myFacet, '(', facetM)
+        myCmd = paste0(myCmd, ' + ', myFacet, '("', facetM, '"')
         if(exists('facetScl')) myCmd = paste0(myCmd, ', scale = facetScl')
-        if(exists('facetCol')) myCmd = paste0(myCmd, ', ncol = facetCol')
-        if(exists('facetRow')) myCmd = paste0(myCmd, ', nrow = facetRow')
         myCmd = paste0(myCmd, ')')
     }
     eval(parse(text = myCmd))
     
-    if(exists('drawDensity')){
-        p = p + aes(y = ..density..) + ylab('Density')
-        if(exists('binWidth')){
-            p = p + geom_freqpoly(binwidth = binWidth)
-        }else{
-            p = p + geom_freqpoly()
-        }
-    }
+    if(!exists('noJitter')) p = p + geom_jitter(alpha = 0.2)
+    
+    if(exists('flip')) p = p + coord_flip()
     
     if(exists('lgPos')) p = p + theme(legend.position = lgPos)
     if(exists('lgPosX') && exists('lgPosY')) p = p + theme(legend.position = c(lgPosX, lgPosY))
@@ -343,23 +369,25 @@ if(exists('noGgplot')){
     if(exists('xComma')) p = p + scale_x_continuous(labels = comma)
     if(exists('yComma')) p = p + scale_y_continuous(labels = comma)
     if(exists('axisRatio')) p = p + coord_fixed(ratio = axisRatio)
-    if(exists('annoTxt')) p = p + annotate('text', x = annoTxtX, y = annoTxtY, label = annoTxt)
+    if(exists('annoTxt')) p = p + annotate('text', x = as.numeric(strsplit(annoTxtX, ',', fixed = T)),
+                                           y = as.numeric(strsplit(annoTxtY, ',', fixed = T)),
+                                           label = strsplit(annoTxt, ',', fixed = T))
     
-    if(exists('x1') && exists('x2')) p = p + coord_cartesian(xlim = c(x1, x2))
     if(exists('y1') && exists('y2')) p = p + coord_cartesian(ylim = c(y1, y2))
-    if(exists('x1') && exists('x2') && exists('y1') && exists('y2')) p = p + coord_cartesian(xlim = c(x1, x2), ylim = c(y1, y2))
     if(exists('xLog') || exists('yLog')){
         library(scales)
         if(exists('xLog')) p = p + scale_x_continuous(trans = log_trans(xLog)) + annotation_logticks(sides = 'b')
         if(exists('yLog')) p = p + scale_y_continuous(trans = log_trans(yLog)) + annotation_logticks(sides = 'l')
         p = p + theme(panel.grid.minor = element_blank())
     }
-    if(exists('main')) p = p + ggtitle(main) + theme(plot.title = element_text(size = mainS, hjust = 0.5))
-    p = p + xlab(xLab) + theme(axis.title.x = element_text(size = xLblS), 
-                               axis.text.x = element_text(size = xTxtS, angle = xAngle, vjust = vJust))
+    if(exists('main')) p = p + ggtitle(main)
+    p = p + theme(plot.title = element_text(size = mainS, hjust = 0.5))
+    if(exists('xLab')) p = p + xlab(xLab) + theme(axis.title.x = element_text(size = xLblS), 
+                                                  axis.text.x = element_text(size = xTxtS, angle = xAngle, vjust = vJust))
     if(exists('yLab')) p = p + ylab(yLab)
-    p = p + theme(axis.title.y = element_text(size = yLblS), axis.text.y = element_text(size = yTxtS))
+    p = p + theme(axis.title.y = element_text(size = mainS*0.8), axis.text.y = element_text(size = yTxtS))
     
-    if(exists('verticals')) p = p + geom_vline(xintercept = verticals, linetype = "longdash", size = 0.3)
+    if(exists('horizontal')) p = p + geom_hline(yintercept = horizontal, linetype = "longdash", size = 0.3)
+    if(exists('drawLine')) p = p + geom_line(data = line.df, aes(x = 1:nrow(line.df), y = V1))
     p
 }

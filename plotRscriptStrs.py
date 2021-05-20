@@ -163,12 +163,13 @@ plotTargetGenesGoEnrichmentStr = '''
         go2term <- unique(toTable(GOTERM)[,c(1,3)])
         go2gene <- gene2go[,c(2,1)]
         names(targetGeneFiles) <- sampleNames
-        r_bind <- data.frame()
         outPdf <- paste0(outName, ".pdf")
         if(length(sampleNames)>1){
+            r_bind <- data.frame()
             for (i in seq(length(targetGeneFiles))){
                 sample <- names(targetGeneFiles[i])
                 genes <- read.csv(targetGeneFiles[[1]][i], header=FALSE)
+                genes <- as.vector(genes[,1])
                 goRes <- enricher(genes, TERM2GENE = go2gene, TERM2NAME = go2term, pvalueCutoff = 1, qvalueCutoff=1, maxGSSize = 100000)
                 goResult <- summary(goRes)
                 # goResult <- goResult[order(goResult$p.adjust),]
@@ -198,6 +199,7 @@ plotTargetGenesGoEnrichmentStr = '''
         }else{
             sample <- sampleNames
             genes <- read.csv(targetGeneFiles[[1]][1], header=FALSE)
+            genes <- as.vector(genes[,1])
             goRes <- enricher(genes, TERM2GENE = go2gene, TERM2NAME = go2term, pvalueCutoff = 1, qvalueCutoff=0.05, maxGSSize = 100000)
             goResult <- summary(goRes)
             goResult <- goResult[which(goResult$p.adjust<=0.05),]
@@ -206,10 +208,10 @@ plotTargetGenesGoEnrichmentStr = '''
             goResult$Ontology <- revalue(goResult$Ontology, c("BP"="Biological process", "MF"="Molecular function", "CC"="Cellular component"))
             goResult <- goResult[order(goResult$Ontology, goResult$pvalue),]
             goResult$Description <- factor(goResult$Description, levels = as.vector(goResult$Description))
-            outFile <- paste(sample, ".goEnrichResults.txt")
+            outFile <- paste0(sample, ".goEnrichResults.txt")
             write.table(goResult, file=outFile, sep = "\t", row.names = FALSE, col.names = TRUE, quote = F)
             pdf(outPdf, width=10, height=8)
-            p <- dotplot(goRes, showCategory=30) + scale_color_continuous(low='purple', high='green') + scale_y_discrete(labels=function(x) str_wrap(x, width=100)) + scale_size(range=c(0, 5)) + ggplot2::facet_grid(~level)
+            p <- dotplot(goRes, showCategory=30) + scale_color_continuous(low='purple', high='green') + scale_y_discrete(labels=function(x) str_wrap(x, width=100)) + scale_size(range=c(0, 5))
             print(p)
             dev.off()
         }

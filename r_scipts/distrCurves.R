@@ -5,32 +5,33 @@ scriptName = basename(scriptPath)
 scriptDir = dirname(scriptPath)
 args = args[-(1:5)]
 source(paste0(scriptDir, '/common.R'))
+library(tools)
 
 usage = function(){
     cat(paste0("Usage: ", scriptName) )
-    cat(" -p=outputName.pdf input1.data inpu2.data [input3.data ...]
+    cat(" -p=outputName.pdf input1.tsv input2.tsv [input3.tsv ...]
 Option:
     Common:
-    -p|pdf          FILE    The output figure in pdf[figure.pdf]
-    -w|width        INT     The figure width
-    -m|main         STR     The main title
-    -mainS          DOU     The size of main title[22 for ggplot]
-    -x|xlab         STR     The xlab
-    -y|ylab         STR     The ylab
-    -xl|xlog        INT     Transform the X scale to INT base log
-    -yl|ylog        INT     Transform the Y scale to INT base log
-    -x1             INT     The xlim start
-    -x2             INT     The xlim end
-    -y1             INT     The ylim start[0 for -f]
-    -y2             INT     The ylim end[1 for -f]
-    -ng|noGgplot            Draw figure in the style of R base rather than ggplot
-    -ho|-horizontal DOU     Draw a horizontal dash line at y=DOU
-    -frac                   Draw the Y axis in fraction
-    -h|help                 Show help
-    
-    ggplot specific:
+    -p|pdf      FILE    The output figure in pdf[figure.pdf]
+    -w|width    INT     The figure width
+    -m|main     STR     The main title
+    -mainS      DOU     The size of main title[22 for ggplot]
+    -x|xlab     STR     The xlab[Binned Values]
+    -y|ylab     STR     The ylab
+    -xl|xlog    INT     Transform the X scale to INT base log
+    -yl|ylog    INT     Transform the Y scale to INT base log
+    -x1         INT     The xlim start
+    -x2         INT     The xlim end
+    -y1         INT     The ylim start
+    -y2         INT     The ylim end
+    -ng|noGgplot        Draw figure in the style of R base rather than ggplot
+    -b|bin      DOU     The bin width for ggplot[1/30 of the range of the data] or 
+                        the break number for R base
+    -h|help             Show help
 
-    -legendT        STR     The title shown on legend[Group]
+    ggplot specific:
+    -ve|vertical  DOU Draw a vertical line
+    -d|density        Draw Y axis in density
 
     -a|alpha        DOU     The alpha of bar body
     -alphaV         STR     The column name to apply alpha (V3, V4, ...)
@@ -38,7 +39,10 @@ Option:
     -alphaTP        POS     The title position of alpha legend[horizontal: top, vertical:right]
     -alphaLP        POS     The label position of alpha legend[horizontal: top, vertical:right]
     -alphaD         STR     The direction of alpha legend (horizontal, vertical)
-    -c|color        STR     The color of line
+    -c|color        STR     The color of bar boundary
+    -colorV         STR     The column name to apply color (V3, V4,...)
+    -colorC                 Continuous color mapping
+    -colorT         STR     The title of color legend[Color]
     -colorTP        POS     The title position of color legend[horizontal: top, vertical:right]
     -colorLP        POS     The label position of color legend[horizontal: top, vertical:right]
     -colorD         STR     The direction of color legend (horizontal, vertical)
@@ -77,45 +81,44 @@ Option:
     -annoTxt    STRs    The comma-seperated texts to be annotated
     -annoTxtX   INTs    The comma-seperated X positions of text
     -annoTxtY   INTs    The comma-seperated Y positions of text
-Skill:
-    Legend title of alpha, color, etc can be set as the same to merge their guides
 ")
-  q(save='no')
+  q(save = 'no')
 }
 
 if(length(args) == 0) usage()
 
 myPdf = 'figure.pdf'
 alphaT = 'Alpha'
+colorT = 'Color'
 linetypeT = 'Line Type'
 sizeT = 'Size'
 lgTtlS = 22
 lgTxtS = 20
 showGuide = TRUE
 mainS = 22
-myLegendTitle = 'Group'
+xLab = 'Binned Values'
 
 for(i in 1:length(args)){
     arg = args[i]
+  
+    tmp = parseArgAsNum(arg, 've(rtical)?', 've')
+    if(!is.null(tmp)){
+        vertical = tmp
+        args[i] = NA
+        next
+    }
+    tmp = parseArgAsNum(arg, 'b(in)?', 'b')
+    if(!is.null(tmp)){
+        myBreak = tmp
+        args[i] = NA
+        next
+    }
+    if(arg == '-d' || arg == '-density'){
+        drawDensity = TRUE
+        args[i] = NA
+        next
+    }
 
-    if(arg == '-frac'){
-        fraction = TRUE
-        args[i] = NA
-        next
-    }
-    tmp = parseArgAsNum(arg, 'ho(rizontal)?', 'ho')
-    if(!is.null(tmp)){
-        myHorizontal = tmp
-        args[i] = NA
-        next
-    }
-    
-    tmp = parseArg(arg, 'legendT', 'legendT')
-    if(!is.null(tmp)){
-        myLegendTitle = tmp
-        args[i] = NA
-        next
-    }
     tmp = parseArgAsNum(arg, 'a(lpha)?', 'a')
     if(!is.null(tmp)){
         myAlpha = tmp
@@ -180,7 +183,7 @@ for(i in 1:length(args)){
         args[i] = NA
         next
     }
-        
+    
     if(arg == '-fp' || arg =='-flip'){
         flip = TRUE
         args[i] = NA
@@ -332,50 +335,67 @@ for(i in 1:length(args)){
 args = args[!is.na(args)]
 if(length(args) < 2) stop('Please specify two input files at least')
 
-
 if(exists('width')){
-    pdf(myPdf, width = width)
+  pdf(myPdf, width = width)
 }else{
-    pdf(myPdf)
+  pdf(myPdf)
 }
-
-library(tools)
 
 fileNames = basename(file_path_sans_ext(args))
 if(exists('noGgplot')){
     myColors = rainbow(length(args))
     data = read.delim(args[1], header = F)
-    if(exists('fraction')) data[2] = data[[2]]/sum(data[2])
-    myCmd = 'plot(data, type = "l", col = myColors[1]'
+    myCmd = 'histRes = hist(data[[1]], plot = F'
+    if(exists('myBreak')) myCmd = paste0(myCmd, ', breaks = myBreak')
+    myCmd = paste0(myCmd, '); plot(histRes$mid, histRes$')
+    if(exists('drawDensity')){
+        myCmd = paste0(myCmd, 'density')
+    }else{
+        myCmd = paste0(myCmd, 'counts')
+    }
+    logStr = ''
+    if(exists('xLog')) logStr = paste0(logStr, 'x')
+    if(exists('yLog')) logStr = paste0(logStr, 'y')
+    if(logStr != '') myCmd = paste0(myCmd, ', log = logStr')
+    myCmd = paste0(myCmd, ', type = "l", col = myColors[1], xlab = xLab')
     if(exists('x1') && exists('x2')) myCmd = paste0(myCmd, ', xlim = c(x1, x2)')
-    if(exists('myMain')) myCmd = paste0(myCmd, ', main = myMain')
-    if(exists('myXlab')) myCmd = paste0(myCmd, ', xlab = myXlab')
-    if(exists('myYlab')) myCmd = paste0(myCmd, ', ylab = myYlab')
+    if(exists('main')) myCmd = paste0(myCmd, ', main = main')
+    if(exists('yLab')) myCmd = paste0(myCmd, ', ylab = yLab')
     myCmd = paste0(myCmd, ')')
     eval(parse(text = myCmd))
+
     for(i in 2:length(args)){
         file = args[i]
+        myColors = c(myColors, i)
         data = read.delim(file, header = F)
-        if(exists('fraction')) data[2] = data[[2]] / sum(data[2])
-        lines(data, col = myColors[i])
+        myCmd = 'histRes = hist(data[[1]], plot = F'
+        if(exists('myBreak')) myCmd = paste0(myCmd, ', breaks = myBreak')
+        myCmd = paste0(myCmd, '); lines(histRes$mid, histRes$')
+        if(exists('drawDensity')){
+            myCmd = paste0(myCmd, 'density')
+        }else{
+            myCmd = paste0(myCmd, 'counts')
+        }
+        myCmd = paste0(myCmd, ', type = "l", col = myColors[i])')
+        eval(parse(text = myCmd))
     }
     legend('topright', legend = fileNames, col = myColors, lty = 1, lwd = 1.5)
 }else{
     library(ggplot2)
-    data = cbind(read.delim(args[1], header = F), Group = fileNames[1])
-    if(exists('fraction')) data[2] = data[[2]] / sum(data[2])
+    data = cbind(read.delim(args[1], header = F), Series = fileNames[1])
     for(i in 2:length(args)){
         file = args[i]
         fileName = fileNames[i]
-        newData = cbind(read.delim(file, header = F), Group = fileName)
-        if(exists('fraction')) newData[2] = newData[[2]] / sum(newData[2])
+        newData = cbind(read.delim(file, header = F), Series = fileName)
         data = rbind(data, newData)
     }
-    p = ggplot(data, aes(x = V1, y = V2, color = Group)) + guides(color = guide_legend(title = myLegendTitle))
-    myCmd = 'p = p + geom_line(show_guide = showGuide'
+  
+    p = ggplot(data, aes(group = Series, color = Series))
+    myCmd = 'p = p + geom_freqpoly(aes(x = V1), '
     if(exists('myAlpha')) myCmd = paste0(myCmd, ', alpha = myAlpha')
     if(exists('color')) myCmd = paste0(myCmd, ', color = color')
     if(exists('size')) myCmd = paste0(myCmd, ', size = size')
+    if(exists('myBreak')) myCmd = paste0(myCmd, ', binwidth = myBreak')
     myCmd = paste0(myCmd, ')')
     if(exists('myFacet')){
         myCmd = paste0(myCmd, ' + ', myFacet, '("' + facetM + '"')
@@ -383,7 +403,9 @@ if(exists('noGgplot')){
         myCmd = paste0(myCmd, ')')
     }
     eval(parse(text = myCmd))
-
+  
+    if(exists('drawDensity')) p = p + aes(y = ..density..)
+    
     if(exists('lgPos')) p = p + theme(legend.position = lgPos)
     if(exists('lgPosX') && exists('lgPosY')) p = p + theme(legend.position = c(lgPosX, lgPosY))
     p = p + theme(legend.title = element_text(size = lgTtlS), legend.text = element_text(size = lgTxtS))
@@ -408,11 +430,10 @@ if(exists('noGgplot')){
     }
     if(exists('main')) p = p + ggtitle(main)
     p = p + theme(plot.title = element_text(size = mainS))
-    if(exists('xLab')) p = p + xlab(xLab)
-    p = p + theme(axis.title.x = element_text(size = mainS*0.8), axis.text.x = element_text(size = mainS*0.7))
+    p = p + xlab(xLab) + theme(axis.title.x = element_text(size = mainS*0.8), axis.text.x = element_text(size = mainS*0.7))
     if(exists('yLab')) p = p + ylab(yLab)
     p = p + theme(axis.title.y = element_text(size = mainS*0.8), axis.text.y = element_text(size = mainS*0.7))
-    if(exists('myHorizontal')) p = p + geom_hline(yintercept = myHorizontal, linetype = "longdash", size = 0.3)
     
+    if(exists('vertical')) p = p + geom_vline(xintercept = vertical, linetype = "longdash", size = 0.3)
     p
 }

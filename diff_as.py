@@ -169,8 +169,8 @@ def diff_as1(dataToProcess, compCondFile=None, dirSpec=None, sampleMerged=False)
     for cond1, cond2 in combinations(conditions, 2):
         comp1Name = list(set([x[0] for x in sample2bamDict["cond2bam"][cond1]]))[0]
         comp2Name = list(set([x[0] for x in sample2bamDict["cond2bam"][cond2]]))[0]
-        b1File = "b1File.txt"
-        b2File = "b2File.txt"
+        b1File = "{}.b1File.txt".format(comp1Name)
+        b2File = "{}.b2File.txt".format(comp2Name)
         b1List = list(set([x[1] for x in sample2bamDict["cond2bam"][cond1]]))
         b2List = list(set([x[1] for x in sample2bamDict["cond2bam"][cond2]]))
         out1 = open(b1File, "w")
@@ -188,8 +188,8 @@ def diff_as1(dataToProcess, compCondFile=None, dirSpec=None, sampleMerged=False)
         if cond1Paired != cond2Paired or len(cond1Paired) > 1 or len(cond2Paired) > 1 or cond1Length != cond2Length or len(cond1Length) > 1 or len(cond2Length) > 1:
             print "rMATS can't resolve the situation where condition {} and {} with different ngs sequencing strategy or read length!".format(comp1Name, comp2Name)
             continue
-        cmd = "rmats.py --b1 {} --b2 {} --gtf {} --od {} -t {} --readLength {} --tstat {} --nthread {}"
-        cmd = cmd.format(b1File, b2File, gtfFile, compOutDir, cond1Paired[0], cond1Length[0], currentThreads, currentThreads)
+        cmd = "rmats.py --b1 {} --b2 {} --gtf {} --od {} -t {} --readLength {} --tstat {} --nthread {} 2>{}.rmats.log"
+        cmd = cmd.format(b1File, b2File, gtfFile, compOutDir, cond1Paired[0], cond1Length[0], currentThreads, currentThreads, compOutDir)
         subprocess.call(cmd, shell=True)
 
         resolveDir("{}.sigDiffAS".format(compOutDir), chdir=False)
