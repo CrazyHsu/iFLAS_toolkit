@@ -157,7 +157,7 @@ plotTargetGenesGoEnrichmentStr = '''
     library(clusterProfiler)
     
     plotTargetGenesGoEnrichment <- function(targetGeneFiles, sampleNames, gene2goFile, outName){
-        targetGeneFiles <- strsplit(targetGeneFiles, ",")
+        targetGeneFiles <- unlist(strsplit(targetGeneFiles, ","))
         sampleNames <- unlist(strsplit(sampleNames, ","))
         gene2go <- read.delim(gene2goFile, header=T, sep="\t")
         go2term <- unique(toTable(GOTERM)[,c(1,3)])
@@ -168,7 +168,7 @@ plotTargetGenesGoEnrichmentStr = '''
             r_bind <- data.frame()
             for (i in seq(length(targetGeneFiles))){
                 sample <- names(targetGeneFiles[i])
-                genes <- read.csv(targetGeneFiles[[1]][i], header=FALSE)
+                genes <- read.csv(targetGeneFiles[i], header=FALSE)
                 genes <- as.vector(genes[,1])
                 goRes <- enricher(genes, TERM2GENE = go2gene, TERM2NAME = go2term, pvalueCutoff = 1, qvalueCutoff=1, maxGSSize = 100000)
                 goResult <- summary(goRes)
@@ -179,7 +179,7 @@ plotTargetGenesGoEnrichmentStr = '''
                 goResult$Ontology <- revalue(goResult$Ontology, c("BP"="Biological process", "MF"="Molecular function", "CC"="Cellular component"))
                 goResult <- goResult[order(goResult$Ontology, goResult$pvalue),]
                 goResult$Description <- factor(goResult$Description, levels = as.vector(goResult$Description))
-                outFile <- paste(sample, ".goEnrichResults.txt")
+                outFile <- paste0(sample, ".goEnrichResults.txt")
                 write.table(goResult, file=outFile, sep = "\t", row.names = FALSE, col.names = TRUE, quote = F)
                 goResult$Cluster <- sample
                 goResult$group <- sample

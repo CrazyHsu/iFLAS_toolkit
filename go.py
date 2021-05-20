@@ -7,7 +7,10 @@ Created on: 2021-04-29 16:20:45
 Last modified: 2021-04-29 16:20:45
 '''
 from commonFuncs import *
+import warnings
 from rpy2 import robjects
+from rpy2.rinterface import RRuntimeWarning
+warnings.filterwarnings("ignore", category=RRuntimeWarning)
 
 def go(args, optionTools=None, dirSpec=None):
     print getCurrentTime() + " Perform GO enrichment for target genes..."
