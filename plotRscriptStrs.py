@@ -14,27 +14,23 @@ plotReadsCorrectedEvalStr = '''
         correctMapped <- read.csv(correctMappedBed, sep="\t", header=FALSE)
         rawMapped$accuracy <- (rawMapped$V13 * rawMapped$V14)/100
         correctMapped$accuracy <- (correctMapped$V13 * correctMapped$V14)/100
-        rawMapped$type <- "raw"
-        correctMapped$type <- "corrected"
+        rawMapped$type <- "Raw"
+        correctMapped$type <- "Corrected"
         pdf(outPdf)
-        ggplot(rbind(rawMapped,correctMapped), aes(x=accuracy, fill=type)) + 
-        geom_density(alpha=0.2) + ggtitle("Raw Reads Correction Evaluation") + xlab("Accuracy (%)")
+        p <- ggplot(rbind(rawMapped,correctMapped), aes(x=accuracy, fill=type)) + 
+        geom_histogram(alpha=0.6, position = 'identity', binwidth=2) + 
+        scale_fill_manual(values=c("#69b3a2", "#404080")) + 
+        ggtitle("Reads Correction Evaluation") + xlab("Accuracy (%)") + 
         theme_bw() + 
-        theme(plot.title = element_text(hjust = 0.5, size=20), text = element_text(size=12), panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"), strip.background = element_blank(), strip.text.x = element_blank(), legend.title = element_blank(), legend.text = element_text(size = 8), legend.key.size = unit(0.5, "cm"), panel.spacing = unit(0, "lines"))
+        theme(plot.title = element_text(hjust = 0.5, size=20), text = element_text(size=12), 
+              panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
+              axis.line = element_line(colour = "black"), strip.background = element_blank(), 
+              strip.text.x = element_blank(), legend.title = element_blank(), legend.text = element_text(size = 8), 
+              legend.key.size = unit(0.5, "cm"), panel.spacing = unit(0, "lines")) +
+        scale_y_continuous(labels = label_number(scale = 1 / 1e4))
+        print(p)
         dev.off()
     }
-    # filtrationDir = os.path.join(dirSpec.out_dir, dataObj.project_name, dataObj.sample_name, "filtration")
-    # if not validateDir(filtrationDir): return []
-    # rawMappedBed = os.path.join(filtrationDir, "raw.mapped.addCVandID.bed12+")
-    # correctMappedBed = os.path.join(filtrationDir, "mapped.addCVandID.bed12+")
-    # rawMapped = pd.read_csv(rawMappedBed, sep="\t", header=None)
-    # correctMapped = pd.read_csv(correctMappedBed, sep="\t", header=None)
-    # rawMapped["accuracy"] = (rawMapped.iloc[:, 12] * rawMapped.iloc[:, 13])/100
-    # correctMapped["accuracy"] = (correctMapped.iloc[:, 12] * correctMapped.iloc[:, 13])/100
-    # for x in [rawMapped, correctMapped]:
-    #     sns.distplot(x.accuracy, kde=False, bins=range(0, 100, 10))
-    # plt.savefig("readsCorrectResult.pdf")
-    # return ["readsCorrectResult.pdf"]
 '''
 
 plotAllelicAsStructureStr = '''
@@ -69,14 +65,20 @@ plotAsCountStatisticsStr = '''
     plotAsCountStatistics <- function(AsAnnotationFile, outPdf){
         as_anno_data <- read.csv(AsAnnotationFile, sep="\t")
         as_anno_data$AS_type <- factor(as_anno_data$AS_type, levels=c("SE", "A5SS", "A3SS", "IR", "APA", "PA"))
+        as_anno_data$Annotation <- factor(as_anno_data$Annotation, levels=c("Inc", "Exc"))
         plot(outPdf)
-        p <- ggplot(as_anno_data, aes(x=annotation, y=count,fill=annotation)) + 
+        p <- ggplot(as_anno_data, aes(x=Annotation, y=Count, fill=Annotation)) + 
             geom_bar(stat = 'identity') + 
             facet_grid(~ AS_type) + 
             coord_cartesian(xlim=c(0.8,2.2)) + 
-            theme_bw() + 
+            theme_bw() + ggtitle("AS Type Statistics") + xlab("AS types") + 
             scale_y_continuous(expand = c(0.02, 0), trans="log10") + 
-            theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"), strip.background = element_blank(), strip.text.x = element_blank(), legend.title = element_blank(), legend.text = element_text(size = 8), legend.key.size = unit(0.5, "cm"), panel.spacing = unit(0, "lines"))
+            theme(plot.title = element_text(hjust = 0.5, size=20), panel.border = element_blank(), 
+                  panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
+                  axis.line = element_line(colour = "black"), 
+                  strip.background = element_blank(), legend.title = element_blank(), 
+                  legend.text = element_text(size = 8), legend.key.size = unit(0.5, "cm"), 
+                  panel.spacing = unit(0, "lines"))
         print(p)
         dev.off()
     }
@@ -86,19 +88,22 @@ plotAsDinucleotideStatisticsStr = '''
     library(ggplot2)
     library(dplyr)
     plotAsDinucleotideStatistics <- function(AsDinucleotideFile, outPdf){
-        as_data <- read.csv(AsDinucleotideFile, sep="\t")
-        as_data1 <- as_data %>% group_by(AS_type, category) %>% mutate(percent = count/sum(count))
-        as_data1[is.na(as_data1)] <- 0
-        as_data1$AS_type <- factor(as_data1$AS_type, levels=c("SE", "A5SS", "A3SS", "IR", "APA", "PA"))
-        #as_data1$dinucleotide <- factor(as_data1$dinucleotide, levels=c("GT-AG", "GC-AG", "GT-", "GC-", "-AG", "other"))
+        as_splice_data <- read.csv(AsDinucleotideFile, sep="\t")
+        as_splice_data[is.na(as_splice_data)] <- 0
+        as_splice_data$AS_type <- factor(as_splice_data$AS_type, levels=c("SE", "A5SS", "A3SS", "IR"))
+        as_splice_data$Category <- factor(as_splice_data$Category, levels=c("Inc", "Exc"))
         pdf(outPdf)
-        p <- ggplot(as_data1, aes(x=category, y=percent,fill=dinucleotide)) + 
+        p <- ggplot(as_splice_data, aes(x=Category, y=Frequency, fill=Dinucleotide)) + 
             geom_bar(stat = 'identity') + 
             facet_grid(~ AS_type) + 
             coord_cartesian(xlim=c(0.8,2.2)) + 
-            theme_bw() + 
+            theme_bw() + ggtitle("AS Dinucleotide Statistics") + xlab("AS types") + 
             scale_y_continuous(expand = c(0.02, 0)) + 
-            theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"), strip.background = element_blank(), strip.text.x = element_blank(), legend.title = element_blank(), legend.text = element_text(size = 8), legend.key.size = unit(0.5, "cm"), panel.spacing = unit(0, "lines"))
+            theme(panel.border = element_blank(), panel.grid.major = element_blank(), 
+                  panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"), 
+                  strip.background = element_blank(), legend.title = element_blank(), 
+                  legend.text = element_text(size = 8), legend.key.size = unit(0.5, "cm"), 
+                  panel.spacing = unit(0, "lines"))
         print(p)
         dev.off()
     }
@@ -109,25 +114,35 @@ plotNovelHqASStr = '''
     library(ggplot2)
     plotNovelHqAS <- function(isoformScoreFile, outPdf){
         isoformScore <- read.csv(isoformScoreFile, sep="\t", header=FALSE)
-        names(isoformScore) <- c("gene", "isos", "count", "total_count", "freq", "annotation")
-        isoformScore <- isoformScore[order(-isoformScore$freq),]
-        isoformScoreNovel <- isoformScore[isoformScore$annotation == "Novel"]
-        isoformScoreAnno <- isoformScore[isoformScore$annotation == "Annotated"]
+        names(isoformScore) <- c("Gene", "Isos", "Count", "Total_count", "Freq", "Annotation")
+        isoformScore <- isoformScore[order(-isoformScore$Freq),]
+        isoformScoreNovel <- isoformScore[isoformScore$Annotation == "Novel"]
+        isoformScoreAnno <- isoformScore[isoformScore$Annotation == "Annotated"]
         
-        isoformScoreNovel$isos <- factor(isoformScoreNovel$isos, levels=as.vector(isoformScoreNovel$isos))
-        isoformScoreAnno$isos <- factor(isoformScoreAnno$isos, levels=as.vector(isoformScoreAnno$isos))
+        isoformScoreNovel$Isos <- factor(isoformScoreNovel$Isos, levels=as.vector(isoformScoreNovel$Isos))
+        isoformScoreAnno$Isos <- factor(isoformScoreAnno$Isos, levels=as.vector(isoformScoreAnno$Isos))
         pdf(outPdf)
-        p1 <- ggplot(data=isoformScoreNovel, aes(x=isos, y=freq, group=1)) + 
+        p1 <- ggplot(data=isoformScoreNovel, aes(x=Isos, y=Freq, group=1)) + 
             geom_point() + 
             geom_line() + 
             theme_bw() + ggtitle("Annotated Isoforms Rank") + 
-            theme(plot.title = element_text(hjust = 0.5, size=20), axis.text.x=element_blank(), axis.title.x=element_blank(), text = element_text(size=12), panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"), strip.background = element_blank(), strip.text.x = element_blank(), legend.title = element_blank(), legend.text = element_text(size = 8), legend.key.size = unit(0.5, "cm"), panel.spacing = unit(0, "lines"))
+            theme(plot.title = element_text(hjust = 0.5, size=20), axis.text.x=element_blank(), 
+                axis.title.x=element_blank(), text = element_text(size=12), panel.border = element_blank(), 
+                panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
+                axis.line = element_line(colour = "black"), strip.background = element_blank(), 
+                strip.text.x = element_blank(), legend.title = element_blank(), legend.text = element_text(size = 8), 
+                legend.key.size = unit(0.5, "cm"), panel.spacing = unit(0, "lines"))
         print(p1)
-        p2 <- ggplot(data=isoformScoreAnno, aes(x=isos, y=freq, group=1)) + 
+        p2 <- ggplot(data=isoformScoreAnno, aes(x=Isos, y=Freq, group=1)) + 
             geom_point() +
             geom_line() +
             theme_bw() + ggtitle("Novel Isoforms Rank") + 
-            theme(plot.title = element_text(hjust = 0.5, size=20), axis.text.x=element_blank(), axis.title.x=element_blank(), text = element_text(size=12), panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"), strip.background = element_blank(), strip.text.x = element_blank(), legend.title = element_blank(), legend.text = element_text(size = 8), legend.key.size = unit(0.5, "cm"), panel.spacing = unit(0, "lines"))
+            theme(plot.title = element_text(hjust = 0.5, size=20), axis.text.x=element_blank(), 
+                axis.title.x=element_blank(), text = element_text(size=12), panel.border = element_blank(), 
+                panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
+                axis.line = element_line(colour = "black"), strip.background = element_blank(), 
+                strip.text.x = element_blank(), legend.title = element_blank(), legend.text = element_text(size = 8), 
+                legend.key.size = unit(0.5, "cm"), panel.spacing = unit(0, "lines"))
         print(p2)
         dev.off()
     }
@@ -138,10 +153,14 @@ plotDiffASStr = '''
     plotDiffAS <- function(diffAsFile, outPdf){
         diffAS <- read.csv(diffAsFile, sep="\t")
         pdf(outPdf)
-        p <- ggplot(diffAS, aes(x=AS_type, y=count, fill=AS_type)) + geom_bar(stat = 'identity') + 
-            theme_bw() + 
+        p <- ggplot(diffAS, aes(x=AS_type, y=Count, fill=AS_type)) + geom_bar(stat = 'identity') + 
+            theme_bw() + ggtitle("Diff AS Type Statistics") + xlab("AS types") + 
             scale_y_continuous(expand = c(0.02, 0)) + 
-            theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"), strip.background = element_blank(), strip.text.x = element_blank(), legend.title = element_blank(), legend.text = element_text(size = 8), legend.key.size = unit(0.5, "cm"), panel.spacing = unit(0, "lines"))
+            theme(panel.border = element_blank(), panel.grid.major = element_blank(), 
+                panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"), 
+                strip.background = element_blank(), strip.text.x = element_blank(), legend.title = element_blank(), 
+                legend.text = element_text(size = 8), legend.key.size = unit(0.5, "cm"), 
+                panel.spacing = unit(0, "lines"))
         print(p)
         dev.off()
     }
@@ -193,7 +212,9 @@ plotTargetGenesGoEnrichmentStr = '''
         
             r_bind_new <- new("compareClusterResult", compareClusterResult = r_bind)
             pdf(outPdf, width=10, height=8)
-            p <- dotplot(r_bind_new, showCategory=30, x=~group) + scale_color_continuous(low='purple', high='green') + scale_y_discrete(labels=function(x) str_wrap(x, width=100)) + scale_size(range=c(0, 5)) + ggplot2::facet_grid(~level)
+            p <- dotplot(r_bind_new, showCategory=30, x=~group) + scale_color_continuous(low='purple', high='green') + 
+                scale_y_discrete(labels=function(x) str_wrap(x, width=100)) + 
+                scale_size(range=c(0, 5)) + ggplot2::facet_grid(~level)
             print(p)
             dev.off()
         }else{
@@ -211,7 +232,8 @@ plotTargetGenesGoEnrichmentStr = '''
             outFile <- paste0(sample, ".goEnrichResults.txt")
             write.table(goResult, file=outFile, sep = "\t", row.names = FALSE, col.names = TRUE, quote = F)
             pdf(outPdf, width=10, height=8)
-            p <- dotplot(goRes, showCategory=30) + scale_color_continuous(low='purple', high='green') + scale_y_discrete(labels=function(x) str_wrap(x, width=100)) + scale_size(range=c(0, 5))
+            p <- dotplot(goRes, showCategory=30) + scale_color_continuous(low='purple', high='green') + 
+                scale_y_discrete(labels=function(x) str_wrap(x, width=100)) + scale_size(range=c(0, 5))
             print(p)
             dev.off()
         }
@@ -645,20 +667,3 @@ plotPaTailAsStructure <- function(sigFile, outPdf){
 
 
 '''
-#
-# test = '''
-# plot_test <- function() {
-#     file.create("testfile.txt")
-# }
-# '''
-# robjects.r(test)
-# robjects.r.plot_test()
-#
-# test = '''
-# f <- function(r){
-#     pi * r
-# }
-# '''
-# robjects.r(test)
-# t=robjects.r.f(3)
-# print(t[0])

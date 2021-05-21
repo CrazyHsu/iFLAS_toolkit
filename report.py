@@ -83,7 +83,7 @@ def reportReadsContentEval(dataObj=None, refParams=None, dirSpec=None):
 def reportASPattern(dataObj=None, dirSpec=None):
     print getCurrentTime() + " Start plotting AS Pattern for project {} sample {}...".format(dataObj.project_name, dataObj.sample_name)
     def _print(asType, annotation, count):
-        return "{}\t{}\t".format(asType, annotation, count)
+        return "{}\t{}\t{}".format(asType, annotation, count)
 
     def _getLineCount(myFile, sep="\t", grepStr=None, col=0, uniq=True, header=False):
         if header == False:
@@ -112,32 +112,32 @@ def reportASPattern(dataObj=None, dirSpec=None):
     APA_novel = os.path.join(characAsDir, "novelPA.tsv")
     PA = os.path.join(characAsDir, "statistic.APA.tsv")
 
-    outStr = "AS_type\tannotation\tcount"
-    outStr += "\n{}".format(_print("IR", "anno", _getLineCount(IR_anno)))
-    outStr += "\n{}".format(_print("IR", "novel", _getLineCount(IR_novel)))
-    outStr += "\n{}".format(_print("SE", "anno", _getLineCount(SE_anno)))
-    outStr += "\n{}".format(_print("SE", "novel", _getLineCount(SE_novel)))
-    outStr += "\n{}".format(_print("A3SS", "anno", _getLineCount(A3SS_anno)))
-    outStr += "\n{}".format(_print("A3SS", "novel", _getLineCount(A3SS_novel)))
-    outStr += "\n{}".format(_print("A5SS", "anno", _getLineCount(A5SS_anno)))
-    outStr += "\n{}".format(_print("A5SS", "novel", _getLineCount(A5SS_novel)))
-    outStr += "\n{}".format(_print("APA", "anno", _getLineCount(APA_anno)))
-    outStr += "\n{}".format(_print("APA", "novel", _getLineCount(APA_novel)))
-    outStr += "\n{}".format(_print("PA", "anno", _getLineCount(PA, grepStr="Known", col=2)))
-    outStr += "\n{}".format(_print("PA", "novel", _getLineCount(PA, grepStr="Novel", col=2)))
+    outStr = "AS_type\tAnnotation\tCount"
+    outStr += "\n{}".format(_print("IR", "Anno", _getLineCount(IR_anno)))
+    outStr += "\n{}".format(_print("IR", "Novel", _getLineCount(IR_novel)))
+    outStr += "\n{}".format(_print("SE", "Anno", _getLineCount(SE_anno)))
+    outStr += "\n{}".format(_print("SE", "Novel", _getLineCount(SE_novel)))
+    outStr += "\n{}".format(_print("A3SS", "Anno", _getLineCount(A3SS_anno)))
+    outStr += "\n{}".format(_print("A3SS", "Novel", _getLineCount(A3SS_novel)))
+    outStr += "\n{}".format(_print("A5SS", "Anno", _getLineCount(A5SS_anno)))
+    outStr += "\n{}".format(_print("A5SS", "Novel", _getLineCount(A5SS_novel)))
+    outStr += "\n{}".format(_print("APA", "Anno", _getLineCount(APA_anno)))
+    outStr += "\n{}".format(_print("APA", "Novel", _getLineCount(APA_novel)))
+    outStr += "\n{}".format(_print("PA", "Anno", _getLineCount(PA, grepStr="Known", col=2)))
+    outStr += "\n{}".format(_print("PA", "Novel", _getLineCount(PA, grepStr="Novel", col=2)))
     asAnnoFile = "{}_{}.AS_annotation.txt".format(dataObj.project_name, dataObj.sample_name)
     out = open(asAnnoFile, "w")
     print >>out, outStr
     out.close()
 
     ######################### splice site
-    irSpliceSite = pd.read_csv(os.path.join(characAsDir, "IR.tmp.txt"), sep="\t", header=None, names=["Dinucleotide", "Count"])
-    seIncSpliceSite = pd.read_csv(os.path.join(characAsDir, "SE.inc.tmp.txt"), sep="\t", header=None, names=["Dinucleotide", "Count"])
-    seExcSpliceSite = pd.read_csv(os.path.join(characAsDir, "SE.exc.tmp.txt"), sep="\t", header=None, names=["Dinucleotide", "Count"])
-    a3ssIncSpliceSite = pd.read_csv(os.path.join(characAsDir, "A3SS.inc.tmp.txt"), sep="\t", header=None, names=["Dinucleotide", "Count"])
-    a3ssExcSpliceSite = pd.read_csv(os.path.join(characAsDir, "A3SS.exc.tmp.txt"), sep="\t", header=None, names=["Dinucleotide", "Count"])
-    a5ssIncSpliceSite = pd.read_csv(os.path.join(characAsDir, "A5SS.inc.tmp.txt"), sep="\t", header=None, names=["Dinucleotide", "Count"])
-    a5ssExcSpliceSite = pd.read_csv(os.path.join(characAsDir, "A5SS.exc.tmp.txt"), sep="\t", header=None, names=["Dinucleotide", "Count"])
+    irSpliceSite = pd.read_csv(os.path.join(characAsDir, "IR.tmp.txt"), sep="\t", header=None, names=["Dinucleotide", "Frequency"])
+    seIncSpliceSite = pd.read_csv(os.path.join(characAsDir, "SE.inc.tmp.txt"), sep="\t", header=None, names=["Dinucleotide", "Frequency"])
+    seExcSpliceSite = pd.read_csv(os.path.join(characAsDir, "SE.exc.tmp.txt"), sep="\t", header=None, names=["Dinucleotide", "Frequency"])
+    a3ssIncSpliceSite = pd.read_csv(os.path.join(characAsDir, "A3SS.inc.tmp.txt"), sep="\t", header=None, names=["Dinucleotide", "Frequency"])
+    a3ssExcSpliceSite = pd.read_csv(os.path.join(characAsDir, "A3SS.exc.tmp.txt"), sep="\t", header=None, names=["Dinucleotide", "Frequency"])
+    a5ssIncSpliceSite = pd.read_csv(os.path.join(characAsDir, "A5SS.inc.tmp.txt"), sep="\t", header=None, names=["Dinucleotide", "Frequency"])
+    a5ssExcSpliceSite = pd.read_csv(os.path.join(characAsDir, "A5SS.exc.tmp.txt"), sep="\t", header=None, names=["Dinucleotide", "Frequency"])
     irSpliceSite["AS_type"], seIncSpliceSite["AS_type"], seExcSpliceSite["AS_type"], a3ssIncSpliceSite["AS_type"], \
     a3ssExcSpliceSite["AS_type"], a5ssIncSpliceSite["AS_type"], a5ssExcSpliceSite["AS_type"] = \
         "IR", "SE", "SE", "A3SS", "A3SS", "A5SS", "A5SS"
@@ -157,7 +157,7 @@ def reportASPattern(dataObj=None, dirSpec=None):
     from plotRscriptStrs import plotAsDinucleotideStatisticsStr
     robjects.r(plotAsDinucleotideStatisticsStr)
     asSpliceSitePdf = "{}_{}.AS_spliceSite.pdf".format(dataObj.project_name, dataObj.sample_name)
-    robjects.r.plotAsCountStatistics(asSpliceSiteFile, asSpliceSitePdf)
+    robjects.r.plotAsDinucleotideStatistics(asSpliceSiteFile, asSpliceSitePdf)
     print getCurrentTime() + " Plotting AS Pattern for project {} sample {} done!".format(dataObj.project_name, dataObj.sample_name)
     return [asAnnoPdf, asSpliceSitePdf]
 
