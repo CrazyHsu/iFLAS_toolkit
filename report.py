@@ -18,7 +18,9 @@ warnings.filterwarnings("ignore", category=RRuntimeWarning)
 def reportReadsCorrectedEval(dataObj=None, dirSpec=None):
     print getCurrentTime() + " Start plotting Reads Corrected Evaluation for project {} sample {}...".format(dataObj.project_name, dataObj.sample_name)
     filtrationDir = os.path.join(dirSpec.out_dir, dataObj.project_name, dataObj.sample_name, "filtration")
-    if not validateDir(filtrationDir): return []
+    if not validateDir(filtrationDir):
+        print getCurrentTime() + " No Corrected Reads available used for evaluation for project {} sample {}...".format(dataObj.project_name, dataObj.sample_name)
+        return []
     rawMappedBed = os.path.join(filtrationDir, "raw.mapped.addCVandID.bed12+")
     correctMappedBed = os.path.join(filtrationDir, "mapped.addCVandID.bed12+")
     from plotRscriptStrs import plotReadsCorrectedEvalStr
@@ -58,6 +60,7 @@ def reportReadsContentEval(dataObj=None, refParams=None, dirSpec=None):
     else:
         flncFx = os.path.join(dirSpec.out_dir, dataObj.project_name, dataObj.sample_name, "preprocess", dataObj.tgs_plat.lower(), "rawFlnc.fq")
         if not validateFile(flncFx):
+            print getCurrentTime() + " No Reads Content can be evaluated for project {} sample {}...".format(dataObj.project_name, dataObj.sample_name)
             return []
 
     cmd = "seqkit fx2tab -n -g {} | cut -f 1,2 > GC_of_raw_flnc_reads.log".format(flncFx)
@@ -99,7 +102,9 @@ def reportASPattern(dataObj=None, dirSpec=None):
     ######################### AS type pattern
     baseDir = os.path.join(dirSpec.out_dir, dataObj.project_name, dataObj.sample_name)
     characAsDir = os.path.join(baseDir, "as_events", "characterization")
-    if not validateDir(characAsDir): return []
+    if not validateDir(characAsDir):
+        print getCurrentTime() + " No AS Pattern file available for project {} sample {}...".format(dataObj.project_name, dataObj.sample_name)
+        return []
     IR_anno = os.path.join(characAsDir, "IR.anno.lst")
     IR_novel = os.path.join(characAsDir, "IR.novel.lst")
     SE_anno = os.path.join(characAsDir, "SE.anno.lst")
@@ -164,7 +169,9 @@ def reportASPattern(dataObj=None, dirSpec=None):
 def reportTargetGeneStructure(dataObj=None, dirSpec=None):
     print getCurrentTime() + " Start plotting Target Gene Structure for project {} sample {}...".format(dataObj.project_name, dataObj.sample_name)
     isoViewerDir = os.path.join(dirSpec.out_dir, dataObj.project_name, dataObj.sample_name, "isoViewer")
-    if not validateDir(isoViewerDir): return
+    if not validateDir(isoViewerDir):
+        print getCurrentTime() + " No Target Gene available use for visualization for project {} sample {}...".format(dataObj.project_name, dataObj.sample_name)
+        return
     allGenePlots = glob.glob("{}/*/*.pdf".format(isoViewerDir))
     writer = PyPDF2.PdfFileWriter()
     for i in allGenePlots:
@@ -179,7 +186,9 @@ def reportTargetGeneStructure(dataObj=None, dirSpec=None):
 def reportNovelHqAS(dataObj=None, dirSpec=None):
     print getCurrentTime() + " Start plotting Novel High-quality Isoform scores for project {} sample {}...".format(dataObj.project_name, dataObj.sample_name)
     isoformScoreFile = os.path.join(dirSpec.out_dir, dataObj.project_name, dataObj.sample_name, "isoIdentity", "isoformScore.txt")
-    if not validateFile(isoformScoreFile): return []
+    if not validateFile(isoformScoreFile):
+        print getCurrentTime() + " No Novel High-quality Isoform scores file available for project {} sample {}...".format(dataObj.project_name, dataObj.sample_name)
+        return []
     # isoformScore = pd.read_csv(isoformScoreFile, sep="\t", header=None, names=["gene", "isos", "count", "total_count", "freq", "annotation"])
     from plotRscriptStrs import plotNovelHqASStr
     robjects.r(plotNovelHqASStr)
@@ -192,7 +201,7 @@ def reportAllelicAS(dataObj=None, refParams=None, dirSpec=None):
     baseDir = os.path.join(dirSpec.out_dir, dataObj.project_name, dataObj.sample_name)
     asHaploFile = os.path.join(baseDir, "allelicAS", "partialAsRelatedHaplotype.txt")
     if not validateFile(asHaploFile):
-        print getCurrentTime() + " No Allelic-Specific AS for project {} sample {}...".format(dataObj.project_name, dataObj.sample_name)
+        print getCurrentTime() + " No Allelic-Specific AS available for project {} sample {}...".format(dataObj.project_name, dataObj.sample_name)
         return
     asHaplo = pd.read_csv(asHaploFile, header=None, sep="\t", names=["gene", "asType", "haplo1", "haplo1isos", "haplo2", "haplo2isos"])
     asHaplo = asHaplo.loc[:, ["gene", "haplo1", "haplo1isos", "haplo2", "haplo2isos"]].drop_duplicates()
@@ -273,7 +282,7 @@ def reportPaTailAS(dataObj=None, dirSpec=None):
     print getCurrentTime() + " Start plotting Differential Poly(A) tail length related AS for project {} sample {}...".format(dataObj.project_name, dataObj.sample_name)
     palenASDir = os.path.join(dirSpec.out_dir, dataObj.project_name, dataObj.sample_name, "palenAS")
     if not validateDir(palenASDir):
-        print getCurrentTime() + " No Diffential Poly(A) tail length related AS for project {} sample {}...".format(dataObj.project_name, dataObj.sample_name)
+        print getCurrentTime() + " No Diffential Poly(A) tail length related AS available for project {} sample {}...".format(dataObj.project_name, dataObj.sample_name)
         return
     asType = ["IR", "SE", "A3SS", "A5SS"]
     from plotRscriptStrs import plotPaTailASStr
@@ -290,11 +299,13 @@ def reportPaTailAS(dataObj=None, dirSpec=None):
 def reportDiffAS(dirSpec=None):
     print getCurrentTime() + " Start plotting Differential-related AS summary..."
     dasDir = os.path.join(dirSpec.out_dir, "das", "sigDiffAS")
-    if not validateDir(dasDir): return
-    irSig = pd.read_csv("{}/IR.sig.txt".format(dasDir), sep="\t", header=True)
-    seSig = pd.read_csv("{}/SE.sig.txt".format(dasDir), sep="\t", header=True)
-    a3ssSig = pd.read_csv("{}/A3SS.sig.txt".format(dasDir), sep="\t", header=True)
-    a5ssSig = pd.read_csv("{}/A5SS.sig.txt".format(dasDir), sep="\t", header=True)
+    if not validateDir(dasDir):
+        print getCurrentTime() + " No Differential-related AS summary can be plotted."
+        return
+    irSig = pd.read_csv("{}/IR.sig.txt".format(dasDir), sep="\t")
+    seSig = pd.read_csv("{}/SE.sig.txt".format(dasDir), sep="\t")
+    a3ssSig = pd.read_csv("{}/A3SS.sig.txt".format(dasDir), sep="\t")
+    a5ssSig = pd.read_csv("{}/A5SS.sig.txt".format(dasDir), sep="\t")
     sigDict = {"IR": ["IR", len(irSig)], "SE": ["SE", len(seSig)], "A3SS": ["A3SS", len(a3ssSig)], "A5SS": ["A5SS", len(a5ssSig)]}
     sigDf = pd.DataFrame.from_dict(sigDict, orient="index", columns=["AS_type", "Count"])
     sigDf.to_csv("sigDiff.AS.txt", sep="\t", index=False, header=True)
@@ -305,7 +316,9 @@ def reportDiffAS(dirSpec=None):
 
 def mergeAllPlots(plot2merge, outPdf):
     print getCurrentTime() + " Start merging plots..."
-    if len(plot2merge) == 0: return
+    if len(plot2merge) == 0:
+        print getCurrentTime() + " No plot can be merged!"
+        return
     writer = PyPDF2.PdfFileWriter()
     for i in plot2merge:
         pdf = PyPDF2.PdfFileReader(open(i, "rb"))
