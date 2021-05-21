@@ -191,7 +191,9 @@ def reportAllelicAS(dataObj=None, refParams=None, dirSpec=None):
     print getCurrentTime() + " Start plotting Allelic-Specific AS for project {} sample {}...".format(dataObj.project_name, dataObj.sample_name)
     baseDir = os.path.join(dirSpec.out_dir, dataObj.project_name, dataObj.sample_name)
     asHaploFile = os.path.join(baseDir, "allelicAS", "partialAsRelatedHaplotype.txt")
-    if not validateFile(asHaploFile): return
+    if not validateFile(asHaploFile):
+        print getCurrentTime() + " No Allelic-Specific AS for project {} sample {}...".format(dataObj.project_name, dataObj.sample_name)
+        return
     asHaplo = pd.read_csv(asHaploFile, header=None, sep="\t", names=["gene", "asType", "haplo1", "haplo1isos", "haplo2", "haplo2isos"])
     asHaplo = asHaplo.loc[:, ["gene", "haplo1", "haplo1isos", "haplo2", "haplo2isos"]].drop_duplicates()
     allelicAsDir = os.path.join(os.getcwd(), "allelicAsPlots")
@@ -268,9 +270,11 @@ def reportAllelicAS(dataObj=None, refParams=None, dirSpec=None):
     print getCurrentTime() + " Plotting Allelic-Specific AS for project {} sample {} done!".format(dataObj.project_name, dataObj.sample_name)
 
 def reportPaTailAS(dataObj=None, dirSpec=None):
-    print getCurrentTime() + " Start plotting Differential poly(A) tail length related AS for project {} sample {}...".format(dataObj.project_name, dataObj.sample_name)
-    palenASDir = dirSpec.out_dir, dataObj.project_name, dataObj.sample_name, "palenAS"
-    if not validateDir(palenASDir): return
+    print getCurrentTime() + " Start plotting Differential Poly(A) tail length related AS for project {} sample {}...".format(dataObj.project_name, dataObj.sample_name)
+    palenASDir = os.path.join(dirSpec.out_dir, dataObj.project_name, dataObj.sample_name, "palenAS")
+    if not validateDir(palenASDir):
+        print getCurrentTime() + " No Diffential Poly(A) tail length related AS for project {} sample {}...".format(dataObj.project_name, dataObj.sample_name)
+        return
     asType = ["IR", "SE", "A3SS", "A5SS"]
     from plotRscriptStrs import plotPaTailASStr
     robjects.r(plotPaTailASStr)

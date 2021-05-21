@@ -9,6 +9,7 @@ Last modified: 2021-05-13 21:53:28
 
 plotReadsCorrectedEvalStr = '''
     library(ggplot2)
+    library(scales)
     plotReadsCorrectedEval <- function(rawMappedBed, correctMappedBed, outPdf){
         rawMapped <- read.csv(rawMappedBed, sep="\t", header=FALSE)
         correctMapped <- read.csv(correctMappedBed, sep="\t", header=FALSE)
@@ -65,8 +66,7 @@ plotAsCountStatisticsStr = '''
     plotAsCountStatistics <- function(AsAnnotationFile, outPdf){
         as_anno_data <- read.csv(AsAnnotationFile, sep="\t")
         as_anno_data$AS_type <- factor(as_anno_data$AS_type, levels=c("SE", "A5SS", "A3SS", "IR", "APA", "PA"))
-        as_anno_data$Annotation <- factor(as_anno_data$Annotation, levels=c("Inc", "Exc"))
-        plot(outPdf)
+        pdf(outPdf)
         p <- ggplot(as_anno_data, aes(x=Annotation, y=Count, fill=Annotation)) + 
             geom_bar(stat = 'identity') + 
             facet_grid(~ AS_type) + 
@@ -116,8 +116,8 @@ plotNovelHqASStr = '''
         isoformScore <- read.csv(isoformScoreFile, sep="\t", header=FALSE)
         names(isoformScore) <- c("Gene", "Isos", "Count", "Total_count", "Freq", "Annotation")
         isoformScore <- isoformScore[order(-isoformScore$Freq),]
-        isoformScoreNovel <- isoformScore[isoformScore$Annotation == "Novel"]
-        isoformScoreAnno <- isoformScore[isoformScore$Annotation == "Annotated"]
+        isoformScoreNovel <- isoformScore[isoformScore$Annotation == "Novel", ]
+        isoformScoreAnno <- isoformScore[isoformScore$Annotation == "Annotated", ]
         
         isoformScoreNovel$Isos <- factor(isoformScoreNovel$Isos, levels=as.vector(isoformScoreNovel$Isos))
         isoformScoreAnno$Isos <- factor(isoformScoreAnno$Isos, levels=as.vector(isoformScoreAnno$Isos))
