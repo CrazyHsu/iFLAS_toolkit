@@ -46,6 +46,15 @@ def checkHisat2IndexExist(hisat2index):
                 break
         return True if ht2Flag == 1 else False
 
+def checkFastpReadsExist(readStr):
+    readsList = re.split("[,|;]", readStr)
+    absReadsList = [os.path.join(os.path.dirname(x), "fastp." + os.path.basename(x)) for x in readsList]
+    boolList = [validateFile(x) for x in absReadsList]
+    if set(boolList) == 1 and boolList[0] == True:
+        return True
+    else:
+        return False
+
 def filterFile(originFile=None, targetFile=None, originField=1, targetField=1, mode="i", outFile=None, returnFlag=False):
     originList, targetList = [], []
     if isinstance(originFile, list):

@@ -103,13 +103,15 @@ def retrievePacbio(dataObj=None, ccsParams=None, dirSpec=None, threads=10):
 
 def processRnaseq(dataObj=None, threads=None, dirSpec=None, max_reads_length_tirmmed=30):
     print getCurrentTime() + " Filtering short-reads with fastp for project {} sample {}...".format(dataObj.project_name, dataObj.sample_name)
-    if "fastp" in dataObj.ngs_left_reads and "fastp" in dataObj.ngs_right_reads:
-        print getCurrentTime() + " It seems like you have filter the reads with fastp, so we skip the process!"
-        print getCurrentTime() + " Filtering short-reads with fastp done!"
-        return
+
     logDir = os.path.join(dirSpec.out_dir, dataObj.project_name, dataObj.sample_name, "log")
     resolveDir(logDir, chdir=False)
-    if dataObj.ngs_reads_paired == "paired":
+    if dataObj.ngs_reads_paired == "paired" and dataObj.ngs_left_reads and dataObj.ngs_right_reads:
+        if ("fastp" in dataObj.ngs_left_reads and "fastp" in dataObj.ngs_right_reads) or \
+                (checkFastpReadsExist(dataObj.ngs_left_reads) and checkFastpReadsExist(dataObj.ngs_right_reads)):
+            print getCurrentTime() + " It seems like you have filter the reads with fastp, so we skip the process!"
+            print getCurrentTime() + " Filtering short-reads with fastp done!"
+            return
         leftReadsRepeats = [i.strip() for i in dataObj.ngs_left_reads.split(";")]
         rightReadsRepeats = [i.strip() for i in dataObj.ngs_right_reads.split(";")]
         if len(leftReadsRepeats) != len(rightReadsRepeats):
@@ -144,6 +146,10 @@ def processRnaseq(dataObj=None, threads=None, dirSpec=None, max_reads_length_tir
             dataObj.ngs_right_reads = ";".join(newRightReadsRepeats)
     else:
         if dataObj.ngs_left_reads and dataObj.ngs_right_reads == None:
+            if "fastp" in dataObj.ngs_left_reads or checkFastpReadsExist(dataObj.ngs_left_reads):
+                print getCurrentTime() + " It seems like you have filter the reads with fastp, so we skip the process!"
+                print getCurrentTime() + " Filtering short-reads with fastp done!"
+                return
             leftReadsRepeats = [i.strip() for i in dataObj.ngs_left_reads.split(";")]
             newLeftReadsRepeats = []
             for i in range(len(leftReadsRepeats)):
@@ -161,6 +167,10 @@ def processRnaseq(dataObj=None, threads=None, dirSpec=None, max_reads_length_tir
                 newLeftReadsRepeats.append(",".join(newLeftReads))
             dataObj.ngs_left_reads = ";".join(newLeftReadsRepeats)
         elif dataObj.ngs_right_reads and dataObj.ngs_left_reads == None:
+            if "fastp" in dataObj.ngs_right_reads or checkFastpReadsExist(dataObj.ngs_right_reads):
+                print getCurrentTime() + " It seems like you have filter the reads with fastp, so we skip the process!"
+                print getCurrentTime() + " Filtering short-reads with fastp done!"
+                return
             rightReadsRepeats = [i.strip() for i in dataObj.ngs_right_reads.split(";")]
             newRightReadsRepeats = []
             for i in range(len(rightReadsRepeats)):
@@ -178,7 +188,7 @@ def processRnaseq(dataObj=None, threads=None, dirSpec=None, max_reads_length_tir
                 newRightReadsRepeats.append(",".join(newRightReads))
             dataObj.ngs_right_reads = ";".join(newRightReadsRepeats)
         else:
-            raise Exception("The NGS data seem not to be single, please check it")
+            raise Exception("The NGS data seem not to be paired or single, please check it")
     print getCurrentTime() + " Filtering short-reads with fastp for project {} sample {} done!".format(dataObj.project_name, dataObj.sample_name)
 
 def retrieveNanopore(dataObj=None, dirSpec=None, threads=10, flowcellType="FLO-MIN106", kitType="SQK-RNA002"):
