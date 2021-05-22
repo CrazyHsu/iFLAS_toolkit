@@ -29,7 +29,7 @@ def checkFast5Files(fast5Dir):
 
 def checkHisat2IndexExist(hisat2index):
     import glob
-    hisat2indexFiles = glob.glob("ls {}*".format(hisat2index))
+    hisat2indexFiles = glob.glob("{}*".format(hisat2index))
 
     if len(hisat2indexFiles) == 0:
         return False
@@ -50,7 +50,7 @@ def checkFastpReadsExist(readStr):
     readsList = re.split("[,|;]", readStr)
     absReadsList = [os.path.join(os.path.dirname(x), "fastp." + os.path.basename(x)) for x in readsList]
     boolList = [validateFile(x) for x in absReadsList]
-    if set(boolList) == 1 and boolList[0] == True:
+    if len(set(boolList)) == 1 and boolList[0] == True:
         return True
     else:
         return False
@@ -112,7 +112,7 @@ def makeHisat2Index(refParams=None, dirSpec=None, threads=None):
     gtfPrefix = os.path.splitext(os.path.basename(refAnnoGTF))[0]
     hisat2index = os.path.join(hisat2indexDir, gtfPrefix)
     if not checkHisat2IndexExist(hisat2index):
-        print str(datetime.datetime.now()) + " Start Hisat2 indexing..."
+        print getCurrentTime() + " Start Hisat2 indexing..."
         resolveDir(hisat2indexDir, chdir=False)
 
         refAnnoSS = "{}/{}.ss".format(hisat2indexDir, gtfPrefix)
@@ -124,7 +124,9 @@ def makeHisat2Index(refParams=None, dirSpec=None, threads=None):
         cmd = "hisat2-build -p {} --ss {} --exon {} {} {} 1>{}/hisat2build.log 2>&1"
         cmd = cmd.format(threads, refAnnoSS, refAnnoExon, refParams.ref_genome, hisat2index, hisat2indexDir)
         subprocess.call(cmd, shell=True)
-        print str(datetime.datetime.now()) + " End Hisat2 indexing!"
+        print getCurrentTime() + " End Hisat2 indexing!"
+    else:
+        print getCurrentTime() + " It seems like you have provided hisat2 index, so the index will be used for mapping."
     return hisat2index
 
 
@@ -134,6 +136,8 @@ def checkAndMakeHisat2Index(refParams=None, threads=None, dirSpec=None):
     else:
         if not checkHisat2IndexExist(refParams.hisat2_index):
             refParams.hisat2_index = makeHisat2Index(refParams=refParams, dirSpec=dirSpec, threads=threads)
+        else:
+            print getCurrentTime() + " It seems like you have provided hisat2 index, so the index will be used for mapping."
 
 def sortTupleList(tupleList):
     return sorted(tupleList)

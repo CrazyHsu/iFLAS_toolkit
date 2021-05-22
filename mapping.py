@@ -140,7 +140,7 @@ def hisat2mapping(dataObj=None, refParams=None, dirSpec=None, threads=10):
     print getCurrentTime() + " Mapping rna-seq short reads to reference genome with hisat2 for project {} sample {} done!".format(
         projectName, sampleName)
 
-def mapping(dataObj=None, minimap2Params=None, refParams=None, dirSpec=None, threads=10):
+def mapping(dataObj=None, minimap2Params=None, refParams=None, dirSpec=None, threads=10, useFmlrc2=True):
     projectName, sampleName = dataObj.project_name, dataObj.sample_name
     if dataObj.data_processed_location:
         if isinstance(dataObj.data_processed_location, list):
@@ -153,14 +153,14 @@ def mapping(dataObj=None, minimap2Params=None, refParams=None, dirSpec=None, thr
             dataObj.data_processed_location = os.path.join(preprocessDir, "rawFlnc.fq")
             cmd = "cat {} > {}".format(" ".join(validFiles), dataObj.data_processed_location)
             subprocess.call(cmd, shell=True)
-            if dataObj.use_fmlrc2:
+            if dataObj.use_fmlrc2 and useFmlrc2:
                 from preprocess import correctWithFmlrc2
                 correctWithFmlrc2(dataObj, dirSpec=dirSpec, useFmlrc2=True, threads=dataObj.single_run_threads)
             minimap2mapping(dataObj=dataObj, minimap2Params=minimap2Params, refParams=refParams, dirSpec=dirSpec,
                             threads=threads)
         elif isinstance(dataObj.data_processed_location, basestring):
             if validateFile(dataObj.data_processed_location):
-                if dataObj.use_fmlrc2:
+                if dataObj.use_fmlrc2 and useFmlrc2:
                     preprocessDir = os.path.join(dirSpec.out_dir, projectName, sampleName, "proprecess", dataObj.tgs_plat.lower())
                     resolveDir(preprocessDir, chdir=False)
                     makeLink(dataObj.data_processed_location, os.path.join(preprocessDir, "rawFlnc.fq"))
@@ -173,6 +173,9 @@ def mapping(dataObj=None, minimap2Params=None, refParams=None, dirSpec=None, thr
             dataObj.data_processed_location = os.path.join(dirSpec.out_dir, projectName, sampleName, "preprocess", "fmlrc", "fmlrc_corrected.fasta")
         else:
             dataObj.data_processed_location = os.path.join(dirSpec.out_dir, projectName, sampleName, "preprocess", dataObj.tgs_plat.lower(), "rawFlnc.fq")
+            if useFmlrc2:
+                from preprocess import correctWithFmlrc2
+                correctWithFmlrc2(dataObj, dirSpec=dirSpec, useFmlrc2=True, threads=dataObj.single_run_threads)
         if validateFile(dataObj.data_processed_location):
             minimap2mapping(dataObj=dataObj, minimap2Params=minimap2Params, refParams=refParams, dirSpec=dirSpec, threads=threads)
         else:

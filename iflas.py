@@ -78,22 +78,86 @@ def mergeSample(strain2data):
                     sampleMergedToProcess[proj][ref_strain].update({strain: sampleMerged})
     return sampleMergedToProcess
 
-def iflas(args):
-    defaultCfg = Config(args.default_cfg)
-    dataToProcess = defaultCfg.dataToProcess
-    refInfoParams = defaultCfg.refInfoParams
-    ccsParams = defaultCfg.ccsParams
-    minimap2Params = defaultCfg.minimap2Params
-    collapseParams = defaultCfg.collapseParams
-    optionTools = defaultCfg.optionTools
-    dirSpec = defaultCfg.dirParams
-    # from commonFuncs import initRefSetting, initSysResourceSetting
-    for refStrain in refInfoParams:
-        refParams = refInfoParams[refStrain]
-        initRefSetting(refParams=refParams, dirSpec=dirSpec)
-    initSysResourceSetting(optionTools=optionTools)
+def oneCommandRunWrapped(dataObj, dataToProcess, refParams, minimap2Params, collapseParams, dirSpec, args):
+    from mapping import mapping
+    mapping(dataObj, minimap2Params, refParams, dirSpec, dataObj.single_run_threads, args.correction)
 
-    pybedtools.set_tempdir(dirSpec.tmp_dir)
+    from filter import filter
+    filter(dataObj, refParams, dirSpec)
+
+    from collapse import collapse
+    collapse(dataObj, collapseParams, refParams, dirSpec, dataObj.single_run_threads)
+
+    from identify_as import identify_as
+    identify_as(dataObj, refParams, dirSpec)
+
+    from visual_as import visual_as
+    targetGenes = args.genes
+    visual_as(dataObj, targetGenes, refParams, dirSpec)
+
+    from rank_as import rank_as
+    rank_as(dataObj, dirSpec)
+
+    from allelic_as import allelic_as
+    allelic_as(dataObj, refParams, dirSpec)
+
+    from palen_as import palen_as
+    palen_as(dataObj, refParams, dirSpec, dataToProcess)
+
+def oneCommandRun(args, dataToProcess, refInfoParams, dirSpec, ccsParams, minimap2Params, collapseParams, optionTools):
+    pool = MyPool(processes=len(dataToProcess))
+    from preprocess import preprocess
+    for dataObj in dataToProcess:
+        dataObj.single_run_threads = int(optionTools.threads / float(len(dataToProcess)))
+        # preprocess(dataObj=dataObj, ccsParams=ccsParams, dirSpec=dirSpec, threads=dataObj.single_run_threads)
+        pool.apply_async(preprocess, (dataObj, ccsParams, dirSpec, dataObj.single_run_threads))
+    pool.close()
+    pool.join()
+
+    strain2data = {}
+    for dataObj in dataToProcess:
+        if dataObj.project_name not in strain2data:
+            strain2data[dataObj.project_name] = {dataObj.ref_strain: {dataObj.strain: [dataObj]}}
+        elif dataObj.ref_strain not in strain2data[dataObj.project_name]:
+            strain2data[dataObj.project_name][dataObj.ref_strain] = {dataObj.strain: [dataObj]}
+        elif dataObj.strain not in strain2data[dataObj.project_name][dataObj.ref_strain]:
+            strain2data[dataObj.project_name][dataObj.ref_strain][dataObj.strain] = [dataObj]
+        else:
+            strain2data[dataObj.project_name][dataObj.ref_strain][dataObj.strain].append(dataObj)
+
+    if optionTools.merge_data_from_same_strain:
+        sampleMergedToProcess = mergeSample(strain2data)
+        processNum = len(list(nestedDictValues(sampleMergedToProcess, returned="value")))
+        pool = MyPool(processes=processNum)
+        for proj in sampleMergedToProcess:
+            for ref_strain in sampleMergedToProcess[proj]:
+                for strain in sampleMergedToProcess[proj][ref_strain]:
+                    dataObj = sampleMergedToProcess[proj][ref_strain][strain]
+                    refParams = refInfoParams[ref_strain]
+                    dataObj.single_run_threads = int(optionTools.threads / float(processNum))
+                    pool.apply_async(oneCommandRunWrapped, (dataObj, dataToProcess, refParams, minimap2Params, collapseParams, dirSpec, args))
+        pool.close()
+        pool.join()
+    else:
+        pool = MyPool(processes=len(dataToProcess))
+        for dataObj in dataToProcess:
+            refParams = refInfoParams[dataObj.ref_strain]
+            dataObj.single_run_threads = int(optionTools.threads / float(len(dataToProcess)))
+            pool.apply_async(oneCommandRunWrapped, (dataObj, dataToProcess, refParams, minimap2Params, collapseParams, dirSpec, args))
+
+        pool.close()
+        pool.join()
+        from diff_as import diff_as1
+        # diff_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
+        compCond = args.compCond
+        diff_as1(dataToProcess, compCondFile=compCond, dirSpec=dirSpec, sampleMerged=optionTools.merge_data_from_same_strain)
+        from go import go
+        go(args, optionTools=optionTools, dirSpec=dirSpec)
+        from report import report
+        # report(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
+        report(dataToProcess=dataToProcess, refInfoParams=refInfoParams, dirSpec=dirSpec)
+
+def splitCommandRun(args, dataToProcess, refInfoParams, dirSpec, ccsParams, minimap2Params, collapseParams, optionTools):
     if args.command == 'preproc':
         pool = MyPool(processes=len(dataToProcess))
         from preprocess import preprocess
@@ -128,7 +192,7 @@ def iflas(args):
                     if args.command == 'mapping':
                         from mapping import mapping
                         # mapping(dataObj=dataObj, minimap2Params=minimap2Params, refParams=refParams, dirSpec=dirSpec, threads=dataObj.single_run_threads)
-                        pool.apply_async(mapping, (dataObj, minimap2Params, refParams, dirSpec, dataObj.single_run_threads))
+                        pool.apply_async(mapping, (dataObj, minimap2Params, refParams, dirSpec, dataObj.single_run_threads, args.correction))
                     if args.command == 'filter':
                         from filter import filter
                         # filter(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
@@ -169,7 +233,8 @@ def iflas(args):
             if args.command == 'mapping':
                 from mapping import mapping
                 # mapping(dataObj=dataObj, minimap2Params=minimap2Params, refParams=refParams, dirSpec=dirSpec, threads=dataObj.single_run_threads)
-                pool.apply_async(mapping, (dataObj, minimap2Params, refParams, dirSpec, dataObj.single_run_threads))
+                pool.apply_async(mapping, (
+                dataObj, minimap2Params, refParams, dirSpec, dataObj.single_run_threads, args.correction))
             if args.command == 'filter':
                 from filter import filter
                 # filter(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
@@ -215,6 +280,26 @@ def iflas(args):
             from report import report
             # report(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
             report(dataToProcess=dataToProcess, refInfoParams=refInfoParams, dirSpec=dirSpec)
+
+def iflas(args):
+    defaultCfg = Config(args.default_cfg)
+    dataToProcess = defaultCfg.dataToProcess
+    refInfoParams = defaultCfg.refInfoParams
+    ccsParams = defaultCfg.ccsParams
+    minimap2Params = defaultCfg.minimap2Params
+    collapseParams = defaultCfg.collapseParams
+    optionTools = defaultCfg.optionTools
+    dirSpec = defaultCfg.dirParams
+    for refStrain in refInfoParams:
+        refParams = refInfoParams[refStrain]
+        initRefSetting(refParams=refParams, dirSpec=dirSpec)
+    initSysResourceSetting(optionTools=optionTools)
+
+    pybedtools.set_tempdir(dirSpec.tmp_dir)
+    if args.command == "all":
+        oneCommandRun(args, dataToProcess, refInfoParams, dirSpec, ccsParams, minimap2Params, collapseParams, optionTools)
+    else:
+        splitCommandRun(args, dataToProcess, refInfoParams, dirSpec, ccsParams, minimap2Params, collapseParams, optionTools)
     pybedtools.cleanup(remove_all=True)
 
 if __name__ == "__main__":
@@ -223,46 +308,56 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(usage='%(prog)s command [options]', description=USAGE)
     subparsers = parser.add_subparsers(title='command', metavar='', dest='command', prog=parser.prog)
     parser_preprocess = subparsers.add_parser('preproc', help='Pre-process the raw PacBio/NanoPore/NGS data. When TGS and NGS data both are provide, This step will use fmlrc2 to correct the TGS read with the information in NGS', usage='%(prog)s [options]')
-    parser_preprocess.add_argument('-c', dest="default_cfg", help="The config file used for init setting.")
+    parser_preprocess.add_argument('-cfg', dest="default_cfg", help="The config file used for init setting.")
 
     parser_mapping = subparsers.add_parser('mapping', help='Mapping the TGS/NGS reads to the reference genome with minimap2', usage='%(prog)s [options]')
-    parser_mapping.add_argument('-c', dest="default_cfg", help="The config file used for init setting.")
+    parser_mapping.add_argument('-cfg', dest="default_cfg", help="The config file used for init setting.")
+    parser_mapping.add_argument('-c', dest="correction", action="store_true", default=False, help="Correct the flnc reads with fmlrc2.")
 
     parser_filter = subparsers.add_parser('filter', help='Screen out the low quality TGS read with junction information provided by NGS data', usage='%(prog)s [options]')
-    parser_filter.add_argument('-c', dest="default_cfg", help="The config file used for init setting.")
+    parser_filter.add_argument('-cfg', dest="default_cfg", help="The config file used for init setting.")
 
     parser_collapse = subparsers.add_parser('collapse', help='Collapse corrected reads into high-confidence isoforms', usage='%(prog)s [options]')
-    parser_collapse.add_argument('-c', dest="default_cfg", help="The config file used for init setting.")
+    parser_collapse.add_argument('-cfg', dest="default_cfg", help="The config file used for init setting.")
 
     parser_findAS = subparsers.add_parser('find_as', help='Identify alternative splicing(AS) type from high-confidence isoforms. Four common AS type are included: intron retention, exon skipping, alternative 3 end splicing and alternative 5 end splicing', usage='%(prog)s [options]')
-    parser_findAS.add_argument('-c', dest="default_cfg", help="The config file used for init setting.")
+    parser_findAS.add_argument('-cfg', dest="default_cfg", help="The config file used for init setting.")
 
     parser_visualAS = subparsers.add_parser('visual_as', help='Visualize the specific gene structure with details including isoform mapping, short reads coverage and AS types identified', usage='%(prog)s [options]')
-    parser_visualAS.add_argument('-c', dest="default_cfg", help="The config file used for init setting.")
-    parser_visualAS.add_argument('-g', dest="genes", type=str, help="The gene list separated by comma or a single file contain genes one per line.")
+    parser_visualAS.add_argument('-cfg', dest="default_cfg", help="The config file used for init setting.")
+    parser_visualAS.add_argument('-g', dest="genes", type=str, help="The gene list separated by comma or a single file contain genes one per line used for visualization.")
 
     parser_rankAS = subparsers.add_parser('rank_as', help='Score the isoform by the produce of each inclusion/exclusion ratio in that isoform, and rank all the isoforms from high to low', usage='%(prog)s [options]')
-    parser_rankAS.add_argument('-c', dest="default_cfg", help="The config file used for init setting.")
+    parser_rankAS.add_argument('-cfg', dest="default_cfg", help="The config file used for init setting.")
 
     parser_allelicAS = subparsers.add_parser('allelic_as', help='Identify allelic-related AS', usage='%(prog)s [options]')
-    parser_allelicAS.add_argument('-c', dest="default_cfg", help="The config file used for init setting.")
+    parser_allelicAS.add_argument('-cfg', dest="default_cfg", help="The config file used for init setting.")
 
     parser_palenAS = subparsers.add_parser('palen_as', help='Identify functional poly(A) tail length related to AS', usage='%(prog)s [options]')
-    parser_palenAS.add_argument('-c', dest="default_cfg", help="The config file used for init setting.")
+    parser_palenAS.add_argument('-cfg', dest="default_cfg", help="The config file used for init setting.")
 
     parser_diffAS = subparsers.add_parser('diff_as', help='Carry out differential AS ananlysis among conditions', usage='%(prog)s [options]')
-    parser_diffAS.add_argument('-c', dest="default_cfg", help="The config file used for init setting.")
+    parser_diffAS.add_argument('-cfg', dest="default_cfg", help="The config file used for init setting.")
     parser_diffAS.add_argument('-d', dest="compCond", type=str, help="The condition file used to detect differential AS between samples.")
 
     parser_goAS = subparsers.add_parser('go', help='Perform GO enrichment analysis and plot results for the specified gene set or multiple gene sets', usage='%(prog)s [options]')
-    parser_goAS.add_argument('-c', dest="default_cfg", type=str, help="The config file used for init setting.")
-    parser_goAS.add_argument('-tg', dest="targetGeneFile", type=str, help="The target gene file or file list separated by comma.")
-    parser_goAS.add_argument('-bg', dest="gene2goFile", type=str, default=None, help="The mapping file between gene and go term.")
-    parser_goAS.add_argument('-s', dest="sampleName", type=str, help="The sample name used plot the track, multi-sample should be separated by commma.")
-    parser_goAS.add_argument('-o', dest="outName", type=str, default="goEnrichment", help="The prefix of the output file.")
+    parser_goAS.add_argument('-cfg', dest="default_cfg", type=str, help="The config file used for init setting.")
+    parser_goAS.add_argument('-tg', dest="targetGeneFile", type=str, help="The target gene file or file list separated by comma used for GO enrichment analysis.")
+    parser_goAS.add_argument('-bg', dest="gene2goFile", type=str, default=None, help="The mapping file between gene and go term used for GO enrichment analysis.")
+    parser_goAS.add_argument('-s', dest="sampleName", type=str, help="The sample name used plot the track, multi-sample should be separated by commma used for GO enrichment analysis.")
+    parser_goAS.add_argument('-o', dest="outName", type=str, default="goEnrichment", help="The prefix of the GO enrichment output file.")
 
     parser_report = subparsers.add_parser('report', help='Automatic detect the plots generated in each step, and merge them into a report file', usage='%(prog)s [options]')
-    parser_report.add_argument('-c', dest="default_cfg", help="The config file used for init setting.")
+    parser_report.add_argument('-cfg', dest="default_cfg", help="The config file used for init setting.")
+
+    parser_all = subparsers.add_parser('all', help="Dynamically perform all analysis with the setting!")
+    parser_all.add_argument('-c', dest="correction", action="store_true", default=False, help="Correct the flnc reads with fmlrc2.")
+    parser_all.add_argument('-g', dest="genes", type=str, help="The gene list separated by comma or a single file contain genes one per line used for visualization.")
+    parser_all.add_argument('-d', dest="compCond", type=str, help="The condition file used to detect differential AS between samples.")
+    parser_all.add_argument('-tg', dest="targetGeneFile", type=str, help="The target gene file or file list separated by comma used for GO enrichment analysis.")
+    parser_all.add_argument('-bg', dest="gene2goFile", type=str, default=None, help="The mapping file between gene and go term used for GO enrichment analysis.")
+    parser_all.add_argument('-s', dest="sampleName", type=str, help="The sample name used plot the track, multi-sample should be separated by commma used for GO enrichment analysis.")
+    parser_all.add_argument('-o', dest="outName", type=str, default="goEnrichment", help="The prefix of the GO enrichment output file.")
 
     if len(sys.argv) <= 2:
         sys.argv.append('-h')

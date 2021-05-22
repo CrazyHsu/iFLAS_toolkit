@@ -88,4 +88,4 @@ def find_pa(dataObj=None, refParams=None, dirSpec=None):
     cmd = '''lines.R -p=PAS.pdf {Other,AATAAA,AAATAA,ATAAAA,ATTAAA,ATAAAT,TAATAA}.PAS -x1=-50 -x2=0 -w=15 2>/dev/null'''
     subprocess.call(cmd, shell=True, executable="/bin/bash")
     os.chdir(prevDir)
-    print str(datetime.datetime.now()) + " Polyadenylation analysis for project {} entry {} done!".format(projectName, sampleName)
+    print getCurrentTime() + " Polyadenylation analysis for project {} entry {} done!".format(projectName, sampleName)
