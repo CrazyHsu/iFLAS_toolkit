@@ -302,6 +302,8 @@ def reportDiffAS(dirSpec=None):
     if not validateDir(dasDir):
         print getCurrentTime() + " No Differential-related AS summary can be plotted."
         return
+    reportDir = os.path.join(dirSpec.out_dir, "das")
+    resolveDir(reportDir)
     irSig = pd.read_csv("{}/IR.sig.txt".format(dasDir), sep="\t")
     seSig = pd.read_csv("{}/SE.sig.txt".format(dasDir), sep="\t")
     a3ssSig = pd.read_csv("{}/A3SS.sig.txt".format(dasDir), sep="\t")
