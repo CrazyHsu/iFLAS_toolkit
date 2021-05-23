@@ -148,7 +148,7 @@ def mapping(dataObj=None, minimap2Params=None, refParams=None, dirSpec=None, thr
             for i in dataObj.data_processed_location:
                 if validateFile(i):
                     validFiles.append(i)
-            preprocessDir = os.path.join(dirSpec.out_dir, projectName, sampleName, "proprecess", dataObj.tgs_plat.lower())
+            preprocessDir = os.path.join(dirSpec.out_dir, projectName, sampleName, "preprocess", dataObj.tgs_plat.lower())
             resolveDir(preprocessDir, chdir=False)
             dataObj.data_processed_location = os.path.join(preprocessDir, "rawFlnc.fq")
             cmd = "cat {} > {}".format(" ".join(validFiles), dataObj.data_processed_location)
@@ -161,7 +161,7 @@ def mapping(dataObj=None, minimap2Params=None, refParams=None, dirSpec=None, thr
         elif isinstance(dataObj.data_processed_location, basestring):
             if validateFile(dataObj.data_processed_location):
                 if dataObj.use_fmlrc2 and useFmlrc2:
-                    preprocessDir = os.path.join(dirSpec.out_dir, projectName, sampleName, "proprecess", dataObj.tgs_plat.lower())
+                    preprocessDir = os.path.join(dirSpec.out_dir, projectName, sampleName, "preprocess", dataObj.tgs_plat.lower())
                     resolveDir(preprocessDir, chdir=False)
                     makeLink(dataObj.data_processed_location, os.path.join(preprocessDir, "rawFlnc.fq"))
                     from preprocess import correctWithFmlrc2

@@ -156,7 +156,8 @@ plotDiffASStr = '''
         p <- ggplot(diffAS, aes(x=AS_type, y=Count, fill=AS_type)) + geom_bar(stat = 'identity') + 
             theme_bw() + ggtitle("Diff AS Type Statistics") + xlab("AS types") + 
             scale_y_continuous(expand = c(0.02, 0)) + 
-            theme(panel.border = element_blank(), panel.grid.major = element_blank(), 
+            theme(plot.title = element_text(hjust = 0.5, size=20),
+                panel.border = element_blank(), panel.grid.major = element_blank(), 
                 panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"), 
                 strip.background = element_blank(), strip.text.x = element_blank(), legend.title = element_blank(), 
                 legend.text = element_text(size = 8), legend.key.size = unit(0.5, "cm"), 
