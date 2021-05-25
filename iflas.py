@@ -82,11 +82,14 @@ def oneCommandRunWrapped(dataObj, dataToProcess, refParams, minimap2Params, coll
     from mapping import mapping
     mapping(dataObj, minimap2Params, refParams, dirSpec, dataObj.single_run_threads, args.correction)
 
-    from filter import filter
-    filter(dataObj, refParams, dirSpec)
+    # from filter import filter
+    # filter(dataObj, refParams, dirSpec)
 
     from collapse import collapse
     collapse(dataObj, collapseParams, refParams, dirSpec, dataObj.single_run_threads)
+
+    from refine import refineJunc
+    refineJunc(dataObj, refParams, dirSpec, True)
 
     from identify_as import identify_as
     identify_as(dataObj, refParams, dirSpec)
@@ -193,14 +196,17 @@ def splitCommandRun(args, dataToProcess, refInfoParams, dirSpec, ccsParams, mini
                         from mapping import mapping
                         # mapping(dataObj=dataObj, minimap2Params=minimap2Params, refParams=refParams, dirSpec=dirSpec, threads=dataObj.single_run_threads)
                         pool.apply_async(mapping, (dataObj, minimap2Params, refParams, dirSpec, dataObj.single_run_threads, args.correction))
-                    if args.command == 'filter':
-                        from filter import filter
-                        # filter(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
-                        pool.apply_async(filter, (dataObj, refParams, dirSpec))
+                    # if args.command == 'filter':
+                    #     from filter import filter
+                    #     # filter(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
+                    #     pool.apply_async(filter, (dataObj, refParams, dirSpec))
                     if args.command == 'collapse':
                         from collapse import collapse
                         # collapse(dataObj=dataObj, collapseParams=collapseParams, refParams=refParams, dirSpec=dirSpec, threads=dataObj.single_run_threads)
                         pool.apply_async(collapse, (dataObj, collapseParams, refParams, dirSpec, dataObj.single_run_threads))
+                    if args.command == 'refine':
+                        from refine import refineJunc
+                        pool.apply_async(refineJunc, (dataObj, refParams, dirSpec, True))
                     if args.command == 'find_as':
                         # from find_charaterize_as_functions import *
                         from identify_as import identify_as
@@ -234,14 +240,17 @@ def splitCommandRun(args, dataToProcess, refInfoParams, dirSpec, ccsParams, mini
                 from mapping import mapping
                 # mapping(dataObj=dataObj, minimap2Params=minimap2Params, refParams=refParams, dirSpec=dirSpec, threads=dataObj.single_run_threads)
                 pool.apply_async(mapping, (dataObj, minimap2Params, refParams, dirSpec, dataObj.single_run_threads, args.correction))
-            if args.command == 'filter':
-                from filter import filter
-                # filter(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
-                pool.apply_async(filter, (dataObj, refParams, dirSpec))
+            # if args.command == 'filter':
+            #     from filter import filter
+            #     # filter(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
+            #     pool.apply_async(filter, (dataObj, refParams, dirSpec))
             if args.command == 'collapse':
                 from collapse import collapse
                 # collapse(dataObj=dataObj, collapseParams=collapseParams, refParams=refParams, dirSpec=dirSpec, threads=dataObj.single_run_threads)
                 pool.apply_async(collapse, (dataObj, collapseParams, refParams, dirSpec, dataObj.single_run_threads))
+            if args.command == 'refine':
+                from refine import refineJunc
+                pool.apply_async(refineJunc, (dataObj, refParams, dirSpec, True))
             if args.command == 'find_as':
                 # from find_charaterize_as_functions import *
                 from identify_as import identify_as
@@ -313,11 +322,11 @@ if __name__ == "__main__":
     parser_mapping.add_argument('-cfg', dest="default_cfg", help="The config file used for init setting.")
     parser_mapping.add_argument('-c', dest="correction", action="store_true", default=False, help="Correct the flnc reads with fmlrc2.")
 
-    parser_filter = subparsers.add_parser('filter', help='Screen out the low quality TGS read with junction information provided by NGS data', usage='%(prog)s [options]')
-    parser_filter.add_argument('-cfg', dest="default_cfg", help="The config file used for init setting.")
-
     parser_collapse = subparsers.add_parser('collapse', help='Collapse corrected reads into high-confidence isoforms', usage='%(prog)s [options]')
     parser_collapse.add_argument('-cfg', dest="default_cfg", help="The config file used for init setting.")
+
+    parser_filter = subparsers.add_parser('refine', help='Refine the splice junction with the information in short reads', usage='%(prog)s [options]')
+    parser_filter.add_argument('-cfg', dest="default_cfg", help="The config file used for init setting.")
 
     parser_findAS = subparsers.add_parser('find_as', help='Identify alternative splicing(AS) type from high-confidence isoforms. Four common AS type are included: intron retention, exon skipping, alternative 3 end splicing and alternative 5 end splicing', usage='%(prog)s [options]')
     parser_findAS.add_argument('-cfg', dest="default_cfg", help="The config file used for init setting.")

@@ -21,10 +21,10 @@ def rank_as(dataObj=None, dirSpec=None):
     a3ssFile = os.path.join(baseDir, "as_events", "ordinary_as", "PB", "A3SS.confident.bed6+")
     a5ssFile = os.path.join(baseDir, "as_events", "ordinary_as", "PB", "A5SS.confident.bed6+")
     paFile = None
-    isoformFile = os.path.join(baseDir, "collapse", "tofu.collapsed.assigned.unambi.bed12+")
+    isoformFile = os.path.join(baseDir, "refine", "tofu.collapsed.assigned.unambi.bed12+")
     collapsedTrans2reads = os.path.join(baseDir, "collapse", "tofu.collapsed.group.txt")
     # asEnumerate(irFile, seFile, a3ssFile, a5ssFile, paFile, isoformFile, isoform2readsFile)
-    novelIsoformFile = os.path.join(os.path.join(baseDir, "collapse", "isoformGrouped.novel.bed12+"))
+    novelIsoformFile = os.path.join(os.path.join(baseDir, "refine", "isoformGrouped.novel.bed12+"))
     scoreAsIsoform(irFile, seFile, a3ssFile, a5ssFile, paFile, isoformFile, collapsedTrans2reads, novelIsoformFile)
     os.chdir(prevDir)
     print getCurrentTime() + " End analysis independence between alternative splicing(AS) isoforms for project {} sample {}!".format(projectName, sampleName)

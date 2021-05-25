@@ -6,8 +6,16 @@ Author: CrazyHsu @ crazyhsu9627@gmail.com
 Created on: 2021-05-12 22:07:52
 Last modified: 2021-05-12 22:07:52
 '''
+import os
+from commonFuncs import validateDir
 
 def identify_as(dataObj=None, refParams=None, dirSpec=None):
+    refineDir = os.path.join(dirSpec.out_dir, dataObj.project_name, dataObj.sample_name)
+    refineDirExist = validateDir(refineDir)
+    if refineDirExist == False:
+        from refine import refineJunc
+        refineJunc(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, refine=False)
+
     from find_as import find_as
     find_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
     from find_pa import find_pa

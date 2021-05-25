@@ -371,4 +371,6 @@ def report(dataToProcess=None, refInfoParams=None, dirSpec=None):
         print getCurrentTime() + " Generate plot report for project {} sample {} done!".format(projectName, sampleName)
     reportDiffAS(dirSpec=dirSpec)
     # reportTargetGenesGoEnrichment(dataObj=dataObj, dirSpec=dirSpec)
+    # from generateHtml import generateHtml
+    # generateHtml()
 

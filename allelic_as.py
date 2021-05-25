@@ -210,7 +210,7 @@ def allelic_as(dataObj=None, refParams=None, dirSpec=None):
 
     processedFq = os.path.join(dirSpec.out_dir, projectName, sampleName, "preprocess", dataObj.tgs_plat.lower(), "rawFlnc.fq")
     collapsedGff = os.path.join(baseDir, "collapse", "tofu.collapsed.good.gff")
-    isoformFile = os.path.join(baseDir, "collapse", "isoformGrouped.bed12+")
+    isoformFile = os.path.join(baseDir, "refine", "isoformGrouped.bed12+")
 
     seFile = os.path.join(baseDir, "as_events", "ordinary_as", "PB", "SE.confident.bed12+")
     irFile = os.path.join(baseDir, "as_events", "ordinary_as", "PB", "IR.confident.bed6+")

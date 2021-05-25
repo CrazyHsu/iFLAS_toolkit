@@ -176,7 +176,7 @@ def palen_as(dataObj=None, refParams=None, dirSpec=None, filterByCount=10, dataT
     resolveDir(os.path.join(baseDir, "palenAS"))
 
     collapsedGroupFile = os.path.join(baseDir, "collapse", "tofu.collapsed.group.txt")
-    isoformFile = os.path.join(baseDir, "collapse", "isoformGrouped.bed12+")
+    isoformFile = os.path.join(baseDir, "refeine", "isoformGrouped.bed12+")
     collapsedTrans2reads = getDictFromFile(collapsedGroupFile, sep="\t", inlineSep=",", valueCol=2)
 
     irFile = os.path.join(baseDir, "as_events", "ordinary_as", "PB", "IR.confident.bed6+")

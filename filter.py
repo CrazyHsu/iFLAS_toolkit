@@ -92,21 +92,18 @@ def strandAdjust(genomeFasta, refGPE, bedFile, minCoverage, juncDiffScore, stran
             bedObj.reads[i].strand = singleExonStrandDict[i][0]
             print >>strandAdjustOut, bedObj.reads[i]
         elif i in multiExonReadStrandDict:
-            if multiExonReadStrandDict[i]["fwdCanonicalCounter"] - multiExonReadStrandDict[i][
-                "revCanonicalCounter"] > juncDiffScore:
+            if multiExonReadStrandDict[i]["fwdCanonicalCounter"] - multiExonReadStrandDict[i]["revCanonicalCounter"] > juncDiffScore:
                 if bedObj.reads[i].strand == "+":
                     print >>strandConfirmedOut, bedObj.reads[i]
                 bedObj.reads[i].strand = "+"
                 print >> strandAdjustOut, bedObj.reads[i]
-            elif multiExonReadStrandDict[i]["revCanonicalCounter"] - multiExonReadStrandDict[i][
-                "fwdCanonicalCounter"] > juncDiffScore:
+            elif multiExonReadStrandDict[i]["revCanonicalCounter"] - multiExonReadStrandDict[i]["fwdCanonicalCounter"] > juncDiffScore:
                 if bedObj.reads[i].strand == "-":
                     print >>strandConfirmedOut, bedObj.reads[i]
                 bedObj.reads[i].strand = "-"
                 print >> strandAdjustOut, bedObj.reads[i]
             else:
-                chrom, start, end, strand = bedObj.reads[i].chrom, bedObj.reads[i].chromStart, bedObj.reads[i].chromEnd, \
-                                            bedObj.reads[i].strand
+                chrom, start, end, strand = bedObj.reads[i].chrom, bedObj.reads[i].chromStart, bedObj.reads[i].chromEnd, bedObj.reads[i].strand
                 multiExonAmbiStrandBedList.append(" ".join(map(str, [chrom, start, end, i, ".", strand])))
         else:
             print >>strandAdjustOut, bedObj.reads[i]

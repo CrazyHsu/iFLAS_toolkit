@@ -42,7 +42,7 @@ def mergeIsoforms(samples=None, dirSpec=None):
     tmpDict = {}
     mergedIso2ReadsBed = open("all_sample_merged_iso.bed", "w")
     for i in samples:
-        isoformGroupedBed12 = os.path.join(dirSpec.out_dir, i.project_name, i.sample_name, "collapse", "isoformGrouped.bed12+")
+        isoformGroupedBed12 = os.path.join(dirSpec.out_dir, i.project_name, i.sample_name, "refine", "isoformGrouped.bed12+")
         aseDir = os.path.join(dirSpec.out_dir, i.project_name, i.sample_name, "as_events", "ordinary_as")
         cmd = '''(cut -f 8,10 --output-delimiter=',' {}/PB/A3SS.confident.bed6+ {}/PB/A5SS.confident.bed6+ {}/PB/IR.confident.bed6+;
               cut -f 16,18 --output-delimiter=',' {}/PB/SE.confident.bed12+) | tr ',' '\n' | sort -u |

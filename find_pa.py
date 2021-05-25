@@ -9,9 +9,9 @@ def find_pa(dataObj=None, refParams=None, dirSpec=None):
     baseDir = os.path.join(dirSpec.out_dir, projectName, sampleName)
     paDir = os.path.join(baseDir, "as_events", "pa")
     resolveDir(paDir)
-    makeLink(os.path.join(baseDir, "collapse", "reads.assigned.unambi.bed12+"), "reads.assigned.unambi.bed12+")
     makeLink(os.path.join(baseDir, "collapse", "tofu.collapsed.group.txt"), "tofu.collapsed.group.txt")
-    makeLink(os.path.join(baseDir, "collapse", "isoformGrouped.bed12+"), "isoformGrouped.bed12+")
+    makeLink(os.path.join(baseDir, "refine", "reads.assigned.unambi.bed12+"), "reads.assigned.unambi.bed12+")
+    makeLink(os.path.join(baseDir, "refine", "isoformGrouped.bed12+"), "isoformGrouped.bed12+")
 
     with open("reads.assigned.unambi.bed12+") as f:
         cleavageList = {}

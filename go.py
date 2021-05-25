@@ -49,6 +49,4 @@ def go(args, optionTools=None, dirSpec=None):
         robjects.r.plotTargetGenesGoEnrichment(",".join(validateTargetGeneFiles), ",".join(validateSampleNames), gene2goFile, outName)
     else:
         robjects.r.plotTargetGenesGoEnrichment(validateTargetGeneFiles, validateSampleNames, gene2goFile, outName)
-    # cmd = "Rscript {}/plotGoEnrich.R -g={} -s={} -bg={} -o={}".format(scriptDir, ",".join(validateTargetGeneFiles), ",".join(validateSampleNames), gene2goFile, args.out)
-    # subprocess.call(cmd, shell=True)
     print getCurrentTime() + " Perform GO enrichment for target genes done!"
