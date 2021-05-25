@@ -175,7 +175,7 @@ def filterByJunc(dataObj=None, refParams=None, dirSpec=None, threads=10):
 
     if dataObj.ngs_left_reads or dataObj.ngs_right_reads:
         if dataObj.ngs_junctions == None:
-            dataObj.ngs_junctions = os.path.join(dirSpec.out_dir, projectName, sampleName, "RNA-seq", "reassembly", "junctions.bed")
+            dataObj.ngs_junctions = os.path.join(dirSpec.out_dir, projectName, sampleName, "filtration", "junctions.bed")
         juncScoringParams = "-r {} strandConfirm.bed12+ -j {}".format(refParams.ref_gpe, dataObj.ngs_junctions)
     else:
         juncScoringParams = "-r {} strandConfirm.bed12+".format(refParams.ref_gpe)

@@ -233,8 +233,7 @@ def splitCommandRun(args, dataToProcess, refInfoParams, dirSpec, ccsParams, mini
             if args.command == 'mapping':
                 from mapping import mapping
                 # mapping(dataObj=dataObj, minimap2Params=minimap2Params, refParams=refParams, dirSpec=dirSpec, threads=dataObj.single_run_threads)
-                pool.apply_async(mapping, (
-                dataObj, minimap2Params, refParams, dirSpec, dataObj.single_run_threads, args.correction))
+                pool.apply_async(mapping, (dataObj, minimap2Params, refParams, dirSpec, dataObj.single_run_threads, args.correction))
             if args.command == 'filter':
                 from filter import filter
                 # filter(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
