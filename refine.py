@@ -348,7 +348,7 @@ def refineJunc(dataObj=None, refParams=None, dirSpec=None, refine=True):
                      strandAdjust="tofu.strandAdjusted.bed12+", strandConfirmed="tofu.strandConfirm.bed12+")
         if dataObj.ngs_left_reads or dataObj.ngs_right_reads:
             if dataObj.ngs_junctions == None:
-                dataObj.ngs_junctions = os.path.join(baseDir, "mapping", "rna-seq", "junctions.bed")
+                dataObj.ngs_junctions = os.path.join(baseDir, "mapping", "rna-seq", "reassembly", "junctions.bed")
             juncScoringParams = "-r {} tofu.strandConfirm.bed12+ -j {}".format(refParams.ref_gpe, dataObj.ngs_junctions)
         else:
             juncScoringParams = "-r {} tofu.strandConfirm.bed12+".format(refParams.ref_gpe)

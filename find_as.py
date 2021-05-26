@@ -141,7 +141,7 @@ def find_as(dataObj=None, refParams=None, dirSpec=None):
     isoformBed = os.path.join(baseDir, "refine", "isoformGrouped.bed12+")
     tofuGroupFile = os.path.join(baseDir, "collapse", "tofu.collapsed.group.txt")
     if dataObj.ngs_junctions == None and (dataObj.ngs_left_reads or dataObj.ngs_right_reads):
-        dataObj.ngs_junctions = os.path.join(baseDir, "mapping", "rna-seq", "junctions.bed")
+        dataObj.ngs_junctions = os.path.join(baseDir, "mapping", "rna-seq", "reassembly", "junctions.bed")
 
     # if not os.path.exists("PB"):
     #     os.makedirs("PB")
