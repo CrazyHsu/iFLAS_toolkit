@@ -284,7 +284,7 @@ def collapse(dataObj=None, collapseParams=None, refParams=None, dirSpec=None, th
     resolveDir(os.path.join(baseDir, "collapse"))
     logDir = os.path.join(baseDir, "log")
     resolveDir(logDir, chdir=False)
-    processedFa = os.path.join(baseDir, "mapping", "processed.fa")
+    processedFa = os.path.join(baseDir, "mapping", "flnc.processed.fa")
     # processedBed = os.path.join(baseDir, "mapping", "flnc.addCVandID.bed12+")
     flncSam = os.path.join(baseDir, "mapping", "flnc.mm2.sam")
     # processedIds = getFxSequenceId(processedFa, isFa=True)

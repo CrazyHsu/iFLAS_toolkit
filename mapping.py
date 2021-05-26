@@ -27,11 +27,11 @@ def getJuncFromRegtools(dataObj=None, dirSpec=None, filterByCount=10):
 def mappingFilterAndAddTags(samFile=None, outPrefix="flnc", maxLength=50000, threads=10):
     cmd = "bamToBed -i <(samtools view -bS {}) -bed12 > tmp.bed12".format(samFile)
     subprocess.call(cmd, shell=True, executable="/bin/bash")
-    cmd = '''filter.pl -o <(awk 'OFS="\t"{if($3-$2>%d){print}}' tmp.bed12) flnc.mm2.sam -1 4 > tmp.sam''' % (maxLength)
+    cmd = '''filter.pl -o <(awk 'OFS="\t"{if($3-$2>%d){print}}' tmp.bed12) %s.mm2.sam -1 4 > tmp.sam''' % (maxLength, outPrefix)
     subprocess.call(cmd, shell=True, executable="/bin/bash")
     cmd = '''(samtools view -H tmp.sam; samtools view -f 16 -F 4079 tmp.sam; samtools view -f 0 -F 4095 tmp.sam) | 
         samAddTag.pl --checkHardClip --coverage --identity 2>lengthInconsistent.sam |
-        samtools sort -@ {} > {}.mm2.sam'''.format(threads, outPrefix)
+        samtools sort -@ {} --output-fmt SAM > {}.mm2.sam'''.format(threads, outPrefix)
     subprocess.call(cmd, shell=True, executable="/bin/bash")
     cmd = "sam2bed.pl -t CV,ID {}.mm2.sam > {}.addCVandID.bed12+".format(outPrefix, outPrefix)
     subprocess.call(cmd, shell=True)
