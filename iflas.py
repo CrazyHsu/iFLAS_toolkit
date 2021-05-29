@@ -43,7 +43,7 @@ def mergeSample(strain2data):
                 polyaLocationDict = {}
                 for x in dataObjs:
                     if x.polya_location != None and validateFile(x.polya_location):
-                        polyaLocationDict.update({x.sample_name, x.polya_location})
+                        polyaLocationDict.update({x.sample_name: x.polya_location})
                 sampleMerged.polya_location = polyaLocationDict if len(polyaLocationDict) else None
 
                 minLeftRepeats = min([len(x.ngs_left_reads.split(";")) for x in dataObjs])

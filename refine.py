@@ -304,6 +304,7 @@ def strandAdjust(genomeFasta, refGPE, bedFile, minCoverage, juncDiffScore, stran
             print >>strandConfirmedOut, bedObj.reads[infoList[3]]
     strandAdjustOut.close()
     strandConfirmedOut.close()
+    removeFiles(os.getcwd(), [tmpBed])
 
 def identifyNovelIsoformsByJunctions(gpeFile, bedFile, anno="annoIsoform.bed", novel="novelIsoform.bed"):
     annoOut = open(anno, "w")
