@@ -204,6 +204,7 @@ def mapping(dataObj=None, minimap2Params=None, refParams=None, dirSpec=None, thr
         else:
             raise Exception("Something wrong happened for generating preprocess flnc reads! Please check it!")
     if dataObj.ngs_left_reads or dataObj.ngs_right_reads:
-        from preprocess import renameNGSdata2fastp
+        from preprocess import renameNGSdata2fastp, processRnaseq
+        processRnaseq(dataObj=dataObj, threads=threads, dirSpec=dirSpec, max_reads_length_tirmmed=1)
         renameNGSdata2fastp(dataObj=dataObj)
         hisat2mapping(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, threads=threads)

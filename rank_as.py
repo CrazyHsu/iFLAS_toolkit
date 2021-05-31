@@ -9,7 +9,7 @@ Last modified: 2021-04-29 16:19:25
 from commonFuncs import *
 from rank_as_functions import *
 
-def rank_as(dataObj=None, dirSpec=None):
+def rank_as(dataObj=None, dirSpec=None, refParams=None):
     projectName, sampleName = dataObj.project_name, dataObj.sample_name
     print getCurrentTime() + " Start analysis independence between alternative splicing(AS) isoforms for project {} sample {}...".format(projectName, sampleName)
     baseDir = os.path.join(dirSpec.out_dir, projectName, sampleName)
@@ -25,6 +25,7 @@ def rank_as(dataObj=None, dirSpec=None):
     collapsedTrans2reads = os.path.join(baseDir, "collapse", "tofu.collapsed.group.txt")
     # asEnumerate(irFile, seFile, a3ssFile, a5ssFile, paFile, isoformFile, isoform2readsFile)
     novelIsoformFile = os.path.join(os.path.join(baseDir, "refine", "isoformGrouped.novel.bed12+"))
-    scoreAsIsoform(irFile, seFile, a3ssFile, a5ssFile, paFile, isoformFile, collapsedTrans2reads, novelIsoformFile)
+    asEnumerateFile, isoformScoreFile = scoreAsIsoform(irFile, seFile, a3ssFile, a5ssFile, paFile, isoformFile, collapsedTrans2reads, novelIsoformFile)
+    quantIsoformWithSalmon(isoformScoreFile, isoformFile, dataObj, refParams, dirSpec)
     os.chdir(prevDir)
     print getCurrentTime() + " End analysis independence between alternative splicing(AS) isoforms for project {} sample {}!".format(projectName, sampleName)

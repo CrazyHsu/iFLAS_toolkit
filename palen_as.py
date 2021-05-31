@@ -97,9 +97,9 @@ def getASpairedIsoforms(asFile, collapsedGroupFile, isoformFile, asType="SE", fi
                     uniqGene = list(set(inclusionGene+exclusionGene))
                     if len(uniqGene) == 1:
                         if uniqGene[0] not in asPairs:
-                            asPairs[uniqGene[0]] = [[newInclusionIsos, newExclusionIsos]]
+                            asPairs[uniqGene[0]] = [[newInclusionIsos, newExclusionIsos, records[3]]]
                         else:
-                            asPairs[uniqGene[0]].append([newInclusionIsos, newExclusionIsos])
+                            asPairs[uniqGene[0]].append([newInclusionIsos, newExclusionIsos, records[3]])
             else:
                 for item in itertools.product(inclusionIsos, exclusionIsos):
                     inclusionReads = collapsedTrans2reads[item[0]]
@@ -112,18 +112,20 @@ def getASpairedIsoforms(asFile, collapsedGroupFile, isoformFile, asType="SE", fi
                     exclusionGene = ".".join(item[1].split(".")[:2])
                     if inclusionGene == exclusionGene:
                         if inclusionGene not in asPairs:
-                            asPairs[inclusionGene] = [[[item[0]], [item[1]]]]
+                            asPairs[inclusionGene] = [[[item[0]], [item[1]], records[3]]]
                         else:
-                            asPairs[inclusionGene].append([[item[0]], [item[1]]])
+                            asPairs[inclusionGene].append([[item[0]], [item[1]], records[3]])
         return asPairs
 
-def getPalenAS(flncReads2Palen, isoformFile, collapsedTrans2reads=None, asPairs=None, filterByCount=10, mergeByJunc=False):
+def getPalenAS(flncReads2Palen, isoformFile, readsFile, collapsedTrans2reads=None, asPairs=None, filterByCount=10, mergeByJunc=False):
     prevDir = os.getcwd()
     if not mergeByJunc:
         resolveDir("no_mergeByJunc")
     else:
         resolveDir("mergeByJunc")
 
+    # isoBedObj = BedFile(isoformFile, type="bed12+")
+    readBedObj = BedFile(readsFile, type="bed12+")
     for asType in asPairs:
         sigFile = "{}.palenAndAS.sig.bed12+".format(asType)
         sigOut = open(sigFile, "w")
@@ -134,6 +136,14 @@ def getPalenAS(flncReads2Palen, isoformFile, collapsedTrans2reads=None, asPairs=
                 exclusionIsos = item[1]
                 inclusionReads = itertools.chain.from_iterable([collapsedTrans2reads[x] for x in inclusionIsos])
                 exclusionReads = itertools.chain.from_iterable([collapsedTrans2reads[x] for x in exclusionIsos])
+                if asType == "IR":
+                    tmpReads = []
+                    retention = [map(int, re.split("[:|-]", item[2])[1:3])]
+                    for x in inclusionReads:
+                        overlap = getOverlapOfTuple(readBedObj.reads[x].exons, retention)
+                        if getBlockLength(overlap) == getBlockLength(retention):
+                            tmpReads.append(x)
+                    inclusionReads = tmpReads
                 inclusionReads2palen = [[x, flncReads2Palen[x]] for x in inclusionReads if x in flncReads2Palen]
                 exclusionReads2palen = [[x, flncReads2Palen[x]] for x in exclusionReads if x in flncReads2Palen]
                 if len(inclusionReads2palen) < filterByCount or len(exclusionReads2palen) < filterByCount: continue
@@ -176,6 +186,7 @@ def palen_as(dataObj=None, refParams=None, dirSpec=None, filterByCount=10, dataT
     resolveDir(os.path.join(baseDir, "palenAS"))
 
     collapsedGroupFile = os.path.join(baseDir, "collapse", "tofu.collapsed.group.txt")
+    readsFile = os.path.join(baseDir, "mapping", "flnc.addCVandID.bed12+")
     isoformFile = os.path.join(baseDir, "refeine", "isoformGrouped.bed12+")
     collapsedTrans2reads = getDictFromFile(collapsedGroupFile, sep="\t", inlineSep=",", valueCol=2)
 
@@ -208,7 +219,7 @@ def palen_as(dataObj=None, refParams=None, dirSpec=None, filterByCount=10, dataT
     palen_pass = palen.loc[palen.qc_tag == "PASS", ]
     flncReads2Palen = dict(zip(palen_pass.readname, palen_pass.polya_length))
 
-    getPalenAS(flncReads2Palen, isoformFile, collapsedTrans2reads=collapsedTrans2reads, asPairs=asPairs, filterByCount=filterByCount, mergeByJunc=True)
+    getPalenAS(flncReads2Palen, isoformFile, readsFile, collapsedTrans2reads=collapsedTrans2reads, asPairs=asPairs, filterByCount=filterByCount, mergeByJunc=True)
     # getPalenAS(flncReads2Palen, dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, collapsedTrans2reads=collapsedTrans2reads, filterByCount=filterByCount, merged=False)
     # getPalenAS(flncReads2Palen, dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, mergedIsoDict=mergedIsoDict, filterByCount=filterByCount, merged=True)
 

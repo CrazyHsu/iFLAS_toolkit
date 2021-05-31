@@ -270,8 +270,13 @@ def process1(queryPickle, refPickle, offset=10):
                                 resultDict[queryBed.name] = ["complete_identity", consensusIntronN, refBed.name,
                                                              overlapRatio, overlapRatio2query]
                     else:
-                        resultDict[queryBed.name] = ["incorrect", consensusIntronN, "none5;" + refBed.name,
-                                                     overlapRatio, overlapRatio2query]
+                        if queryBed.name not in resultDict:
+                            resultDict[queryBed.name] = ["incorrect", consensusIntronN, "none5;" + refBed.name,
+                                                         overlapRatio, overlapRatio2query]
+                        else:
+                            if (overlapRatio > resultDict[queryBed.name][3] or overlapRatio2query > resultDict[queryBed.name][4]) and resultDict[queryBed.name][0] == "incorrect":
+                                resultDict[queryBed.name] = ["incorrect", consensusIntronN, "none5;" + refBed.name,
+                                                             overlapRatio, overlapRatio2query]
                 else:
                     if queryBed.name in resultDict and resultDict[queryBed.name][0] == "complete_identity":
                         continue

@@ -63,14 +63,8 @@ def processTargetGenes(targetGenes):
         return getDictFromFile(targetGenes)
     else:
         return targetGenes.split(",")
-    # elif "," in targetGenes:
-    #     return targetGenes.split(",")
-    # else:
-    #     raise Exception("Please input target genes in corrected format: "
-    #                     "1. Input the genes in string split by comma; "
-    #                     "2. Input the genes in a file one gene per line")
 
-def parallelPlotterAnno(gene, gpeTargetGenePickle, sampleTargetGenePickle, dataObjs, dirSpec):
+def parallelPlotter(gene, gpeTargetGenePickle, sampleTargetGenePickle, dataObjs, dirSpec):
     projectName, sampleName = dataObjs.project_name, dataObjs.sample_name
     baseDir = os.path.join(dirSpec.out_dir, projectName, sampleName)
     isoViewDir = os.path.join(baseDir, "isoViewer")

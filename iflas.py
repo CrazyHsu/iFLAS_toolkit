@@ -99,7 +99,7 @@ def oneCommandRunWrapped(dataObj, dataToProcess, refParams, minimap2Params, coll
     visual_as(dataObj, targetGenes, refParams, dirSpec)
 
     from rank_as import rank_as
-    rank_as(dataObj, dirSpec)
+    rank_as(dataObj, dirSpec, refParams)
 
     from allelic_as import allelic_as
     allelic_as(dataObj, refParams, dirSpec)
@@ -141,6 +141,21 @@ def oneCommandRun(args, dataToProcess, refInfoParams, dirSpec, ccsParams, minima
                     pool.apply_async(oneCommandRunWrapped, (dataObj, dataToProcess, refParams, minimap2Params, collapseParams, dirSpec, args))
         pool.close()
         pool.join()
+        if args.command == 'visual_as':
+            from visual_as import visual_as_merge
+            targetGenes = args.genes
+            # plot the gene structure for all samples
+            for ref_strain in refInfoParams:
+                visual_as_merge(dataToProcess=dataToProcess, targetGenes=targetGenes, refParams=refInfoParams[ref_strain], dirSpec=dirSpec)
+        from diff_as import diff_as1
+        # diff_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
+        compCond = args.compCond
+        diff_as1(sampleMergedToProcess, compCondFile=compCond, dirSpec=dirSpec, sampleMerged=optionTools.merge_data_from_same_strain)
+        from go import go
+        go(args, optionTools=optionTools, dirSpec=dirSpec)
+        from report import report
+        # report(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
+        report(dataToProcess=sampleMergedToProcess, refInfoParams=refInfoParams, dirSpec=dirSpec)
     else:
         pool = MyPool(processes=len(dataToProcess))
         for dataObj in dataToProcess:
@@ -150,6 +165,12 @@ def oneCommandRun(args, dataToProcess, refInfoParams, dirSpec, ccsParams, minima
 
         pool.close()
         pool.join()
+        if args.command == 'visual_as':
+            from visual_as import visual_as_merge
+            targetGenes = args.genes
+            # plot the gene structure for all samples
+            for ref_strain in refInfoParams:
+                visual_as_merge(dataToProcess=dataToProcess, targetGenes=targetGenes, refParams=refInfoParams[ref_strain], dirSpec=dirSpec)
         from diff_as import diff_as1
         # diff_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
         compCond = args.compCond
@@ -220,7 +241,7 @@ def splitCommandRun(args, dataToProcess, refInfoParams, dirSpec, ccsParams, mini
                     if args.command == 'rank_as':
                         from rank_as import rank_as
                         # rank_as(dataObj=dataObj, dirSpec=dirSpec)
-                        pool.apply_async(rank_as, (dataObj, dirSpec))
+                        pool.apply_async(rank_as, (dataObj, dirSpec, refParams))
                     if args.command == 'allelic_as':
                         from allelic_as import allelic_as
                         # allelic_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
@@ -231,6 +252,24 @@ def splitCommandRun(args, dataToProcess, refInfoParams, dirSpec, ccsParams, mini
                         pool.apply_async(palen_as, (dataObj, refParams, dirSpec, dataToProcess))
         pool.close()
         pool.join()
+        if args.command == 'visual_as':
+            from visual_as import visual_as_merge
+            targetGenes = args.genes
+            # plot the gene structure for all samples
+            for ref_strain in refInfoParams:
+                visual_as_merge(dataToProcess=dataToProcess, targetGenes=targetGenes, refParams=refInfoParams[ref_strain], dirSpec=dirSpec)
+        if args.command == 'diff_as':
+            from diff_as import diff_as1
+            # diff_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
+            compCond = args.compCond
+            diff_as1(sampleMergedToProcess, compCondFile=compCond, dirSpec=dirSpec, sampleMerged=optionTools.merge_data_from_same_strain)
+        if args.command == 'go':
+            from go import go
+            go(args, optionTools=optionTools, dirSpec=dirSpec)
+        if args.command == 'report':
+            from report import report
+            # report(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
+            report(dataToProcess=sampleMergedToProcess, refInfoParams=refInfoParams, dirSpec=dirSpec)
     else:
         pool = MyPool(processes=len(dataToProcess))
         for dataObj in dataToProcess:
@@ -264,7 +303,7 @@ def splitCommandRun(args, dataToProcess, refInfoParams, dirSpec, ccsParams, mini
             if args.command == 'rank_as':
                 from rank_as import rank_as
                 # rank_as(dataObj=dataObj, dirSpec=dirSpec)
-                pool.apply_async(rank_as, (dataObj, dirSpec))
+                pool.apply_async(rank_as, (dataObj, dirSpec, refParams))
             if args.command == 'allelic_as':
                 from allelic_as import allelic_as
                 # allelic_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
@@ -276,6 +315,12 @@ def splitCommandRun(args, dataToProcess, refInfoParams, dirSpec, ccsParams, mini
 
         pool.close()
         pool.join()
+        if args.command == 'visual_as':
+            from visual_as import visual_as_merge
+            targetGenes = args.genes
+            # plot the gene structure for all samples
+            for ref_strain in refInfoParams:
+                visual_as_merge(dataToProcess=dataToProcess, targetGenes=targetGenes, refParams=refInfoParams[ref_strain], dirSpec=dirSpec)
         if args.command == 'diff_as':
             from diff_as import diff_as1
             # diff_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)

@@ -10,6 +10,104 @@ Last modified: 2021-04-29 16:16:55
 from commonObjs import *
 from multiprocessing import Pool
 from visual_as_functions import *
+import glob
+
+def visual_as_merge(dataToProcess=None, targetGenes=None, refParams=None, dirSpec=None):
+    isoViewerDir = os.path.join(dirSpec.out_dir, "isoViewer_sample_merged")
+    resolveDir(isoViewerDir)
+    if targetGenes == None:
+        print getCurrentTime() + " Visualize all gene structure compared to the reference genome in all samples..."
+    else:
+        print getCurrentTime() + " Visualize selected gene structure compared to the reference genome in all samples..."
+        targetGenes = processTargetGenes(targetGenes)
+    refGpeObj = GenePredObj(refParams.ref_gpe, False)
+    for geneName in targetGenes:
+        mergedData = {}
+        for dataObj in dataToProcess:
+            tmpDir = os.path.join(dirSpec.out_dir, dataObj.project_name, dataObj.sample_name, "isoViewer", geneName)
+            sampleName = "{}_{}".format(dataObj.project_name, dataObj.sample_name)
+            if validateDir(tmpDir):
+                tmpDict = {"tgs": [], "ngs": {}}
+                isoformGff = os.path.abspath(os.path.join(tmpDir, "{}.iFLAS.gff"))
+                isoformGpe = os.path.abspath(os.path.join(tmpDir, "{}.iFLAS.gpe"))
+                ngsSamList = glob.glob(os.path.join(tmpDir, "repeat*.{}.sam").format(geneName))
+                if validateFile(isoformGff):
+                    tmpDict["tgs"] = [isoformGff, isoformGpe]
+                for i in ngsSamList:
+                    if validateFile(os.path.abspath(i)):
+                        repeat = os.path.basename(i).split(".")[0]
+                        tmpDict["ngs"].update({repeat: validateFile(os.path.abspath(i))})
+                mergedData.update({sampleName: tmpDict})
+        if mergedData:
+            resolveDir(os.path.join(isoViewerDir, geneName))
+
+            isoformGpes = [mergedData[x]["tgs"][1] for x in mergedData]
+            minPos = []
+            maxPos = []
+            for x in isoformGpes:
+                gpeObjs = GenePredObj(x, False).geneName2gpeObj[geneName]
+                minPos = [gpeObj.txStart for gpeObj in gpeObjs]
+                maxPos = [gpeObj.txEnd for gpeObj in gpeObjs]
+
+            refGeneObj = refGpeObj.geneName2gpeObj[geneName]
+
+            targetGeneChrom = refGeneObj.chrom
+            plotMinpos = min([refGeneObj.minpos] + minPos)
+            plotMaxpos = max([refGeneObj.maxpos] + maxPos)
+            targetGeneStrand = refGeneObj.strand
+
+            # Gene model section
+            geneModelGPE = "{}.gpe".format(geneName)
+            geneModelGTF = "{}.gtf".format(geneName)
+            geneModelGFF = "{}.gff".format(geneName)
+
+            geneModelGPEOut = open(geneModelGPE, "w")
+            for i in refGeneObj:
+                print >> geneModelGPEOut, i
+            geneModelGPEOut.close()
+            targetGeneRegion = "{}:{}-{}".format(targetGeneChrom, plotMinpos, plotMaxpos)
+            os.system("genePredToGtf file {} {} -source=iFLAS".format(geneModelGPE, geneModelGTF))
+            os.system("gene_model_to_splicegraph.py -m {} -o {} 2>/dev/null".format(geneModelGTF, geneModelGFF))
+            sectionToPlot = []
+            geneModelHidePlot = PlotSection(section_name="[GeneModelGraph]", source_file=geneModelGTF,
+                                            gene_name=geneName, relative_size=5.0,
+                                            title_string="Gene Model for %gene", hide=True)
+            sectionToPlot.append(geneModelHidePlot)
+            geneModelItemCount = getFileRowCounts(geneModelGPE)
+            geneModelRelativeSize = resizeTrackRatio(geneModelItemCount)
+            geneModelVisiblePlot = PlotSection(section_name="[GeneModelIsoformsGraph]", plot_type="isoforms",
+                                               source_file=geneModelGFF, relative_size=geneModelRelativeSize,
+                                               title_string="Gene Model for %gene [{}({})]".format(
+                                                   targetGeneRegion, targetGeneStrand))
+            sectionToPlot.append(geneModelVisiblePlot)
+            isoItemCounts = 0
+            for sampleName in mergedData:
+                tmpSample = mergedData[sampleName]
+                postCorrIsoItemCounts = getFileRowCounts(tmpSample["tgs"][1])
+                isoItemCounts += postCorrIsoItemCounts
+                postCorrIsoRelativeSize = resizeTrackRatio(postCorrIsoItemCounts)
+                postCorrIsoPlotType = "isoforms"
+                postCorrIsoPlot = PlotSection(section_name="[AllReadsCollapse]", plot_type=postCorrIsoPlotType,
+                                              source_file=tmpSample["tgs"][0], relative_size=postCorrIsoRelativeSize,
+                                              title_string="Corrected isoforms and AS events in %s from %s data" % (geneName, sampleName))
+                sectionToPlot.append(postCorrIsoPlot)
+                for repeatName in tmpSample["ngs"]:
+                    ngsSam = tmpSample["ngs"][repeatName]
+                    ngsPlot = PlotSection(section_name="[Reads_%s]" % (repeatName), plot_type="read_depth",
+                                            source_file=ngsSam, relative_size=5.0,
+                                            title_string="%s Read Coverage in sample %s" % (geneName, repeatName))
+                    sectionToPlot.append(ngsPlot)
+            figOut = geneName + ".pdf"
+            cfgOut = open(geneName + ".cfg", "w")
+            majorItemCount = geneModelItemCount + isoItemCounts
+            figHeight = 10 if majorItemCount <= 50 else 15 if majorItemCount <= 150 else 20
+            mainSec = MainSection(fout=figOut, height=figHeight)
+            print >> cfgOut, mainSec.printStr()
+            for sec in sectionToPlot:
+                print >> cfgOut, sec.printStr()
+            cfgOut.close()
+            os.system("plotter.py %s.cfg 2>/dev/null" % geneName)
+
 
 def visual_as(dataObj=None, targetGenes=None, refParams=None, dirSpec=None):
     projectName, sampleName = dataObj.project_name, dataObj.sample_name
@@ -58,15 +156,8 @@ def visual_as(dataObj=None, targetGenes=None, refParams=None, dirSpec=None):
                         gene2readsObj = readsDict[chrom][strand][geneName]
                         sampleTargetGenePickle = pickle.dumps(gene2readsObj)
                         gpeTargetGenePickle = pickle.dumps(gpeObj.geneName2gpeObj[gene2readsObj.geneName])
-                        pool.apply_async(parallelPlotterAnno, (gene2readsObj.geneName, gpeTargetGenePickle,
+                        pool.apply_async(parallelPlotter, (gene2readsObj.geneName, gpeTargetGenePickle,
                                                                sampleTargetGenePickle, dataObj, dirSpec))
-                        # if gene2readsObj.geneName in gpeObj.geneName2gpeObj:
-                        #     gpeTargetGenePickle = pickle.dumps(gpeObj.geneName2gpeObj[gene2readsObj.geneName])
-                        #     pool.apply_async(parallelPlotterAnno, (gene2readsObj.geneName, gpeTargetGenePickle,
-                        #                                            sampleTargetGenePickle, tgsSample, dirSpec))
-                        # else:
-                        #     pool.apply_async(parallelPlotterNovel, (gene2readsObj.geneName, sampleTargetGenePickle,
-                        #                                             tgsSample, dirSpec))
         pool.close()
         pool.join()
     except Exception as e:
