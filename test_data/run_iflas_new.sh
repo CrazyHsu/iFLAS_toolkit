@@ -79,6 +79,6 @@ python iflas.py find_as -cfg test_data/iFLAS_config_wangbo_hybrid_merged_new.cfg
 python iflas.py visual_as -cfg test_data/iFLAS_config_wangbo_hybrid_merged_new.cfg -g Zm00001d050245
 python iflas.py rank_as -cfg test_data/iFLAS_config_wangbo_hybrid_merged_new.cfg
 python iflas.py diff_as -cfg test_data/iFLAS_config_wangbo_hybrid_merged_new.cfg -d test_data/wangbo_hybrid_compCond.txt
-python iflas.py allelic_as -cfg test_data/iFLAS_config_wangbo_hybrid_merged_new.cfg
+python iflas.py allelic_as -cfg test_data/iFLAS_config_wangbo_hybrid_merged_new.cfg -ase -fbs
 python iflas.py go -cfg test_data/iFLAS_config_wangbo_hybrid_merged_new.cfg -tg targetGene1.txt,targetGene2.txt,targetGene3.txt -bg gene2goId.txt -s sample1,sample2,sample3
 python iflas.py report -cfg test_data/iFLAS_config_wangbo_hybrid_merged_new.cfg

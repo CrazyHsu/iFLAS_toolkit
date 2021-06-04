@@ -149,7 +149,7 @@ def runPhaser(targetDir):
     #     strand, ploidy)
     # subprocess.call(cmd, shell=True)
     cmd = "run_phaser.py ccs.fastq ccs.sam ccs.mpileup fake.read_stat.txt fake.mapping.txt --partial_ok --strand {} " \
-          "-o phased.partial -n {} --bhFDR 0.01 -p 0.01 1>partial.stdout.txt".format(strand, ploidy)
+          "-o phased.partial -n {} --bhFDR 0.01 -p 0.01 1>partial.stdout.txt 2>&1".format(strand, ploidy)
     subprocess.call(cmd, shell=True)
 
     os.chdir(curDir)
@@ -234,7 +234,7 @@ def allelic_as(dataObj=None, refParams=None, dirSpec=None, args=None):
     # multiResults = []
     pool = Pool(processes=dataObj.single_run_threads)
     for i in lociDir:
-        pool.apply_async(runPhaser, (i))
+        pool.apply_async(runPhaser, (i,))
         # multiResults.append(singleRunRes)
     pool.close()
     pool.join()
