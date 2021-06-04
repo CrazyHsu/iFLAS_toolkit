@@ -270,8 +270,6 @@ def allelic_as(dataObj=None, refParams=None, dirSpec=None, args=None):
     os.chdir(prevDir)
     print getCurrentTime() + " Identify allelic-specific AS events for project {} sample {} done!".format(projectName, sampleName)
 
-    allelic_specific_exp(dataObj, refParams, dirSpec, args.refFa, args.altFa, args.useFreebayes)
-
 def vcfHaplo(cleanVCF):
     import vcf
     vcf_reader = vcf.Reader(open(cleanVCF, "r"))
@@ -561,3 +559,9 @@ def allelic_specific_exp(dataObj=None, refParams=None, dirSpec=None, refFa=None,
 
 
     os.chdir(prevDir)
+
+def allelic(dataObj=None, refParams=None, dirSpec=None, args=None):
+    allelic_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, args=args)
+    if args.ase:
+        allelic_specific_exp(dataObj, refParams, dirSpec, args.refFa, args.altFa, args.useFreebayes)
+

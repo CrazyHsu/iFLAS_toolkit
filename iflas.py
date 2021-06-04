@@ -101,11 +101,11 @@ def oneCommandRunWrapped(dataObj, dataToProcess, refParams, minimap2Params, coll
     from rank_as import rank_as
     rank_as(dataObj, dirSpec, refParams)
 
-    from allelic_as import allelic_as
-    allelic_as(dataObj, refParams, dirSpec)
+    from allelic_as import allelic
+    allelic(dataObj, refParams, dirSpec, args)
 
     from palen_as import palen_as
-    palen_as(dataObj, refParams, dirSpec, dataToProcess)
+    palen_as(dataObj, refParams, dirSpec, args.pa_sup, dataToProcess)
 
 def oneCommandRun(args, dataToProcess, refInfoParams, dirSpec, ccsParams, minimap2Params, collapseParams, optionTools):
     pool = MyPool(processes=len(dataToProcess))
@@ -243,9 +243,9 @@ def splitCommandRun(args, dataToProcess, refInfoParams, dirSpec, ccsParams, mini
                         # rank_as(dataObj=dataObj, dirSpec=dirSpec)
                         pool.apply_async(rank_as, (dataObj, dirSpec, refParams))
                     if args.command == 'allelic_as':
-                        from allelic_as import allelic_as
+                        from allelic_as import allelic
                         # allelic_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
-                        pool.apply_async(allelic_as, (dataObj, refParams, dirSpec))
+                        pool.apply_async(allelic, (dataObj, refParams, dirSpec, args))
                     if args.command == 'palen_as':
                         from palen_as import palen_as
                         # palen_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, dataToProcess=dataToProcess)
@@ -305,9 +305,9 @@ def splitCommandRun(args, dataToProcess, refInfoParams, dirSpec, ccsParams, mini
                 # rank_as(dataObj=dataObj, dirSpec=dirSpec)
                 pool.apply_async(rank_as, (dataObj, dirSpec, refParams))
             if args.command == 'allelic_as':
-                from allelic_as import allelic_as
+                from allelic_as import allelic
                 # allelic_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
-                pool.apply_async(allelic_as, (dataObj, refParams, dirSpec, args))
+                pool.apply_async(allelic, (dataObj, refParams, dirSpec, args))
             if args.command == 'palen_as':
                 from palen_as import palen_as
                 # palen_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, dataToProcess=dataToProcess)
@@ -385,12 +385,14 @@ if __name__ == "__main__":
 
     parser_allelicAS = subparsers.add_parser('allelic_as', help='Identify allelic-related AS', usage='%(prog)s [options]')
     parser_allelicAS.add_argument('-cfg', dest="default_cfg", help="The config file used for init setting.")
-    parser_allelicAS.add_argument('-ref_fa', dest="refFa", default=None, help="The reference fasta file used to be quantified.")
-    parser_allelicAS.add_argument('-alt_fa', dest="altFa", default=None, help="The alternative fasta file used to be quantified.")
-    parser_allelicAS.add_argument('-fbs', dest="useFreebayes", action="store_true", default=False, help="Call the heterozygosity SNPs with freebayes.")
+    parser_allelicAS.add_argument('-ase', dest="ase", action="store_true", default=False, help="Whether to Carry out ASE analysis.")
+    parser_allelicAS.add_argument('-ref_fa', dest="refFa", default=None, help="The reference fasta file used to be quantified in ASE.")
+    parser_allelicAS.add_argument('-alt_fa', dest="altFa", default=None, help="The alternative fasta file used to be quantified in ASE.")
+    parser_allelicAS.add_argument('-fbs', dest="useFreebayes", action="store_true", default=False, help="Call the heterozygosity SNPs with freebayes in ASE.")
 
     parser_palenAS = subparsers.add_parser('palen_as', help='Identify functional poly(A) tail length related to AS', usage='%(prog)s [options]')
     parser_palenAS.add_argument('-cfg', dest="default_cfg", help="The config file used for init setting.")
+    parser_palenAS.add_argument('-pa_sup', dest="pa_support", type=int, default=10, help="The pa cluster coverage supported by flnc reads. Default: 10.")
 
     parser_diffAS = subparsers.add_parser('diff_as', help='Carry out differential AS ananlysis among conditions', usage='%(prog)s [options]')
     parser_diffAS.add_argument('-cfg', dest="default_cfg", help="The config file used for init setting.")
