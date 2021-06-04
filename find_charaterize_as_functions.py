@@ -311,7 +311,7 @@ def getAS(annoBedRes, novelBedRes, offset=0, reference=0):
                 novelDict[read.chrom][read.strand].append(read)
     return annoDict, novelDict
 
-def getPaCluster(readsBed=None, tofuGroup=None, filterByCount=0, threads=None, paClusterOut=None):
+def getPaCluster(readsBed=None, tofuGroup=None, filterByCount=0, threads=None, paClusterOut=None, paDist=20):
     gene2reads = {}
     readsDict = BedFile(readsBed, type="bed12+").reads
     with open(tofuGroup) as f:
@@ -332,7 +332,7 @@ def getPaCluster(readsBed=None, tofuGroup=None, filterByCount=0, threads=None, p
         chroms = [r.chrom for r in readsBedList]
         mostChrom = Counter(chroms).most_common(1)[0][0]
         readsBedList = [r for r in readsBedList if r.chrom == mostChrom]
-        paCluster(readsBedList, outHandle=outHandle)
+        paCluster(readsBedList, outHandle=outHandle, distance=paDist)
     outHandle.close()
 
 
@@ -872,6 +872,7 @@ def motifAroundPA(bed6plus=None, up1=100, down1=100, up2=100, down2=100, refFast
 def paCluster(readsBedList, distance=20, windowSize=3, manner="mode", outHandle=None):
     chroms = [i.chrom for i in readsBedList]
     strands = [i.strand for i in readsBedList]
+    refGene = Counter([i.otherList[2] for i in readsBedList]).most_common()[0][0]
     if len(set(strands)) != 1: return
     chrom = list(set(chroms))[0]
     strand = list(set(strands))[0]
@@ -898,21 +899,20 @@ def paCluster(readsBedList, distance=20, windowSize=3, manner="mode", outHandle=
             paCounter = Counter(relPaSites)
             currentCount = reduce(lambda x, y: x + y, [paCounter[z+1] for z in range(windowSize) if z + 1 in paCounter])
             maxCount = currentCount
+            maxCountPos = range(windowSize)
             for j in range(2, max(paCounter.keys()) - windowSize + 1):
                 currentCount = 0
+                tmpPos = []
                 for z in range(j, j + windowSize):
                     if z + 1 in paCounter:
                         currentCount += paCounter[z + 1]
-                if currentCount > maxCount: maxCount = currentCount
-            if manner == "mode":
-                relSite2Count = sorted([(k, v) for k, v in paCounter.iteritems()], key=lambda x: (x[1], x[0]),
-                                       reverse=True)
-            elif manner == "downstream":
-                relSite2Count = sorted([(k, v) for k, v in paCounter.iteritems()], key=lambda x: x[0], reverse=True)
-            else:
-                relSite2Count = sorted([(k, v) for k, v in paCounter.iteritems()], key=lambda x: x[0])
+                        tmpPos.append(z + 1)
+                if currentCount > maxCount:
+                    maxCount = currentCount
+                    maxCountPos = tmpPos
 
-            mainPaSite = relSite2Count[0][0]
+            maxCountPosSorted = sorted([(x, paCounter[x]) for x in maxCountPos], key=lambda x: (x[1], x[0]), reverse=True)
+            mainPaSite = maxCountPosSorted[0][0]
             if strand == "+":
                 paSite = paRangeStart + mainPaSite
             else:
@@ -926,7 +926,7 @@ def paCluster(readsBedList, distance=20, windowSize=3, manner="mode", outHandle=
                 else:
                     freq.append(round(0, 2))
             print >> outHandle, "\t".join(map(str, [chrom, paRangeStart, paRangeEnd, ",".join(readNames), readCount, strand,
-                                               paSite - 1, paSite, ",".join(map(str, relPaSites)), len(relSite2Count),
+                                               paSite - 1, paSite, refGene, ",".join(map(str, relPaSites)), len(paCounter),
                                                round(maxCount / float(readCount), 2), "\t".join(map(str, freq))]))
             paRangeStart = currentPa - 1
             paRangeEnd = currentPa
@@ -938,21 +938,20 @@ def paCluster(readsBedList, distance=20, windowSize=3, manner="mode", outHandle=
     paCounter = Counter(relPaSites)
     currentCount = reduce(lambda x, y: x + y, [paCounter[z + 1] for z in range(windowSize) if z + 1 in paCounter])
     maxCount = currentCount
+    maxCountPos = range(windowSize)
     for j in range(2, max(paCounter.keys()) - windowSize + 1):
         currentCount = 0
+        tmpPos = []
         for z in range(j, j + windowSize):
             if z + 1 in paCounter:
                 currentCount += paCounter[z + 1]
-        if currentCount > maxCount: maxCount = currentCount
-    if manner == "mode":
-        relSite2Count = sorted([(k, v) for k, v in paCounter.iteritems()], key=lambda x: (x[1], x[0]),
-                               reverse=True)
-    elif manner == "downstream":
-        relSite2Count = sorted([(k, v) for k, v in paCounter.iteritems()], key=lambda x: x[0], reverse=True)
-    else:
-        relSite2Count = sorted([(k, v) for k, v in paCounter.iteritems()], key=lambda x: x[0])
+                tmpPos.append(z + 1)
+        if currentCount > maxCount:
+            maxCount = currentCount
+            maxCountPos = tmpPos
 
-    mainPaSite = relSite2Count[0][0]
+    maxCountPosSorted = sorted([(x, paCounter[x]) for x in maxCountPos], key=lambda x: (x[1], x[0]), reverse=True)
+    mainPaSite = maxCountPosSorted[0][0]
     if strand == "+":
         paSite = paRangeStart + mainPaSite
     else:
@@ -966,7 +965,7 @@ def paCluster(readsBedList, distance=20, windowSize=3, manner="mode", outHandle=
         else:
             freq.append(round(0, 2))
     print >> outHandle, "\t".join(map(str, [chrom, paRangeStart, paRangeEnd, ",".join(readNames), readCount, strand,
-                                            paSite - 1, paSite, ",".join(map(str, relPaSites)), len(relSite2Count),
+                                            paSite - 1, paSite, refGene, ",".join(map(str, relPaSites)), len(paCounter),
                                             round(maxCount / float(readCount), 2), "\t".join(map(str, freq))]))
 
 

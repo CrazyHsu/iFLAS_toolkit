@@ -307,7 +307,7 @@ def splitCommandRun(args, dataToProcess, refInfoParams, dirSpec, ccsParams, mini
             if args.command == 'allelic_as':
                 from allelic_as import allelic_as
                 # allelic_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
-                pool.apply_async(allelic_as, (dataObj, refParams, dirSpec))
+                pool.apply_async(allelic_as, (dataObj, refParams, dirSpec, args))
             if args.command == 'palen_as':
                 from palen_as import palen_as
                 # palen_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, dataToProcess=dataToProcess)
@@ -385,6 +385,9 @@ if __name__ == "__main__":
 
     parser_allelicAS = subparsers.add_parser('allelic_as', help='Identify allelic-related AS', usage='%(prog)s [options]')
     parser_allelicAS.add_argument('-cfg', dest="default_cfg", help="The config file used for init setting.")
+    parser_allelicAS.add_argument('-ref_fa', dest="refFa", default=None, help="The reference fasta file used to be quantified.")
+    parser_allelicAS.add_argument('-alt_fa', dest="altFa", default=None, help="The alternative fasta file used to be quantified.")
+    parser_allelicAS.add_argument('-fbs', dest="useFreebayes", action="store_true", default=False, help="Call the heterozygosity SNPs with freebayes.")
 
     parser_palenAS = subparsers.add_parser('palen_as', help='Identify functional poly(A) tail length related to AS', usage='%(prog)s [options]')
     parser_palenAS.add_argument('-cfg', dest="default_cfg", help="The config file used for init setting.")

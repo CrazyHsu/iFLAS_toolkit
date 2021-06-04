@@ -147,8 +147,8 @@ def getPalenAS(flncReads2Palen, isoformFile, readsFile, collapsedTrans2reads=Non
                 inclusionReads2palen = [[x, flncReads2Palen[x]] for x in inclusionReads if x in flncReads2Palen]
                 exclusionReads2palen = [[x, flncReads2Palen[x]] for x in exclusionReads if x in flncReads2Palen]
                 if len(inclusionReads2palen) < filterByCount or len(exclusionReads2palen) < filterByCount: continue
-                aPalen = map(int, [x[1] for x in inclusionReads2palen])
-                bPalen = map(int, [x[1] for x in exclusionReads2palen])
+                aPalen = map(float, [x[1] for x in inclusionReads2palen])
+                bPalen = map(float, [x[1] for x in exclusionReads2palen])
                 stat_val1, p_val1 = stats.ttest_ind(aPalen, bPalen)
                 stat_val2, p_val2 = stats.kruskal(aPalen, bPalen)
                 if float(p_val1) <= 0.001 and float(p_val2) <= 0.001:
@@ -178,6 +178,39 @@ def getPalenAS(flncReads2Palen, isoformFile, readsFile, collapsedTrans2reads=Non
         sigOut.close()
     os.chdir(prevDir)
 
+def getPalenAPA(paClusterBed, flncReads2Palen, filterByCount, palenAPA):
+    gene2paReads = {}
+    with open(paClusterBed) as f:
+        for line in f.readlines():
+            infoList = line.strip("\n").split("\t")
+            gene = infoList[8]
+            paSite = "{}_{}".format(infoList[0], infoList[7])
+            reads = infoList[3].split(",")
+            if len(reads) < filterByCount: continue
+            if gene not in gene2paReads:
+                gene2paReads[gene] = {paSite: reads}
+            else:
+                gene2paReads[gene].update({paSite: reads})
+    out = open(palenAPA, "w")
+    for gene in gene2paReads:
+        if len(gene2paReads[gene].keys()) < 2: continue
+        validPaSites = {}
+        for item in itertools.combinations(gene2paReads[gene].keys(), 2):
+            aPalen = [float(flncReads2Palen[x]) for x in gene2paReads[gene][item[0]] if x in flncReads2Palen]
+            bPalen = [float(flncReads2Palen[x]) for x in gene2paReads[gene][item[1]] if x in flncReads2Palen]
+            stat_val1, p_val1 = stats.ttest_ind(aPalen, bPalen)
+            stat_val2, p_val2 = stats.kruskal(aPalen, bPalen)
+            if float(p_val1) <= 0.001 and float(p_val2) <= 0.001:
+                if item[0] not in validPaSites:
+                    validPaSites[item[0]] = aPalen
+                if item[0] not in validPaSites:
+                    validPaSites[item[1]] = bPalen
+
+        paNumStr = ";".join(map(str, [len(validPaSites[x]) for x in validPaSites.keys()]))
+        paLenStr = ";".join([",".join(map(str, validPaSites[x])) for x in validPaSites.keys()])
+        print >> out, "\t".join([gene, ";".join(validPaSites.keys()), paNumStr, paLenStr])
+    out.close()
+
 def palen_as(dataObj=None, refParams=None, dirSpec=None, filterByCount=10, dataToProcess=None):
     projectName, sampleName = dataObj.project_name, dataObj.sample_name
     print getCurrentTime() + " Identify functional poly(A) tail length related to AS for project {} sample {}...".format(projectName, sampleName)
@@ -187,7 +220,7 @@ def palen_as(dataObj=None, refParams=None, dirSpec=None, filterByCount=10, dataT
 
     collapsedGroupFile = os.path.join(baseDir, "collapse", "tofu.collapsed.group.txt")
     readsFile = os.path.join(baseDir, "mapping", "flnc.addCVandID.bed12+")
-    isoformFile = os.path.join(baseDir, "refeine", "isoformGrouped.bed12+")
+    isoformFile = os.path.join(baseDir, "refine", "isoformGrouped.bed12+")
     collapsedTrans2reads = getDictFromFile(collapsedGroupFile, sep="\t", inlineSep=",", valueCol=2)
 
     irFile = os.path.join(baseDir, "as_events", "ordinary_as", "PB", "IR.confident.bed6+")
@@ -225,3 +258,44 @@ def palen_as(dataObj=None, refParams=None, dirSpec=None, filterByCount=10, dataT
 
     os.chdir(prevDir)
     print getCurrentTime() + " Identify functional poly(A) tail length related to AS for project {} entry {} done!".format(projectName, sampleName)
+
+    print getCurrentTime() + " Identify functional poly(A) tail length related to APA for project {} sample {}...".format(projectName, sampleName)
+    resolveDir(os.path.join(baseDir, "palenAS", "palenAPA"))
+    paClusterBed = os.path.join(baseDir, "as_events", "pa", "paCluster.bed8+")
+    palenAPA = "apaRelatedPalen.txt"
+    getPalenAPA(paClusterBed, flncReads2Palen, filterByCount, palenAPA)
+    os.chdir(prevDir)
+
+    # palen_apa(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, filterByCount=filterByCount, dataToProcess=dataToProcess)
+    print getCurrentTime() + " Identify functional poly(A) tail length related to APA for project {} sample {}...".format(projectName, sampleName)
+
+def palen_apa(dataObj=None, refParams=None, dirSpec=None, filterByCount=10, dataToProcess=None):
+    projectName, sampleName = dataObj.project_name, dataObj.sample_name
+    print getCurrentTime() + " Identify functional poly(A) tail length related to APA for project {} sample {}...".format(projectName, sampleName)
+    prevDir = os.getcwd()
+    baseDir = os.path.join(dirSpec.out_dir, projectName, sampleName)
+    resolveDir(os.path.join(baseDir, "palenAPA"))
+
+    palenFile = dataObj.polya_location
+    palenFileList = []
+    if palenFile == None:
+        for tmpObj in dataToProcess:
+            polyaLenCalling(dataObj=tmpObj, refParams=refParams, dirSpec=dirSpec)
+            palenFileList.append(tmpObj.polya_location)
+    elif isinstance(palenFile, dict):
+        for tmpObj in dataToProcess:
+            if tmpObj.sample_name not in palenFile:
+                polyaLenCalling(dataObj=tmpObj, refParams=refParams, dirSpec=dirSpec)
+                palenFileList.append(tmpObj.polya_location)
+    else:
+        palenFileList.append(palenFile)
+
+    palen = pd.concat([pd.read_csv(x, sep="\t") for x in palenFileList])
+    palen_pass = palen.loc[palen.qc_tag == "PASS", ]
+    flncReads2Palen = dict(zip(palen_pass.readname, palen_pass.polya_length))
+    paClusterBed = os.path.join(baseDir, "as_events", "pa", "paCluster.bed8+")
+    palenAPA = "apaRelatedPalen.txt"
+    getPalenAPA(paClusterBed, flncReads2Palen, filterByCount, palenAPA)
+
+    os.chdir(prevDir)
+    print getCurrentTime() + " Identify functional poly(A) tail length related to APA for project {} sample {}...".format(projectName, sampleName)
