@@ -39,7 +39,7 @@ plotAllelicAsStructureStr = '''
     library(GenomicFeatures)
     library(Gviz)
     
-    plotAllelicAsStructure <- function(refGenome, gtfs, mixedBam, haploBams, ngsBam, chrom, chromStart, chromEnd, outName){
+    plotAllelicAsStructure <- function(refGenome, gtfs, mixedBam, haploBams, ngsBam, chrom, chromStart, chromEnd, htStarts, htEnds, color, outName){
         plot(paste0(outName, ".pdf"))
         gtrack <- GenomeAxisTrack(cex = 1)
         sTrack <- SequenceTrack(refGenome)
@@ -50,11 +50,14 @@ plotAllelicAsStructureStr = '''
         haploBams <- unlist(strsplit(haploBams, ","))
         haploReads1Track <- AlignmentsTrack(haploBams[1], isPaired = TRUE, min.height = 20, size = 80, type="pileup", name="Haplotype1 Alignments")
         haploReads2Track <- AlignmentsTrack(haploBams[2], isPaired = TRUE, min.height = 20, size = 80, type="pileup", name="Haplotype2 Alignments")
+        htStarts <- as.numeric(unlist(strsplit(htStarts, ","))) - 50
+        htEnds <- as.numeric(unlist(strsplit(htEnds, ","))) + 50
+        ht <- HighlightTrack(trackList=list(haploIso1Track, haploReads1Track, haploIso2Track, haploReads2Track), start=htStarts, end=htEnds, chromosome=chrom, col=c(color), alpha=0.8)
         if(ngsBam!=""){
             ngsCovTrack <- AlignmentsTrack(ngsBam, isPaired = TRUE, min.height = 20, size = 80, type="Coverage", name="Short Reads Alignments")
-            p <- plotTracks(c(covTrack, ngsCovTrack, haploIso1Track, haploReads1Track, haploIso2Track, haploReads2Track, sTrack, gtrack), chromosome = chrom, from = chromStart, to = chromEnd, cex=0.5, min.height=2, fontsize=10, extend.left=0.02, extend.right=0.02, main=outName, cex.main=1)
+            p <- plotTracks(c(covTrack, ngsCovTrack, ht, sTrack, gtrack), chromosome = chrom, from = chromStart, to = chromEnd, cex=0.5, min.height=2, fontsize=10, extend.left=0.02, extend.right=0.02, main=outName, cex.main=1)
         }else{
-            p <- plotTracks(c(covTrack, haploIso1Track, haploReads1Track, haploIso2Track, haploReads2Track, sTrack, gtrack), chromosome = chrom, from = chromStart, to = chromEnd, cex=0.5, min.height=2, fontsize=10, extend.left=0.02, extend.right=0.02, main=outName, cex.main=1)
+            p <- plotTracks(c(covTrack, ht, sTrack, gtrack), chromosome = chrom, from = chromStart, to = chromEnd, cex=0.5, min.height=2, fontsize=10, extend.left=0.02, extend.right=0.02, main=outName, cex.main=1)
         }
         print(p)
         dev.off()
