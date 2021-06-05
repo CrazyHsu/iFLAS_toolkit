@@ -235,9 +235,12 @@ def relationshipBetweenAlleleSpecifiAndAS(partial=False, nopartial=False, isoPai
             partialHaplotype = "phased.partial.cleaned.human_readable.txt"
             if os.path.exists(partialHaplotype):
                 partialDF = pd.read_csv(partialHaplotype, skiprows=[0], index_col=0, sep="\t")
-                if not set(isoPair[0] + isoPair[1]).issubset(set(partialDF.columns)): continue
-                incIsoDf = partialDF.loc[:, isoPair[0]].sum(axis=1)
-                excIsoDf = partialDF.loc[:, isoPair[1]].sum(axis=1)
+                # if not set(isoPair[0] + isoPair[1]).issubset(set(partialDF.columns)): continue
+                newIncIsos = list(set(partialDF.columns) & set(isoPair[0]))
+                newExcIsos = list(set(partialDF.columns) & set(isoPair[1]))
+                if len(newIncIsos) == 0 or len(newExcIsos) == 0: continue
+                incIsoDf = partialDF.loc[:, newIncIsos].sum(axis=1)
+                excIsoDf = partialDF.loc[:, newExcIsos].sum(axis=1)
                 mergedDf = pd.concat([incIsoDf, excIsoDf], axis=1)
                 if (pd.DataFrame.max(mergedDf) >= 5).all() and (pd.DataFrame.min(mergedDf) <= 3).all():
                     if len(mergedDf[(mergedDf.T != 0).any()]) == 1: continue
@@ -253,9 +256,12 @@ def relationshipBetweenAlleleSpecifiAndAS(partial=False, nopartial=False, isoPai
             nopartialHaplotype = "phased.nopartial.cleaned.human_readable.txt"
             if os.path.exists(nopartialHaplotype):
                 nopartialDF = pd.read_csv(nopartialHaplotype, skiprows=[0], index_col=0, sep="\t")
-                if not set(isoPair[0] + isoPair[1]).issubset(set(nopartialDF.columns)): continue
-                incIsoDf = nopartialDF.loc[:, isoPair[0]].sum(axis=1)
-                excIsoDf = nopartialDF.loc[:, isoPair[1]].sum(axis=1)
+                # if not set(isoPair[0] + isoPair[1]).issubset(set(nopartialDF.columns)): continue
+                newIncIsos = list(set(nopartialDF.columns) & set(isoPair[0]))
+                newExcIsos = list(set(nopartialDF.columns) & set(isoPair[1]))
+                if len(newIncIsos) == 0 or len(newExcIsos) == 0: continue
+                incIsoDf = nopartialDF.loc[:, newIncIsos].sum(axis=1)
+                excIsoDf = nopartialDF.loc[:, newExcIsos].sum(axis=1)
                 mergedDf = pd.concat([incIsoDf, excIsoDf], axis=1)
                 if (pd.DataFrame.max(mergedDf) >= 5).all() and (pd.DataFrame.min(mergedDf) <= 3).all():
                     if len(mergedDf[(mergedDf.T != 0).any()]) == 1: continue

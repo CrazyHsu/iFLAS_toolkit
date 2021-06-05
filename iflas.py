@@ -155,7 +155,7 @@ def oneCommandRun(args, dataToProcess, refInfoParams, dirSpec, ccsParams, minima
         go(args, optionTools=optionTools, dirSpec=dirSpec)
         from report import report
         # report(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
-        report(dataToProcess=sampleMergedToProcess, refInfoParams=refInfoParams, dirSpec=dirSpec)
+        report(dataToProcess=sampleMergedToProcess, refInfoParams=refInfoParams, dirSpec=dirSpec, args=args)
     else:
         pool = MyPool(processes=len(dataToProcess))
         for dataObj in dataToProcess:
@@ -179,7 +179,7 @@ def oneCommandRun(args, dataToProcess, refInfoParams, dirSpec, ccsParams, minima
         go(args, optionTools=optionTools, dirSpec=dirSpec)
         from report import report
         # report(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
-        report(dataToProcess=dataToProcess, refInfoParams=refInfoParams, dirSpec=dirSpec)
+        report(dataToProcess=dataToProcess, refInfoParams=refInfoParams, dirSpec=dirSpec, args=args)
 
 def splitCommandRun(args, dataToProcess, refInfoParams, dirSpec, ccsParams, minimap2Params, collapseParams, optionTools):
     if args.command == 'preproc':
@@ -244,7 +244,7 @@ def splitCommandRun(args, dataToProcess, refInfoParams, dirSpec, ccsParams, mini
                         pool.apply_async(rank_as, (dataObj, dirSpec, refParams))
                     if args.command == 'allelic_as':
                         from allelic_as import allelic
-                        # allelic_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
+                        # allelic(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, args=args)
                         pool.apply_async(allelic, (dataObj, refParams, dirSpec, args))
                     if args.command == 'palen_as':
                         from palen_as import palen_as
@@ -269,7 +269,7 @@ def splitCommandRun(args, dataToProcess, refInfoParams, dirSpec, ccsParams, mini
         if args.command == 'report':
             from report import report
             # report(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
-            report(dataToProcess=sampleMergedToProcess, refInfoParams=refInfoParams, dirSpec=dirSpec)
+            report(dataToProcess=sampleMergedToProcess, refInfoParams=refInfoParams, dirSpec=dirSpec, args=args)
     else:
         pool = MyPool(processes=len(dataToProcess))
         for dataObj in dataToProcess:
@@ -306,7 +306,7 @@ def splitCommandRun(args, dataToProcess, refInfoParams, dirSpec, ccsParams, mini
                 pool.apply_async(rank_as, (dataObj, dirSpec, refParams))
             if args.command == 'allelic_as':
                 from allelic_as import allelic
-                # allelic_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
+                # allelic(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, args=args)
                 pool.apply_async(allelic, (dataObj, refParams, dirSpec, args))
             if args.command == 'palen_as':
                 from palen_as import palen_as
@@ -332,7 +332,7 @@ def splitCommandRun(args, dataToProcess, refInfoParams, dirSpec, ccsParams, mini
         if args.command == 'report':
             from report import report
             # report(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
-            report(dataToProcess=dataToProcess, refInfoParams=refInfoParams, dirSpec=dirSpec)
+            report(dataToProcess=dataToProcess, refInfoParams=refInfoParams, dirSpec=dirSpec, args=args)
 
 def iflas(args):
     defaultCfg = Config(args.default_cfg)
@@ -407,6 +407,14 @@ if __name__ == "__main__":
 
     parser_report = subparsers.add_parser('report', help='Automatic detect the plots generated in each step, and merge them into a report file', usage='%(prog)s [options]')
     parser_report.add_argument('-cfg', dest="default_cfg", help="The config file used for init setting.")
+    parser_report.add_argument('-all', dest="all", action="store_true", default=False, help="Generate all the plots.")
+    parser_report.add_argument('-basic', dest="basic", action="store_true", default=False, help="Generate basic information plots.")
+    parser_report.add_argument('-asp', dest="asp", action="store_true", default=False, help="Generate AS pattern plots.")
+    parser_report.add_argument('-geneStruc', dest="geneStruc", action="store_true", default=False, help="Generate gene structure with AS events.")
+    parser_report.add_argument('-novelIso', dest="novelIso", action="store_true", default=False, help="Generate identity curve for novel isoforms.")
+    parser_report.add_argument('-asas', dest="asas", action="store_true", default=False, help="Generate allele-specific AS events.")
+    parser_report.add_argument('-palen', dest="palen", action="store_true", default=False, help="Generate AS events related differential poly(A) tail length.")
+    parser_report.add_argument('-diff', dest="diff", action="store_true", default=False, help="Generate the statistics for differential spliced events.")
 
     parser_all = subparsers.add_parser('all', help="Dynamically perform all analysis with the setting!")
     parser_all.add_argument('-c', dest="correction", action="store_true", default=False, help="Correct the flnc reads with fmlrc2.")

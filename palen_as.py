@@ -101,20 +101,32 @@ def getASpairedIsoforms(asFile, collapsedGroupFile, isoformFile, asType="SE", fi
                         else:
                             asPairs[uniqGene[0]].append([newInclusionIsos, newExclusionIsos, records[3]])
             else:
-                for item in itertools.product(inclusionIsos, exclusionIsos):
-                    inclusionReads = collapsedTrans2reads[item[0]]
-                    exclusionReads = collapsedTrans2reads[item[1]]
-                    if filterByCount:
-                        if len(inclusionReads) < filterByCount or len(exclusionReads) < filterByCount:
-                            continue
-                    '''the isoform PB.x.x split by "." to determine gene PB.x'''
-                    inclusionGene = ".".join(item[0].split(".")[:2])
-                    exclusionGene = ".".join(item[1].split(".")[:2])
-                    if inclusionGene == exclusionGene:
-                        if inclusionGene not in asPairs:
-                            asPairs[inclusionGene] = [[[item[0]], [item[1]], records[3]]]
-                        else:
-                            asPairs[inclusionGene].append([[item[0]], [item[1]], records[3]])
+                newInclusionIsos = [x for x in inclusionIsos if len(collapsedTrans2reads[x]) >= filterByCount]
+                newExclusionIsos = [x for x in exclusionIsos if len(collapsedTrans2reads[x]) >= filterByCount]
+                if len(newInclusionIsos) == 0 or len(newExclusionIsos) == 0:
+                    continue
+                inclusionGene = [".".join(x.split(".")[:2]) for x in newInclusionIsos]
+                exclusionGene = [".".join(x.split(".")[:2]) for x in newExclusionIsos]
+                uniqGene = list(set(inclusionGene + exclusionGene))
+                if len(uniqGene) == 1:
+                    if uniqGene[0] not in asPairs:
+                        asPairs[uniqGene[0]] = [[newInclusionIsos, newExclusionIsos, records[3]]]
+                    else:
+                        asPairs[uniqGene[0]].append([newInclusionIsos, newExclusionIsos, records[3]])
+                # for item in itertools.product(inclusionIsos, exclusionIsos):
+                #     inclusionReads = collapsedTrans2reads[item[0]]
+                #     exclusionReads = collapsedTrans2reads[item[1]]
+                #     if filterByCount:
+                #         if len(inclusionReads) < filterByCount or len(exclusionReads) < filterByCount:
+                #             continue
+                #     '''the isoform PB.x.x split by "." to determine gene PB.x'''
+                #     inclusionGene = ".".join(item[0].split(".")[:2])
+                #     exclusionGene = ".".join(item[1].split(".")[:2])
+                #     if inclusionGene == exclusionGene:
+                #         if inclusionGene not in asPairs:
+                #             asPairs[inclusionGene] = [[[item[0]], [item[1]], records[3]]]
+                #         else:
+                #             asPairs[inclusionGene].append([[item[0]], [item[1]], records[3]])
         return asPairs
 
 def getPalenAS(flncReads2Palen, isoformFile, readsFile, collapsedTrans2reads=None, asPairs=None, filterByCount=10, mergeByJunc=False):
@@ -124,7 +136,7 @@ def getPalenAS(flncReads2Palen, isoformFile, readsFile, collapsedTrans2reads=Non
     else:
         resolveDir("mergeByJunc")
 
-    # isoBedObj = BedFile(isoformFile, type="bed12+")
+    isoBedObj = BedFile(isoformFile, type="bed12+")
     readBedObj = BedFile(readsFile, type="bed12+")
     for asType in asPairs:
         sigFile = "{}.palenAndAS.sig.bed12+".format(asType)
@@ -138,7 +150,7 @@ def getPalenAS(flncReads2Palen, isoformFile, readsFile, collapsedTrans2reads=Non
                 exclusionReads = itertools.chain.from_iterable([collapsedTrans2reads[x] for x in exclusionIsos])
                 if asType == "IR":
                     tmpReads = []
-                    retention = [map(int, re.split("[:|-]", item[2])[1:3])]
+                    retention = [map(int, re.split("[:|-]", item[2])[-2:])]
                     for x in inclusionReads:
                         overlap = getOverlapOfTuple(readBedObj.reads[x].exons, retention)
                         if getBlockLength(overlap) == getBlockLength(retention):
@@ -163,7 +175,7 @@ def getPalenAS(flncReads2Palen, isoformFile, readsFile, collapsedTrans2reads=Non
                     # cmd = "Rscript violin_paired.R {}".format(fileOut)
                     # subprocess.call(cmd, shell=True)
 
-                    isoBedObj = BedFile(isoformFile, type="bed12+")
+                    # isoBedObj = BedFile(isoformFile, type="bed12+")
                     inclusionIsosObj = [isoBedObj.reads[x] for x in inclusionIsos]
                     exclusionIsosObj = [isoBedObj.reads[x] for x in exclusionIsos]
                     incSortedIsos = sorted(inclusionIsosObj, key=lambda x: abs(x.chromStart - x.chromEnd), reverse=True)
@@ -183,10 +195,10 @@ def getPalenAPA(paClusterBed, flncReads2Palen, filterByCount, palenAPA):
     with open(paClusterBed) as f:
         for line in f.readlines():
             infoList = line.strip("\n").split("\t")
-            gene = infoList[8]
-            paSite = "{}_{}".format(infoList[0], infoList[7])
             reads = infoList[3].split(",")
             if len(reads) < filterByCount: continue
+            gene = infoList[8]
+            paSite = "{}_{}".format(infoList[0], infoList[7])
             if gene not in gene2paReads:
                 gene2paReads[gene] = {paSite: reads}
             else:
@@ -198,14 +210,16 @@ def getPalenAPA(paClusterBed, flncReads2Palen, filterByCount, palenAPA):
         for item in itertools.combinations(gene2paReads[gene].keys(), 2):
             aPalen = [float(flncReads2Palen[x]) for x in gene2paReads[gene][item[0]] if x in flncReads2Palen]
             bPalen = [float(flncReads2Palen[x]) for x in gene2paReads[gene][item[1]] if x in flncReads2Palen]
+            if len(aPalen) < filterByCount or len(bPalen) < filterByCount: continue
             stat_val1, p_val1 = stats.ttest_ind(aPalen, bPalen)
             stat_val2, p_val2 = stats.kruskal(aPalen, bPalen)
             if float(p_val1) <= 0.001 and float(p_val2) <= 0.001:
                 if item[0] not in validPaSites:
                     validPaSites[item[0]] = aPalen
-                if item[0] not in validPaSites:
+                if item[1] not in validPaSites:
                     validPaSites[item[1]] = bPalen
 
+        if len(validPaSites) < 2: continue
         paNumStr = ";".join(map(str, [len(validPaSites[x]) for x in validPaSites.keys()]))
         paLenStr = ";".join([",".join(map(str, validPaSites[x])) for x in validPaSites.keys()])
         print >> out, "\t".join([gene, ";".join(validPaSites.keys()), paNumStr, paLenStr])
@@ -241,6 +255,7 @@ def palen_as(dataObj=None, refParams=None, dirSpec=None, filterByCount=10, dataT
             polyaLenCalling(dataObj=tmpObj, refParams=refParams, dirSpec=dirSpec)
             palenFileList.append(tmpObj.polya_location)
     elif isinstance(palenFile, dict):
+        palenFileList.extend(palenFile.values())
         for tmpObj in dataToProcess:
             if tmpObj.sample_name not in palenFile:
                 polyaLenCalling(dataObj=tmpObj, refParams=refParams, dirSpec=dirSpec)
@@ -248,7 +263,7 @@ def palen_as(dataObj=None, refParams=None, dirSpec=None, filterByCount=10, dataT
     else:
         palenFileList.append(palenFile)
 
-    palen = pd.concat([pd.read_csv(x, sep="\t") for x in palenFileList])
+    palen = pd.concat([pd.read_csv(x, sep="\t", dtype={"contig": "string"}) for x in palenFileList])
     palen_pass = palen.loc[palen.qc_tag == "PASS", ]
     flncReads2Palen = dict(zip(palen_pass.readname, palen_pass.polya_length))
 
@@ -283,6 +298,7 @@ def palen_apa(dataObj=None, refParams=None, dirSpec=None, filterByCount=10, data
             polyaLenCalling(dataObj=tmpObj, refParams=refParams, dirSpec=dirSpec)
             palenFileList.append(tmpObj.polya_location)
     elif isinstance(palenFile, dict):
+        palenFileList.extend(palenFile.values())
         for tmpObj in dataToProcess:
             if tmpObj.sample_name not in palenFile:
                 polyaLenCalling(dataObj=tmpObj, refParams=refParams, dirSpec=dirSpec)
@@ -290,7 +306,7 @@ def palen_apa(dataObj=None, refParams=None, dirSpec=None, filterByCount=10, data
     else:
         palenFileList.append(palenFile)
 
-    palen = pd.concat([pd.read_csv(x, sep="\t") for x in palenFileList])
+    palen = pd.concat([pd.read_csv(x, sep="\t", dtype={"contig": "string"}) for x in palenFileList])
     palen_pass = palen.loc[palen.qc_tag == "PASS", ]
     flncReads2Palen = dict(zip(palen_pass.readname, palen_pass.polya_length))
     paClusterBed = os.path.join(baseDir, "as_events", "pa", "paCluster.bed8+")

@@ -314,8 +314,8 @@ def reportAllelicAS1(dataObj=None, refParams=None, dirSpec=None):
                 highlightStarts.append(int(asEvent.split("@")[1].split("-")[0]))
                 highlightEnds.append(int(asEvent.split("@")[1].split("-")[-1]))
             else:
-                highlightStarts.append(int(asEvent.split(":")[1].split("-")[0]))
-                highlightEnds.append(int(asEvent.split(":")[1].split("-")[-1]))
+                highlightStarts.append(int(asEvent.split(":")[-1].split("-")[0]))
+                highlightEnds.append(int(asEvent.split(":")[-1].split("-")[-1]))
 
             for x in row.haplo1isos.split("_"):
                 haplo1isos.append(x)
@@ -486,7 +486,7 @@ def mergeAllPlots(plot2merge, outPdf):
     output.close()
     print getCurrentTime() + " Merging plots done!"
 
-def report(dataToProcess=None, refInfoParams=None, dirSpec=None):
+def report(dataToProcess=None, refInfoParams=None, dirSpec=None, args=None):
     reportDir = os.path.join(dirSpec.out_dir, "reports")
     for dataObj in dataToProcess:
         refParams = refInfoParams[dataObj.ref_strain]
@@ -500,17 +500,23 @@ def report(dataToProcess=None, refInfoParams=None, dirSpec=None):
         resolveDir(subDir)
 
         plots2merge = []
-        if dataObj.use_fmlrc2:
-            plots2merge.extend(reportReadsCorrectedEval(dataObj=dataObj, dirSpec=dirSpec))
-        plots2merge.extend(reportReadsContentEval(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec))
-        plots2merge.extend(reportASPattern(dataObj=dataObj, dirSpec=dirSpec))
-        reportTargetGeneStructure(dataObj=dataObj, dirSpec=dirSpec)
-        plots2merge.extend(reportNovelHqAS(dataObj=dataObj, dirSpec=dirSpec))
-        reportAllelicAS1(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
-        reportPaTailAS(dataObj=dataObj, dirSpec=dirSpec)
+        if args.basic or args.all:
+            if dataObj.use_fmlrc2:
+                plots2merge.extend(reportReadsCorrectedEval(dataObj=dataObj, dirSpec=dirSpec))
+            plots2merge.extend(reportReadsContentEval(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec))
+        if args.asp or args.all:
+            plots2merge.extend(reportASPattern(dataObj=dataObj, dirSpec=dirSpec))
+        if args.geneStruc or args.all:
+            reportTargetGeneStructure(dataObj=dataObj, dirSpec=dirSpec)
+        if args.novelIso or args.all:
+            plots2merge.extend(reportNovelHqAS(dataObj=dataObj, dirSpec=dirSpec))
+        if args.asas or args.all:
+            reportAllelicAS1(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
+        if args.palen or args.all:
+            reportPaTailAS(dataObj=dataObj, dirSpec=dirSpec)
 
-        mergedPdf = "{}_{}.merged.pdf".format(projectName, sampleName)
-        mergeAllPlots(plots2merge, mergedPdf)
+        # mergedPdf = "{}_{}.merged.pdf".format(projectName, sampleName)
+        # mergeAllPlots(plots2merge, mergedPdf)
         # preprocess (readsCorrectResult.pdf)
         # mapping
         # filtration
@@ -524,7 +530,8 @@ def report(dataToProcess=None, refInfoParams=None, dirSpec=None):
         # go (go_enrichment.pdf)
         os.chdir(prevDir)
         print getCurrentTime() + " Generate plot report for project {} sample {} done!".format(projectName, sampleName)
-    reportDiffAS(dirSpec=dirSpec)
+    if args.diff or args.all:
+        reportDiffAS(dirSpec=dirSpec)
     # reportTargetGenesGoEnrichment(dataObj=dataObj, dirSpec=dirSpec)
     # from generateHtml import generateHtml
     # generateHtml()
