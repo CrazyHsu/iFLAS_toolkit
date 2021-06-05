@@ -105,7 +105,7 @@ def oneCommandRunWrapped(dataObj, dataToProcess, refParams, minimap2Params, coll
     allelic(dataObj, refParams, dirSpec, args)
 
     from palen_as import palen_as
-    palen_as(dataObj, refParams, dirSpec, args.pa_sup, dataToProcess)
+    palen_as(dataObj, refParams, dirSpec, args.pa_support, dataToProcess)
 
 def oneCommandRun(args, dataToProcess, refInfoParams, dirSpec, ccsParams, minimap2Params, collapseParams, optionTools):
     pool = MyPool(processes=len(dataToProcess))
@@ -248,8 +248,8 @@ def splitCommandRun(args, dataToProcess, refInfoParams, dirSpec, ccsParams, mini
                         pool.apply_async(allelic, (dataObj, refParams, dirSpec, args))
                     if args.command == 'palen_as':
                         from palen_as import palen_as
-                        # palen_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, dataToProcess=dataToProcess)
-                        pool.apply_async(palen_as, (dataObj, refParams, dirSpec, dataToProcess))
+                        palen_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, filterByCount=args.pa_support, dataToProcess=dataToProcess)
+                        # pool.apply_async(palen_as, (dataObj, refParams, dirSpec, args.pa_support, dataToProcess))
         pool.close()
         pool.join()
         if args.command == 'visual_as':
@@ -310,8 +310,8 @@ def splitCommandRun(args, dataToProcess, refInfoParams, dirSpec, ccsParams, mini
                 pool.apply_async(allelic, (dataObj, refParams, dirSpec, args))
             if args.command == 'palen_as':
                 from palen_as import palen_as
-                # palen_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, dataToProcess=dataToProcess)
-                pool.apply_async(palen_as, (dataObj, refParams, dirSpec, dataToProcess))
+                palen_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, filterByCount=args.pa_support, dataToProcess=dataToProcess)
+                # pool.apply_async(palen_as, (dataObj, refParams, dirSpec, args.pa_support, dataToProcess))
 
         pool.close()
         pool.join()

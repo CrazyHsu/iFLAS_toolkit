@@ -641,7 +641,7 @@ def allelic_specific_exp(dataObj=None, refParams=None, dirSpec=None, refFa=None,
     os.chdir(prevDir)
 
 def allelic(dataObj=None, refParams=None, dirSpec=None, args=None):
-    allelic_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, args=args)
+    # allelic_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, args=args)
     if args.ase:
         allelic_specific_exp(dataObj, refParams, dirSpec, args.refFa, args.altFa, args.useFreebayes)
 
