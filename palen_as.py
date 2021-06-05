@@ -282,7 +282,7 @@ def palen_as(dataObj=None, refParams=None, dirSpec=None, filterByCount=10, dataT
     os.chdir(prevDir)
 
     # palen_apa(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, filterByCount=filterByCount, dataToProcess=dataToProcess)
-    print getCurrentTime() + " Identify functional poly(A) tail length related to APA for project {} sample {}...".format(projectName, sampleName)
+    print getCurrentTime() + " Identify functional poly(A) tail length related to APA for project {} sample {} done".format(projectName, sampleName)
 
 def palen_apa(dataObj=None, refParams=None, dirSpec=None, filterByCount=10, dataToProcess=None):
     projectName, sampleName = dataObj.project_name, dataObj.sample_name

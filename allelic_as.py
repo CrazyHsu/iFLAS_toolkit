@@ -491,11 +491,11 @@ def allelic_specific_exp(dataObj=None, refParams=None, dirSpec=None, refFa=None,
     projectName, sampleName = dataObj.project_name, dataObj.sample_name
     print getCurrentTime() + " Identify allelic-specific expression genes for project {} sample {}...".format(projectName, sampleName)
     prevDir = os.getcwd()
-    baseDir = os.path.join(dirSpec.out_dir, projectName, sampleName, "alleleAS", "alleleSpecificExp")
+    baseDir = os.path.join(dirSpec.out_dir, projectName, sampleName, "allelicAS", "alleleSpecificExp")
     resolveDir(baseDir)
 
     import vcf, pysam
-    lociDir = glob.glob(os.path.join(dirSpec.out_dir, projectName, sampleName, "alleleAS", "by_loci/*size*"))
+    lociDir = glob.glob(os.path.join(dirSpec.out_dir, projectName, sampleName, "allelicAS", "by_loci/*size*"))
     freeBayesAlleleSNP = {}
     hybridBam = os.path.join(dirSpec.out_dir, projectName, sampleName, "RNA-seq", "reassembly", "tmp.bam")
     if useFreeBayes:
