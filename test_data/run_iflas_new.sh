@@ -35,7 +35,7 @@ python iflas.py report -cfg test_data/iFLAS_config_wanglab_new.cfg
 
 ############ ont
 python iflas.py preproc -cfg test_data/iFLAS_config_ont_new.cfg
-python iflas.py mapping -cfg test_data/iFLAS_config_ont_new.cfg
+python iflas.py mapping -cfg test_data/iFLAS_config_ont_new.cfg -c
 python iflas.py collapse -cfg test_data/iFLAS_config_ont_new.cfg
 python iflas.py refine -cfg test_data/iFLAS_config_ont_new.cfg
 python iflas.py find_as -cfg test_data/iFLAS_config_ont_new.cfg

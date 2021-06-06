@@ -46,7 +46,7 @@ def minimap2mapping(dataObj=None, minimap2Params=None, refParams=None, dirSpec=N
     prevDir = os.getcwd()
     workDir = os.path.join(baseDir, "mapping")
     resolveDir(workDir)
-    if minimap2Params.mm2_index != None and validateFile(minimap2Params.mm2_indexx):
+    if minimap2Params.mm2_index != None and validateFile(minimap2Params.mm2_index):
         mm2index = minimap2Params.mm2_index
     elif refParams.ref_mm2_index != None and validateFile(refParams.ref_mm2_index):
         mm2index = refParams.ref_mm2_index

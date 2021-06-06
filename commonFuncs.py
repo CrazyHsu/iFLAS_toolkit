@@ -401,9 +401,12 @@ def resolveDir(dirName, chdir=True):
     if chdir:
         os.chdir(dirName)
 
-def removeFiles(myDir, fileList):
+def removeFiles(myDir=None, fileList=None):
     for f in fileList:
-        os.remove(os.path.join(myDir, f.strip("\n")))
+        if myDir:
+            os.remove(os.path.join(myDir, f.strip("\n")))
+        else:
+            os.remove(f.strip("\n"))
         
 def renameNGSdata2fastp(dataObj=None):
     if "fastp" in dataObj.ngs_left_reads and "fastp" in dataObj.ngs_right_reads:

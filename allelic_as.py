@@ -356,7 +356,7 @@ def vcfHaplo(cleanVCF):
     refStr, altStr = "", ""
     for record in vcf_reader:
         refStr += record.REF
-        altStr += record.ALT
+        altStr += record.ALT[0]
     return {refStr: "REF", altStr: "ALT"}
 
 def assignHaplo(haplotypes, vcfHaploDict):
@@ -460,6 +460,11 @@ def mergeASEfromSalmonOut(ref_quant_sf, alt_quant_sf, haplo2count, mergedASEfile
         print >> out, "\t".join([gene, refGene, tgsRefCount, tgsAltCount, ngsRefTPM, ngsRefCount, ngsAltTPM, ngsAltCount])
     out.close()
 
+def tagBam(snpPosFile, bamFile):
+    assignReadsToRef = "/data/CrazyHsu_data/software/jvarkit/dist/biostar214299.jar"
+    cmd = "java -jar {} -p {} {} -o tagged.bam".format(assignReadsToRef, snpPosFile, bamFile)
+    subprocess.call(cmd, shell=True)
+
 def generate_regions(fasta_index_file, size, chunks=False, chromosomes=None, outFile=None):
     from math import ceil
     if not fasta_index_file.endswith(".fai"):
@@ -497,7 +502,7 @@ def allelic_specific_exp(dataObj=None, refParams=None, dirSpec=None, refFa=None,
     import vcf, pysam
     lociDir = glob.glob(os.path.join(dirSpec.out_dir, projectName, sampleName, "allelicAS", "by_loci/*size*"))
     freeBayesAlleleSNP = {}
-    hybridBam = os.path.join(dirSpec.out_dir, projectName, sampleName, "RNA-seq", "reassembly", "tmp.bam")
+    hybridBam = os.path.join(dirSpec.out_dir, projectName, sampleName, "mapping", "rna-seq", "reassembly", "tmp.bam")
     if useFreeBayes:
         generate_regions(refParams.ref_genome, 1000000, outFile="split.region.txt")
         cmd = "freebayes-parallel <(cat split.region.txt) 40 -f {} {} -C 10 -F 0.2 --min-base-quality 20 > freebayes.SNP.vcf".format(
@@ -521,12 +526,23 @@ def allelic_specific_exp(dataObj=None, refParams=None, dirSpec=None, refFa=None,
                 snpName = "{}_{}".format(record.CHROM, record.POS)
                 if len(record.REF) != 1 or len(record.ALT) != 1: continue
                 if len(freeBayesAlleleSNP) != 0 and snpName not in freeBayesAlleleSNP: continue
-                print >> snp_position, "\t".join([record.CHROM, record.POS, record.REF, "REF"])
-                print >> snp_position, "\t".join([record.CHROM, record.POS, record.ALT, "ALT"])
+                print >> snp_position, "\t".join(map(str, [record.CHROM, record.POS, record.REF, "REF"]))
+                print >> snp_position, "\t".join(map(str, [record.CHROM, record.POS, record.ALT[0], "ALT"]))
     snp_position.close()
 
-    assignReadsToRef = "/data/CrazyHsu_data/software/jvarkit/dist/biostar214299.jar"
-    cmd = "java -jar {} -p snp_position.txt {} -o tagged.bam".format(assignReadsToRef, hybridBam)
+    cmd = "bamtools split -in {} -reference".format(hybridBam)
+    subprocess.call(cmd, shell=True)
+    splitBams = glob.glob(os.path.join(os.path.dirname(hybridBam), "*.REF_*.bam"))
+    taggedBams = []
+    pool = Pool(processes=dataObj.single_run_threads)
+    for i in splitBams:
+        newBam = os.path.splitext(i) + ".tagged.bam"
+        taggedBams.append(newBam)
+        pool.apply_async(tagBam, ("snp_position.txt", newBam))
+    pool.close()
+    pool.join()
+
+    cmd = "samtools cat {} > tagged.bam".format(" ".join(taggedBams))
     subprocess.call(cmd, shell=True)
     samfile = pysam.AlignmentFile("tagged.bam", "rb")
     refReads = open("ref_reads.lst", "w")
@@ -538,6 +554,8 @@ def allelic_specific_exp(dataObj=None, refParams=None, dirSpec=None, refFa=None,
             print >> altReads, record.query_name
     refReads.close()
     altReads.close()
+    # removeFiles(fileList=splitBams)
+    # removeFiles(fileList=taggedBams)
 
     ##################
     isoformFile = os.path.join(dirSpec.out_dir, projectName, sampleName, "refine", "isoformGrouped.bed12+")
