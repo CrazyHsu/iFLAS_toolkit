@@ -460,10 +460,20 @@ def mergeASEfromSalmonOut(ref_quant_sf, alt_quant_sf, haplo2count, mergedASEfile
         print >> out, "\t".join([gene, refGene, tgsRefCount, tgsAltCount, ngsRefTPM, ngsRefCount, ngsAltTPM, ngsAltCount])
     out.close()
 
-def tagBam(snpPosFile, bamFile):
+def tagBamAndFilter(snpPosFile, inBam, taggedBam):
     assignReadsToRef = "/data/CrazyHsu_data/software/jvarkit/dist/biostar214299.jar"
-    cmd = "java -jar {} -p {} {} -o tagged.bam".format(assignReadsToRef, snpPosFile, bamFile)
+    cmd = "java -jar {} -p {} {} -o {}".format(assignReadsToRef, snpPosFile, inBam, taggedBam)
     subprocess.call(cmd, shell=True)
+    refReads = []
+    altReads = []
+    samfile = pysam.AlignmentFile(taggedBam, "rb")
+    for record in samfile:
+        if record.get_tag("RG") == "REF" and record.get_tag("NH") == 1:
+            refReads.append(record.query_name)
+        if record.get_tag("RG") == "ALT" and record.get_tag("NH") == 1:
+            altReads.append(record.query_name)
+    samfile.close()
+    return refReads, altReads
 
 def generate_regions(fasta_index_file, size, chunks=False, chromosomes=None, outFile=None):
     from math import ceil
@@ -534,26 +544,42 @@ def allelic_specific_exp(dataObj=None, refParams=None, dirSpec=None, refFa=None,
     subprocess.call(cmd, shell=True)
     splitBams = glob.glob(os.path.join(os.path.dirname(hybridBam), "*.REF_*.bam"))
     taggedBams = []
+    resultList = []
     pool = Pool(processes=dataObj.single_run_threads)
     for i in splitBams:
-        newBam = os.path.splitext(i) + ".tagged.bam"
+        newBam = os.path.splitext(i)[0] + ".tagged.bam"
         taggedBams.append(newBam)
-        pool.apply_async(tagBam, ("snp_position.txt", newBam))
+        tmpRes = pool.apply_async(tagBamAndFilter, ("snp_position.txt", i, newBam))
+        resultList.append(tmpRes)
     pool.close()
     pool.join()
 
-    cmd = "samtools cat {} > tagged.bam".format(" ".join(taggedBams))
-    subprocess.call(cmd, shell=True)
-    samfile = pysam.AlignmentFile("tagged.bam", "rb")
-    refReads = open("ref_reads.lst", "w")
-    altReads = open("alt_reads.lst", "w")
-    for record in samfile:
-        if record.get_tag("RG") == "REF" and record.get_tag("NH") == 1:
-            print >> refReads, record.query_name
-        if record.get_tag("RG") == "ALT" and record.get_tag("NH") == 1:
-            print >> altReads, record.query_name
-    refReads.close()
-    altReads.close()
+    refReads = []
+    altReads = []
+    for res in resultList:
+        tmp = res.get()
+        refReads.extend(tmp[0])
+        altReads.extend(tmp[1])
+    with open("ref_reads.lst", "w") as f:
+        for i in refReads:
+            print >> f, i
+    with open("alt_reads.lst", "w") as f:
+        for i in altReads:
+            print >> f, i
+    # cmd = "samtools cat {} > tagged.bam".format(" ".join(taggedBams))
+    # subprocess.call(cmd, shell=True)
+    # refReads = open("ref_reads.lst", "w")
+    # altReads = open("alt_reads.lst", "w")
+    # for i in taggedBams:
+    #     samfile = pysam.AlignmentFile(i, "rb")
+    #     for record in samfile:
+    #         if record.get_tag("RG") == "REF" and record.get_tag("NH") == 1:
+    #             print >> refReads, record.query_name
+    #         if record.get_tag("RG") == "ALT" and record.get_tag("NH") == 1:
+    #             print >> altReads, record.query_name
+    #     samfile.close()
+    # refReads.close()
+    # altReads.close()
     # removeFiles(fileList=splitBams)
     # removeFiles(fileList=taggedBams)
 

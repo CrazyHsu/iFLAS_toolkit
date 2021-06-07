@@ -244,8 +244,8 @@ def splitCommandRun(args, dataToProcess, refInfoParams, dirSpec, ccsParams, mini
                         pool.apply_async(rank_as, (dataObj, dirSpec, refParams))
                     if args.command == 'allelic_as':
                         from allelic_as import allelic
-                        # allelic(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, args=args)
-                        pool.apply_async(allelic, (dataObj, refParams, dirSpec, args))
+                        allelic(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, args=args)
+                        # pool.apply_async(allelic, (dataObj, refParams, dirSpec, args))
                     if args.command == 'palen_as':
                         from palen_as import palen_as
                         palen_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, filterByCount=args.pa_support, dataToProcess=dataToProcess)
@@ -306,8 +306,8 @@ def splitCommandRun(args, dataToProcess, refInfoParams, dirSpec, ccsParams, mini
                 pool.apply_async(rank_as, (dataObj, dirSpec, refParams))
             if args.command == 'allelic_as':
                 from allelic_as import allelic
-                # allelic(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, args=args)
-                pool.apply_async(allelic, (dataObj, refParams, dirSpec, args))
+                allelic(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, args=args)
+                # pool.apply_async(allelic, (dataObj, refParams, dirSpec, args))
             if args.command == 'palen_as':
                 from palen_as import palen_as
                 palen_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, filterByCount=args.pa_support, dataToProcess=dataToProcess)
