@@ -234,49 +234,6 @@ def identifyNovelIsoformsByJunctions(gpeFile, bedFile, anno="annoIsoform.bed", n
     annoOut.close()
     novelOut.close()
 
-def filterByJunc(dataObj=None, refParams=None, dirSpec=None):
-    projectName, sampleName = dataObj.project_name, dataObj.sample_name
-    baseDir = os.path.join(dirSpec.out_dir, projectName, sampleName)
-    processedFa = os.path.join(baseDir, "mapping", "flnc.processed.fa")
-    flncBedFile = os.path.join(baseDir, "mapping", "flnc.addCVandID.bed12+")
-    refBedFile = refParams.ref_bed
-    refBed = BedFile(refBedFile, type="bed12+").reads
-    flncBed = BedFile(flncBedFile, type="bed12+").reads
-
-    ngsJuncDict = {}
-    if dataObj.ngs_left_reads or dataObj.ngs_right_reads:
-        ngsJunc = os.path.join(baseDir, "mapping", "rna-seq", "reassembly", "junctions.bed")
-        ngsJuncBed = BedFile(ngsJunc, type="bed12").reads
-        for read in ngsJuncBed:
-            if len(ngsJuncBed[read].introns) > 0:
-                for junc in ngsJuncBed[read].introns:
-                    if junc not in ngsJuncDict:
-                        ngsJuncDict[junc] = ""
-    refJuncDict = {}
-    for trans in refBed:
-        if len(refBed[trans].introns) > 0:
-            for junc in refBed[trans].introns:
-                if junc not in refJuncDict:
-                    refJuncDict[junc] = ""
-
-    filterReads = open("filterReads.lst", "w")
-    for read in flncBed:
-        if len(flncBed[read].introns) > 0:
-            consensusJuncN = 0
-            for junc in flncBed[read].introns:
-                if junc in refJuncDict or junc in ngsJuncDict:
-                    consensusJuncN += 1
-            if len(flncBed[read].introns) >= 4:
-                print >> filterReads, read
-            elif consensusJuncN/float(len(flncBed[read].introns)) >= 1.0/3:
-                print >> filterReads, read
-        else:
-            print >> filterReads, read
-    filterReads.close()
-    cmd = "seqkit grep -f {} {} > flnc.juncFiltered.fa".format(filterReads, processedFa)
-    subprocess.call(cmd, shell=True)
-    return os.path.join(os.getcwd(), "flnc.juncFiltered.fa")
-
 def collapse(dataObj=None, collapseParams=None, refParams=None, dirSpec=None, threads=10):
     projectName, sampleName = dataObj.project_name, dataObj.sample_name
     print getCurrentTime() + " Collapse with cDNA_cupcake for project {} sample {}...".format(projectName, sampleName)
@@ -286,13 +243,8 @@ def collapse(dataObj=None, collapseParams=None, refParams=None, dirSpec=None, th
     resolveDir(os.path.join(baseDir, "collapse"))
     logDir = os.path.join(baseDir, "log")
     resolveDir(logDir, chdir=False)
-    processedFa = filterByJunc(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
-    # processedFa = os.path.join(baseDir, "mapping", "flnc.processed.fa")
-    # processedBed = os.path.join(baseDir, "mapping", "flnc.addCVandID.bed12+")
+    processedFa = os.path.join(baseDir, "mapping", "flnc.processed.fa")
     flncSam = os.path.join(baseDir, "mapping", "flnc.mm2.sam")
-    # processedIds = getFxSequenceId(processedFa, isFa=True)
-    # getSubSamByName(flncSam, nameList=processedIds, isBam=False, nameListIsFile=False, outPrefix="processed", sort=True,
-    #                 threads=threads)
     if collapseParams.dun_merge_5_shorter:
         cmd = "collapse_isoforms_by_sam.py --input {} -s {} --max_5_diff {} --max_3_diff {} " \
               "--flnc_coverage {} -c {} -i {} --max_fuzzy_junction {} --dun-merge-5-shorter -o tofu 1>{}/tofu.collapse.log 2>&1"
