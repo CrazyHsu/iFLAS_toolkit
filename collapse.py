@@ -234,46 +234,48 @@ def identifyNovelIsoformsByJunctions(gpeFile, bedFile, anno="annoIsoform.bed", n
     annoOut.close()
     novelOut.close()
 
-def refineJunc(dataObj=None, refParams=None, dirSpec=None):
+def filterByJunc(dataObj=None, refParams=None, dirSpec=None):
     projectName, sampleName = dataObj.project_name, dataObj.sample_name
     baseDir = os.path.join(dirSpec.out_dir, projectName, sampleName)
-    processedFa = os.path.join(baseDir, "mapping", "processed.fa")
-    processedBed = os.path.join(baseDir, "mapping", "flnc.addCVandID.bed12+")
+    processedFa = os.path.join(baseDir, "mapping", "flnc.processed.fa")
+    flncBedFile = os.path.join(baseDir, "mapping", "flnc.addCVandID.bed12+")
+    refBedFile = refParams.ref_bed
+    refBed = BedFile(refBedFile, type="bed12+").reads
+    flncBed = BedFile(flncBedFile, type="bed12+").reads
 
-    cmd = "gtfToGenePred tofu.collapsed.good.gff tofu.collapsed.gpe -genePredExt"
-    subprocess.call(cmd, shell=True)
-    cmd = "gpe2bed.pl tofu.collapsed.gpe -g > tofu.collapsed.bed12+"
-    subprocess.call(cmd, shell=True)
-    strandAdjust(refParams.ref_genome, refParams.ref_gpe, "tofu.collapsed.bed12+", 0.8, 2,
-                 strandAdjust="strandAdjusted.bed12+", strandConfirmed="strandConfirm.bed12+")
-
+    ngsJuncDict = {}
     if dataObj.ngs_left_reads or dataObj.ngs_right_reads:
-        if dataObj.ngs_junctions == None:
-            dataObj.ngs_junctions = os.path.join(baseDir, "mapping", "rna-seq", "reassembly", "junctions.bed")
-        juncScoringParams = "-r {} strandConfirm.bed12+ -j {}".format(refParams.ref_gpe, dataObj.ngs_junctions)
-    else:
-        juncScoringParams = "-r {} strandConfirm.bed12+".format(refParams.ref_gpe)
-    cmd = "juncConsensus.pl -s <(juncScoring.pl {}) -l 5 strandConfirm.bed12+ >processed.bed12+".format(juncScoringParams)
-    subprocess.call(cmd, shell=True, executable="/bin/bash")
+        ngsJunc = os.path.join(baseDir, "mapping", "rna-seq", "reassembly", "junctions.bed")
+        ngsJuncBed = BedFile(ngsJunc, type="bed12").reads
+        for read in ngsJuncBed:
+            if len(ngsJuncBed[read].introns) > 0:
+                for junc in ngsJuncBed[read].introns:
+                    if junc not in ngsJuncDict:
+                        ngsJuncDict[junc] = ""
+    refJuncDict = {}
+    for trans in refBed:
+        if len(refBed[trans].introns) > 0:
+            for junc in refBed[trans].introns:
+                if junc not in refJuncDict:
+                    refJuncDict[junc] = ""
 
-    readsAssign(refParams.ref_bed, "tofu.collapsed.bed12+", readsColNum=13, outPrefix="tofu.collapsed.assigned",
-                group=True)
-    cmd = "cut -f1-12,14 tofu.collapsed.assigned.unambi.bed12+ > isoformGrouped.bed12+"
+    filterReads = open("filterReads.lst", "w")
+    for read in flncBed:
+        if len(flncBed[read].introns) > 0:
+            consensusJuncN = 0
+            for junc in flncBed[read].introns:
+                if junc in refJuncDict or junc in ngsJuncDict:
+                    consensusJuncN += 1
+            if len(flncBed[read].introns) >= 4:
+                print >> filterReads, read
+            elif consensusJuncN/float(len(flncBed[read].introns)) >= 1.0/3:
+                print >> filterReads, read
+        else:
+            print >> filterReads, read
+    filterReads.close()
+    cmd = "seqkit grep -f {} {} > flnc.juncFiltered.fa".format(filterReads, processedFa)
     subprocess.call(cmd, shell=True)
-    identifyNovelIsoformsByJunctions(refParams.ref_gpe, "isoformGrouped.bed12+", anno="isoformGrouped.anno.bed12+",
-                                     novel="isoformGrouped.novel.bed12+")
-
-    cmd = '''seqkit grep {} -f <(cut -f 2 tofu.collapsed.group.txt | tr ',' '\n') -w 0 > processed.ignore_id_removed.fa'''.format(
-        processedFa)
-    subprocess.call(cmd, shell=True, executable="/bin/bash")
-    cmd = '''filter.pl -o <(cut -f 2 tofu.collapsed.group.txt | tr ',' '\n') {} -2 4 -m i > processed.ignore_id_removed.bed12+'''.format(
-        processedBed)
-    subprocess.call(cmd, shell=True, executable="/bin/bash")
-    readsAssign(refParams.ref_bed, "processed.ignore_id_removed.bed12+", readsColNum=14, outPrefix="reads.assigned",
-                group=True)
-
-    cmd = "cut -f 1-12,15 reads.assigned.unambi.bed12+ | bed2gpe.pl -b 12 -g 13 - | genePredToGtf file stdin reads.unambi.gtf -source=iFLAS"
-    subprocess.call(cmd, shell=True)
+    return os.path.join(os.getcwd(), "flnc.juncFiltered.fa")
 
 def collapse(dataObj=None, collapseParams=None, refParams=None, dirSpec=None, threads=10):
     projectName, sampleName = dataObj.project_name, dataObj.sample_name
@@ -284,7 +286,8 @@ def collapse(dataObj=None, collapseParams=None, refParams=None, dirSpec=None, th
     resolveDir(os.path.join(baseDir, "collapse"))
     logDir = os.path.join(baseDir, "log")
     resolveDir(logDir, chdir=False)
-    processedFa = os.path.join(baseDir, "mapping", "flnc.processed.fa")
+    processedFa = filterByJunc(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
+    # processedFa = os.path.join(baseDir, "mapping", "flnc.processed.fa")
     # processedBed = os.path.join(baseDir, "mapping", "flnc.addCVandID.bed12+")
     flncSam = os.path.join(baseDir, "mapping", "flnc.mm2.sam")
     # processedIds = getFxSequenceId(processedFa, isFa=True)

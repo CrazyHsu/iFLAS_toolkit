@@ -334,7 +334,7 @@ def refineJunc(dataObj=None, refParams=None, dirSpec=None, refine=True):
     baseDir = os.path.join(dirSpec.out_dir, projectName, sampleName)
     refineDir = os.path.join(baseDir, "refine")
     resolveDir(refineDir)
-    processedFa = os.path.join(baseDir, "mapping", "flnc.processed.fa")
+    processedFa = os.path.join(baseDir, "collapse", "flnc.juncFiltered.fa")
     processedBed = os.path.join(baseDir, "mapping", "flnc.addCVandID.bed12+")
 
     collapsedGff = os.path.join(baseDir, "collapse", "tofu.collapsed.good.gff")

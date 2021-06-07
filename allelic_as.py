@@ -356,7 +356,7 @@ def vcfHaplo(cleanVCF):
     refStr, altStr = "", ""
     for record in vcf_reader:
         refStr += record.REF
-        altStr += record.ALT[0]
+        altStr += str(record.ALT[0])
     return {refStr: "REF", altStr: "ALT"}
 
 def assignHaplo(haplotypes, vcfHaploDict):
@@ -527,6 +527,7 @@ def allelic_specific_exp(dataObj=None, refParams=None, dirSpec=None, refFa=None,
                 freeBayesAlleleSNP[snpName] = record
 
     snp_position = open("snp_position.txt", "w")
+    snpDict = {}
     for i in lociDir:
         partialHaplotype = os.path.join(i, "phased.partial.cleaned.human_readable.txt")
         partialVcf = os.path.join(i, "phased.partial.cleaned.vcf")
@@ -534,6 +535,8 @@ def allelic_specific_exp(dataObj=None, refParams=None, dirSpec=None, refFa=None,
             haplo_vcf = vcf.Reader(open(partialVcf, "r"))
             for record in haplo_vcf:
                 snpName = "{}_{}".format(record.CHROM, record.POS)
+                if snpName in snpDict: continue
+                snpDict[snpName] = ""
                 if len(record.REF) != 1 or len(record.ALT) != 1: continue
                 if len(freeBayesAlleleSNP) != 0 and snpName not in freeBayesAlleleSNP: continue
                 print >> snp_position, "\t".join(map(str, [record.CHROM, record.POS, record.REF, "REF"]))
@@ -542,12 +545,12 @@ def allelic_specific_exp(dataObj=None, refParams=None, dirSpec=None, refFa=None,
 
     cmd = "bamtools split -in {} -reference".format(hybridBam)
     subprocess.call(cmd, shell=True)
-    splitBams = glob.glob(os.path.join(os.path.dirname(hybridBam), "*.REF_*.bam"))
+    splitBams = glob.glob(os.path.join(os.path.dirname(hybridBam), "tmp.REF_*.bam"))
     taggedBams = []
     resultList = []
     pool = Pool(processes=dataObj.single_run_threads)
     for i in splitBams:
-        newBam = os.path.splitext(i)[0] + ".tagged.bam"
+        newBam = os.path.join(os.path.dirname(i), "tagged." + os.path.basename(i))
         taggedBams.append(newBam)
         tmpRes = pool.apply_async(tagBamAndFilter, ("snp_position.txt", i, newBam))
         resultList.append(tmpRes)
