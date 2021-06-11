@@ -11,5 +11,5 @@ myQuery <- list(list(query=intersects, params=list("iflas", "tama"), color="red"
 myQuery <- list(list(query=intersects, params=list("iflas", "tama", "stringtie"), color="#B22222", active=T), list(query=intersects, params=list("iflas"), color="#FA8072", active=T))
 
 pdf(args[2])
-upset(junc_df, sets = c("iflas", "flair", "tama", "stringtie"), order.by = c("degree", "freq"), queries=myQuery, sets.bar.color = c("maroon", "blue", "orange", "green"), text.scale = c(1.5, 1.5, 1.5, 1.5, 1.5, 1), mb.ratio=c(0.5,0.5))
+upset(junc_df, sets = c("iflas", "flair", "tama", "stringtie"), order.by = c("freq"), queries=myQuery, sets.bar.color = c("maroon", "blue", "orange", "green"), text.scale = c(1.5, 1.5, 1.5, 1.5, 1.5, 1), mb.ratio=c(0.5,0.5))
 dev.off()

@@ -44,13 +44,22 @@ def filterByJunc(bedFile=None, refBedFile=None, juncBedFile=None, maxIntronLen=5
                 if junc not in refJuncDict:
                     refJuncDict[junc] = ""
 
+    flncJuncDict = {}
+    for read in flncBed:
+        if len(flncBed[read].introns) > 0:
+            for junc in flncBed[read].introns:
+                if junc not in flncJuncDict:
+                    flncJuncDict[junc] = 1
+                else:
+                    flncJuncDict[junc] += 1
+
     filterReads = open("filterReads.lst", "w")
     for read in flncBed:
         if len(flncBed[read].introns) > 0:
             if getBlockLength(flncBed[read].introns) > maxIntronLen: continue
             consensusJuncN = 0
             for junc in flncBed[read].introns:
-                if junc in refJuncDict or junc in ngsJuncDict:
+                if junc in refJuncDict or junc in ngsJuncDict or flncJuncDict[junc] >= 3:
                     consensusJuncN += 1
             if len(flncBed[read].introns) >= 4:
                 print >> filterReads, read
@@ -65,7 +74,7 @@ def mappingFilterAndAddTags(samFile=None, outPrefix="flnc", maxLength=50000, ref
     cmd = "bamToBed -i <(samtools view -bS {}) -bed12 > tmp.bed12".format(samFile)
     subprocess.call(cmd, shell=True, executable="/bin/bash")
     filteredReads = filterByJunc(bedFile="tmp.bed12", refBedFile=refBedFile, juncBedFile=juncBedFile, maxIntronLen=maxLength)
-    cmd = '''filter.pl -o {} {}.mm2.sam -1 4 -m i > tmp.sam'''.format(filteredReads, outPrefix)
+    cmd = '''(samtools view -H {}; filter.pl -o {} {} -m i) > tmp.sam'''.format(samFile, filteredReads, samFile)
     subprocess.call(cmd, shell=True, executable="/bin/bash")
     cmd = '''(samtools view -H tmp.sam; samtools view -f 16 -F 4079 tmp.sam; samtools view -f 0 -F 4095 tmp.sam) | 
         samAddTag.pl --checkHardClip --coverage --identity 2>lengthInconsistent.sam |

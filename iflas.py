@@ -89,7 +89,7 @@ def oneCommandRunWrapped(dataObj, dataToProcess, refParams, minimap2Params, coll
     collapse(dataObj, collapseParams, refParams, dirSpec, dataObj.single_run_threads)
 
     from refine import refineJunc
-    refineJunc(dataObj, refParams, dirSpec, True)
+    refineJunc(dataObj, refParams, dirSpec, args.refine, args.adjust)
 
     from identify_as import identify_as
     identify_as(dataObj, refParams, dirSpec)
@@ -227,7 +227,7 @@ def splitCommandRun(args, dataToProcess, refInfoParams, dirSpec, ccsParams, mini
                         pool.apply_async(collapse, (dataObj, collapseParams, refParams, dirSpec, dataObj.single_run_threads))
                     if args.command == 'refine':
                         from refine import refineJunc
-                        pool.apply_async(refineJunc, (dataObj, refParams, dirSpec, True))
+                        pool.apply_async(refineJunc, (dataObj, refParams, dirSpec, args.refine, args.adjust))
                     if args.command == 'find_as':
                         # from find_charaterize_as_functions import *
                         from identify_as import identify_as
@@ -289,7 +289,7 @@ def splitCommandRun(args, dataToProcess, refInfoParams, dirSpec, ccsParams, mini
                 pool.apply_async(collapse, (dataObj, collapseParams, refParams, dirSpec, dataObj.single_run_threads))
             if args.command == 'refine':
                 from refine import refineJunc
-                pool.apply_async(refineJunc, (dataObj, refParams, dirSpec, True))
+                pool.apply_async(refineJunc, (dataObj, refParams, dirSpec, args.refine, args.adjust))
             if args.command == 'find_as':
                 # from find_charaterize_as_functions import *
                 from identify_as import identify_as
@@ -372,6 +372,8 @@ if __name__ == "__main__":
 
     parser_filter = subparsers.add_parser('refine', help='Refine the splice junction with the information in short reads', usage='%(prog)s [options]')
     parser_filter.add_argument('-cfg', dest="default_cfg", help="The config file used for init setting.")
+    parser_filter.add_argument('-adjust', dest="adjust", action="store_true", default=False, help="Adjust the strand orient by the information of junctions.")
+    parser_filter.add_argument('-refine', dest="refine", action="store_true", default=False, help="Refine the junction position by the reads support.")
 
     parser_findAS = subparsers.add_parser('find_as', help='Identify alternative splicing(AS) type from high-confidence isoforms. Four common AS type are included: intron retention, exon skipping, alternative 3 end splicing and alternative 5 end splicing', usage='%(prog)s [options]')
     parser_findAS.add_argument('-cfg', dest="default_cfg", help="The config file used for init setting.")

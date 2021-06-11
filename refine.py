@@ -186,7 +186,24 @@ def readsAssign(transBedFile, readsBedFile, offset=10, minConsenesusIntronN=1, m
             print >> unambiOut, "\t".join(novelItem) + "\t" + ":".join(map(str, [novelItem[0], novelItem[5], inc]))
         unambiOut.close()
 
-def strandAdjust(genomeFasta, refGPE, bedFile, minCoverage, juncDiffScore, strandAdjust=None, strandConfirmed=None):
+def isCanonicalSite(strand, dinucleotideType, dinucleotide):
+    if strand == "+":
+        if dinucleotideType == "donor":
+            if re.match("(G[TC])|(AT)", dinucleotide):
+                return 1
+        else:
+            if re.match("A[GC]", dinucleotide):
+                return 1
+    else:
+        if dinucleotideType == "donor":
+            if re.match("([AG]C)|(AT)", dinucleotide):
+                return 1
+        else:
+            if re.match("[CG]T", dinucleotide):
+                return 1
+    return 0
+
+def strandAdjust(genomeFasta, refGPE, bedFile, juncDiffScore, minCoverage, strandAdjust=None, strandConfirmed=None):
     tmpBed = "tmp.bed"
     GenePredObj(refGPE).toBed(outFile=tmpBed)
 
@@ -248,15 +265,15 @@ def strandAdjust(genomeFasta, refGPE, bedFile, minCoverage, juncDiffScore, stran
         if rName not in multiExonReadStrandDict:
             multiExonReadStrandDict[rName] = {"fwdCanonicalCounter": 0, "revCanonicalCounter": 0}
         if dinucleotideType == "left":
-            if re.match("(G[TC])|(AT)", infoList[1]):
-                multiExonReadStrandDict[rName]["fwdCanonicalCounter"] += 1
-            elif re.match("[CG]T", infoList[1]):
-                multiExonReadStrandDict[rName]["revCanonicalCounter"] += 1
+            flag = isCanonicalSite("+", "donor", infoList[1])
+            if flag == 1: multiExonReadStrandDict[rName]["fwdCanonicalCounter"] += 1
+            flag = isCanonicalSite("-", "accept", infoList[1])
+            if flag == 1: multiExonReadStrandDict[rName]["revCanonicalCounter"] += 1
         if dinucleotideType == "right":
-            if re.match("A[GC]", infoList[1]):
-                multiExonReadStrandDict[rName]["fwdCanonicalCounter"] += 1
-            elif re.match("([AG]C)|(AT)", infoList[1]):
-                multiExonReadStrandDict[rName]["revCanonicalCounter"] += 1
+            flag = isCanonicalSite("+", "accept", infoList[1])
+            if flag == 1: multiExonReadStrandDict[rName]["fwdCanonicalCounter"] += 1
+            flag = isCanonicalSite("-", "donor", infoList[1])
+            if flag == 1: multiExonReadStrandDict[rName]["revCanonicalCounter"] += 1
 
     # print
     multiExonAmbiStrandBedList = []
@@ -328,13 +345,13 @@ def identifyNovelIsoformsByJunctions(gpeFile, bedFile, anno="annoIsoform.bed", n
     annoOut.close()
     novelOut.close()
 
-def refineJunc(dataObj=None, refParams=None, dirSpec=None, refine=True):
+def refineJunc(dataObj=None, refParams=None, dirSpec=None, refine=True, adjust=True):
     projectName, sampleName = dataObj.project_name, dataObj.sample_name
     print getCurrentTime() + " Refine the collapsed isoforms for project {} sample {}...".format(projectName, sampleName)
     baseDir = os.path.join(dirSpec.out_dir, projectName, sampleName)
     refineDir = os.path.join(baseDir, "refine")
     resolveDir(refineDir)
-    processedFa = os.path.join(baseDir, "collapse", "flnc.juncFiltered.fa")
+    processedFa = os.path.join(baseDir, "mapping", "flnc.processed.fa")
     processedBed = os.path.join(baseDir, "mapping", "flnc.addCVandID.bed12+")
 
     collapsedGff = os.path.join(baseDir, "collapse", "tofu.collapsed.good.gff")
@@ -345,8 +362,11 @@ def refineJunc(dataObj=None, refParams=None, dirSpec=None, refine=True):
     subprocess.call(cmd, shell=True)
 
     if refine:
-        strandAdjust(refParams.ref_genome, refParams.ref_gpe, "tofu.collapsed.bed12+", 0.8, 2,
-                     strandAdjust="tofu.strandAdjusted.bed12+", strandConfirmed="tofu.strandConfirm.bed12+")
+        if adjust:
+            strandAdjust(refParams.ref_genome, refParams.ref_gpe, "tofu.collapsed.bed12+", 0.8, 2,
+                         strandAdjust="tofu.strandAdjusted.bed12+", strandConfirmed="tofu.strandConfirm.bed12+")
+        else:
+            makeLink("tofu.collapsed.bed12+", "tofu.strandConfirm.bed12+")
         if dataObj.ngs_left_reads or dataObj.ngs_right_reads:
             if dataObj.ngs_junctions == None:
                 dataObj.ngs_junctions = os.path.join(baseDir, "mapping", "rna-seq", "reassembly", "junctions.bed")

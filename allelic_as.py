@@ -386,11 +386,12 @@ def getHaploIsoformSeq(lociDir, isoformFile, refGenome, refFa=None, altFa=None):
             haplotypes = list(partialDF.index)
             # isoforms = list(partialDF.columns)
             haploAssigned = assignHaplo(haplotypes, vcfHaploDict)
-            junc2iso = {}
             for haplo in haplotypes:
+                junc2iso = {}
                 isoformAssigned = partialDF.iloc[:, partialDF.loc[haplo, ].to_numpy().nonzero()[0]].columns
                 for j in isoformAssigned:
-                    if len(isoformBed[j].intron) > 1:
+                    if j not in isoformBed: continue
+                    if len(isoformBed[j].introns) > 1:
                         if isoformBed[j].juncChain not in junc2iso:
                             junc2iso[isoformBed[j].juncChain] = {"iso": [j]}
                         else:
@@ -402,25 +403,24 @@ def getHaploIsoformSeq(lociDir, isoformFile, refGenome, refFa=None, altFa=None):
                             junc2iso["monoExon"]["iso"].append(j)
                 tmpJunc = ""
                 tmpCount = 0
-                if len(junc2iso) > 1:
-                    for y in junc2iso:
-                        if partialDF.loc[haplo, junc2iso[y]["iso"]].sum() > tmpCount:
-                            tmpJunc = y
-                            tmpCount = partialDF.loc[haplo, junc2iso[y]["iso"]].sum()
-                repIsos = [isoformBed[x] for x in junc2iso[tmpJunc]]
+                for y in junc2iso:
+                    if partialDF.loc[haplo, junc2iso[y]["iso"]].sum() > tmpCount:
+                        tmpJunc = y
+                        tmpCount = partialDF.loc[haplo, junc2iso[y]["iso"]].sum()
+                repIsos = [isoformBed[x] for x in junc2iso[tmpJunc]["iso"]]
                 sortedRepIsos = sorted(repIsos, key=lambda x: abs(x.chromStart - x.chromEnd), reverse=True)
                 repIso = copy.copy(sortedRepIsos[0])
                 repIso.name = "{}_{}".format(lociName, haploAssigned[haplo])
                 haplo2flncCount[repIso.name] = [tmpCount, repIso.otherList[0]]
                 print >> representIsoOut, str(repIso)
     representIsoOut.close()
-    cmd = '''bedtools getfasta -fi {} -bed representIso.bed -name -split | seqkit replace -w 0 -p "(.*?):(.*)" -r '$1' > representIso.fa'''.format(refGenome)
+    cmd = '''bedtools getfasta -fi {} -bed representIso.bed -name -split | seqkit replace -w 0 -p "(.*?):(.*)" -r '$1' | seqkit rmdup -n > representIso.fa'''.format(refGenome)
     subprocess.call(cmd, shell=True, executable="/bin/bash")
-    if not validateFile(refFa):
+    if not refFa or not validateFile(refFa):
         cmd = '''seqkit grep -p "REF$" -r representIso.fa > representIso.REF.fa'''
         subprocess.call(cmd, shell=True, executable="/bin/bash")
         refFa = os.path.join(os.getcwd(), "representIso.REF.fa")
-    if not validateFile(altFa):
+    if not altFa or not validateFile(altFa):
         cmd = '''seqkit grep -p "ALT$" -r representIso.fa > representIso.ALT.fa'''
         subprocess.call(cmd, shell=True, executable="/bin/bash")
         altFa = os.path.join(os.getcwd(), "representIso.ALT.fa")
@@ -507,68 +507,69 @@ def allelic_specific_exp(dataObj=None, refParams=None, dirSpec=None, refFa=None,
     print getCurrentTime() + " Identify allelic-specific expression genes for project {} sample {}...".format(projectName, sampleName)
     prevDir = os.getcwd()
     baseDir = os.path.join(dirSpec.out_dir, projectName, sampleName, "allelicAS", "alleleSpecificExp")
+    logDir = os.path.join(dirSpec.out_dir, projectName, sampleName, "log")
     resolveDir(baseDir)
 
     import vcf, pysam
     lociDir = glob.glob(os.path.join(dirSpec.out_dir, projectName, sampleName, "allelicAS", "by_loci/*size*"))
-    freeBayesAlleleSNP = {}
-    hybridBam = os.path.join(dirSpec.out_dir, projectName, sampleName, "mapping", "rna-seq", "reassembly", "tmp.bam")
-    if useFreeBayes:
-        generate_regions(refParams.ref_genome, 1000000, outFile="split.region.txt")
-        cmd = "freebayes-parallel <(cat split.region.txt) 40 -f {} {} -C 10 -F 0.2 --min-base-quality 20 > freebayes.SNP.vcf".format(
-            refParams.ref_genome, hybridBam)
-        subprocess.call(cmd, shell=True, executable="/bin/bash")
-
-
-        vcf_reader = vcf.Reader(open("freebayes.SNP.vcf", "r"))
-        for record in vcf_reader:
-            snpName = "{}_{}".format(record.CHROM, record.POS)
-            if record.INFO["AF"] == 0.5 and len(record.INFO["TYPE"]) == 1 and record.INFO["TYPE"][0] == "snp":
-                freeBayesAlleleSNP[snpName] = record
-
-    snp_position = open("snp_position.txt", "w")
-    snpDict = {}
-    for i in lociDir:
-        partialHaplotype = os.path.join(i, "phased.partial.cleaned.human_readable.txt")
-        partialVcf = os.path.join(i, "phased.partial.cleaned.vcf")
-        if os.path.exists(partialHaplotype):
-            haplo_vcf = vcf.Reader(open(partialVcf, "r"))
-            for record in haplo_vcf:
-                snpName = "{}_{}".format(record.CHROM, record.POS)
-                if snpName in snpDict: continue
-                snpDict[snpName] = ""
-                if len(record.REF) != 1 or len(record.ALT) != 1: continue
-                if len(freeBayesAlleleSNP) != 0 and snpName not in freeBayesAlleleSNP: continue
-                print >> snp_position, "\t".join(map(str, [record.CHROM, record.POS, record.REF, "REF"]))
-                print >> snp_position, "\t".join(map(str, [record.CHROM, record.POS, record.ALT[0], "ALT"]))
-    snp_position.close()
-
-    cmd = "bamtools split -in {} -reference".format(hybridBam)
-    subprocess.call(cmd, shell=True)
-    splitBams = glob.glob(os.path.join(os.path.dirname(hybridBam), "tmp.REF_*.bam"))
-    taggedBams = []
-    resultList = []
-    pool = Pool(processes=dataObj.single_run_threads)
-    for i in splitBams:
-        newBam = os.path.join(os.path.dirname(i), "tagged." + os.path.basename(i))
-        taggedBams.append(newBam)
-        tmpRes = pool.apply_async(tagBamAndFilter, ("snp_position.txt", i, newBam))
-        resultList.append(tmpRes)
-    pool.close()
-    pool.join()
-
-    refReads = []
-    altReads = []
-    for res in resultList:
-        tmp = res.get()
-        refReads.extend(tmp[0])
-        altReads.extend(tmp[1])
-    with open("ref_reads.lst", "w") as f:
-        for i in refReads:
-            print >> f, i
-    with open("alt_reads.lst", "w") as f:
-        for i in altReads:
-            print >> f, i
+    # freeBayesAlleleSNP = {}
+    # hybridBam = os.path.join(dirSpec.out_dir, projectName, sampleName, "mapping", "rna-seq", "reassembly", "tmp.bam")
+    # if useFreeBayes:
+    #     generate_regions(refParams.ref_genome, 1000000, outFile="split.region.txt")
+    #     cmd = "freebayes-parallel <(cat split.region.txt) 40 -f {} {} -C 10 -F 0.2 --min-base-quality 20 > freebayes.SNP.vcf".format(
+    #         refParams.ref_genome, hybridBam)
+    #     subprocess.call(cmd, shell=True, executable="/bin/bash")
+    #
+    #
+    #     vcf_reader = vcf.Reader(open("freebayes.SNP.vcf", "r"))
+    #     for record in vcf_reader:
+    #         snpName = "{}_{}".format(record.CHROM, record.POS)
+    #         if record.INFO["AF"] == 0.5 and len(record.INFO["TYPE"]) == 1 and record.INFO["TYPE"][0] == "snp":
+    #             freeBayesAlleleSNP[snpName] = record
+    #
+    # snp_position = open("snp_position.txt", "w")
+    # snpDict = {}
+    # for i in lociDir:
+    #     partialHaplotype = os.path.join(i, "phased.partial.cleaned.human_readable.txt")
+    #     partialVcf = os.path.join(i, "phased.partial.cleaned.vcf")
+    #     if os.path.exists(partialHaplotype):
+    #         haplo_vcf = vcf.Reader(open(partialVcf, "r"))
+    #         for record in haplo_vcf:
+    #             snpName = "{}_{}".format(record.CHROM, record.POS)
+    #             if snpName in snpDict: continue
+    #             snpDict[snpName] = ""
+    #             if len(record.REF) != 1 or len(record.ALT) != 1: continue
+    #             if len(freeBayesAlleleSNP) != 0 and snpName not in freeBayesAlleleSNP: continue
+    #             print >> snp_position, "\t".join(map(str, [record.CHROM, record.POS, record.REF, "REF"]))
+    #             print >> snp_position, "\t".join(map(str, [record.CHROM, record.POS, record.ALT[0], "ALT"]))
+    # snp_position.close()
+    #
+    # cmd = "bamtools split -in {} -reference".format(hybridBam)
+    # subprocess.call(cmd, shell=True)
+    # splitBams = glob.glob(os.path.join(os.path.dirname(hybridBam), "tmp.REF_*.bam"))
+    # taggedBams = []
+    # resultList = []
+    # pool = Pool(processes=dataObj.single_run_threads)
+    # for i in splitBams:
+    #     newBam = os.path.join(os.path.dirname(i), "tagged." + os.path.basename(i))
+    #     taggedBams.append(newBam)
+    #     tmpRes = pool.apply_async(tagBamAndFilter, ("snp_position.txt", i, newBam))
+    #     resultList.append(tmpRes)
+    # pool.close()
+    # pool.join()
+    #
+    # refReads = []
+    # altReads = []
+    # for res in resultList:
+    #     tmp = res.get()
+    #     refReads.extend(tmp[0])
+    #     altReads.extend(tmp[1])
+    # with open("ref_reads.lst", "w") as f:
+    #     for i in refReads:
+    #         print >> f, i
+    # with open("alt_reads.lst", "w") as f:
+    #     for i in altReads:
+    #         print >> f, i
     # cmd = "samtools cat {} > tagged.bam".format(" ".join(taggedBams))
     # subprocess.call(cmd, shell=True)
     # refReads = open("ref_reads.lst", "w")
@@ -589,9 +590,9 @@ def allelic_specific_exp(dataObj=None, refParams=None, dirSpec=None, refFa=None,
     ##################
     isoformFile = os.path.join(dirSpec.out_dir, projectName, sampleName, "refine", "isoformGrouped.bed12+")
     refFa, altFa, haplo2flncCount = getHaploIsoformSeq(lociDir, isoformFile, refParams.ref_genome, refFa=refFa, altFa=altFa)
-    cmd = "salmon index -t {} -i ref_salmon_index -p {}".format(refFa, dataObj.single_run_threads)
+    cmd = "salmon index -t {} -i ref_salmon_index -p {} 2>{}/alleleAS.ref_index.log".format(refFa, dataObj.single_run_threads, logDir)
     subprocess.call(cmd, shell=True)
-    cmd = "salmon index -t {} -i alt_salmon_index -p {}".format(altFa, dataObj.single_run_threads)
+    cmd = "salmon index -t {} -i alt_salmon_index -p {} 2>{}/alleleAS.ref_index.log".format(altFa, dataObj.single_run_threads, logDir)
     subprocess.call(cmd, shell=True)
 
     if dataObj.ngs_reads_paired == "paired":
