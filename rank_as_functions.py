@@ -462,10 +462,10 @@ def scoreAsIsoform(irFile, seFile, a3ssFile, a5ssFile, paFile, isoformFile, coll
 def getIsoTPM(quant_sf):
     iso2tpmDict = {}
     with open(quant_sf) as f:
-        for line in f.readlines():
+        for line in f.readlines()[1:]:
             iso = line.strip("\n").split("\t")[0]
-            tmp = line.strip("\n").split("\t")[3]
-            iso2tpmDict.update({iso: float(tmp)})
+            tpm = line.strip("\n").split("\t")[3]
+            iso2tpmDict.update({iso: float(tpm)})
     return iso2tpmDict
 
 def quantIsoformWithSalmon(isoformScoreFile, isoformFile, dataObj, refParams, dirSpec):
@@ -485,10 +485,11 @@ def quantIsoformWithSalmon(isoformScoreFile, isoformFile, dataObj, refParams, di
             print >>representIsoOut, str(repIso) + "\t" + repIsoName
     representIsoOut.close()
 
-    cmd = '''bedtools getfasta -fi {} -bed representIso.bed -name -split | seqkit replace -w 0 -p "(.*?):(.*)" -r '$1' > representIso.fa'''.format(refParams.ref_genome)
+    cmd = '''cut -f 1-12 representIso.bed | bedtools getfasta -fi {} -bed - -name -split | seqkit replace -w 0 -p "(.*?):(.*)" -r '$1' > representIso.fa'''.format(refParams.ref_genome)
     subprocess.call(cmd, shell=True, executable="/bin/bash")
 
-    cmd = "salmon index -t representIso.fa -i representIso_index -p {}".format(dataObj.single_run_threads)
+    logDir = os.path.join(dirSpec.out_dir, dataObj.project_name, dataObj.sample_name, "log")
+    cmd = "salmon index -t representIso.fa -i representIso_index -p {} 1>{}/salmon.index.log 2>&1".format(dataObj.single_run_threads, logDir)
     subprocess.call(cmd, shell=True)
 
     from preprocess import renameNGSdata2fastp, processRnaseq
@@ -503,8 +504,8 @@ def quantIsoformWithSalmon(isoformScoreFile, isoformFile, dataObj, refParams, di
             leftReads = " ".join([r.strip() for r in leftReadsRepeats[i].split(",")])
             rightReads = " ".join([r.strip() for r in rightReadsRepeats[i].split(",")])
             salmonOut = "repeat{}.salmon_quant".format(i)
-            cmd = "salmon quant -l A -i representIso_index -1 {} -2 {} -p {} -o {}"
-            cmd = cmd.format(leftReads, rightReads, dataObj.single_run_threads, salmonOut)
+            cmd = "salmon quant -l A -i representIso_index -1 {} -2 {} -p {} -o {} --consensusSlack 0.5 --preMergeChainSubThresh 0.9 1>{}/{}_log 2>&1"
+            cmd = cmd.format(leftReads, rightReads, dataObj.single_run_threads, salmonOut, logDir, salmonOut)
             subprocess.call(cmd, shell=True)
             quant_sf_list.append(os.path.abspath("{}/quant.sf".format(salmonOut)))
             iso2tpm.update({salmonOut: getIsoTPM("{}/quant.sf".format(salmonOut))})
@@ -519,13 +520,14 @@ def quantIsoformWithSalmon(isoformScoreFile, isoformFile, dataObj, refParams, di
         for i in range(len(singleReadsRepeats)):
             singleReads = ",".join([i.strip() for i in singleReadsRepeats[i].split(",")])
             salmonOut = "repeat{}.salmon_quant".format(i)
-            cmd = "salmon quant -l A -i representIso_index -r {} -p {} -o {}"
-            cmd = cmd.format(singleReads, dataObj.single_run_threads, salmonOut)
+            cmd = "salmon quant -l A -i representIso_index -r {} -p {} -o {} --consensusSlack 0.5 --preMergeChainSubThresh 0.9 1>{}/{}_log 2>&1"
+            cmd = cmd.format(singleReads, dataObj.single_run_threads, salmonOut, logDir, salmonOut)
             subprocess.call(cmd, shell=True)
             quant_sf_list.append(os.path.abspath("{}/quant.sf".format(salmonOut)))
             iso2tpm.update({salmonOut: getIsoTPM("{}/quant.sf".format(salmonOut))})
 
     newScoreOut = open("isoformScore.tpm.txt", "w")
+    print >> newScoreOut, "\t".join(["Gene", "Isoform", "PB_count", "All_PB_count", "Freq_real", "Freq_comb", "TPM_min", "TPM_max", "TPM_mean", "Annotation"])
     with open(isoformScoreFile) as f:
         for line in f.readlines():
             infoList = line.strip("\n").split("\t")
@@ -534,7 +536,7 @@ def quantIsoformWithSalmon(isoformScoreFile, isoformFile, dataObj, refParams, di
             minTPM = min(tpmList)
             maxTPM = max(tpmList)
             meanTPM = sum(tpmList)/float(len(tpmList))
-            print >> newScoreOut, "\t".join(infoList[0:-1]) + "\t" + "\t".join([minTPM, maxTPM, meanTPM]) + "\t" + infoList[-1]
+            print >> newScoreOut, "\t".join(infoList[0:-1]) + "\t" + "\t".join(map(str, [minTPM, maxTPM, meanTPM])) + "\t" + infoList[-1]
     newScoreOut.close()
 
 # irFile = "/home/xufeng/xufeng/iso-seq/iFLAS_toolkit/test_data/Zm00001d050245.IR.PB.bed6+"
