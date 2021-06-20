@@ -1,8 +1,8 @@
 ############ wangbo un-hybrid
 python iflas.py preproc -cfg test_data/iFLAS_config_wangbo_new.cfg
-python iflas.py mapping -cfg test_data/iFLAS_config_wangbo_new.cfg
+python iflas.py mapping -cfg test_data/iFLAS_config_wangbo_new.cfg -c
 python iflas.py collapse -cfg test_data/iFLAS_config_wangbo_new.cfg
-python iflas.py refine -cfg test_data/iFLAS_config_wangbo_new.cfg
+python iflas.py refine -cfg test_data/iFLAS_config_wangbo_new.cfg -refine
 python iflas.py find_as -cfg test_data/iFLAS_config_wangbo_new.cfg
 python iflas.py visual_as -cfg test_data/iFLAS_config_wangbo_new.cfg -g Zm00001d050245
 python iflas.py rank_as -cfg test_data/iFLAS_config_wangbo_new.cfg
@@ -13,7 +13,7 @@ python iflas.py report -cfg test_data/iFLAS_config_wangbo_new.cfg
 ############ wangbo un-hybrid merged
 python iflas.py mapping -cfg test_data/iFLAS_config_wangbo_merge_new.cfg -c
 python iflas.py collapse -cfg test_data/iFLAS_config_wangbo_merge_new.cfg
-python iflas.py refine -cfg test_data/iFLAS_config_wangbo_merge_new.cfg
+python iflas.py refine -cfg test_data/iFLAS_config_wangbo_merge_new.cfg -refine
 python iflas.py find_as -cfg test_data/iFLAS_config_wangbo_merge_new.cfg
 python iflas.py visual_as -cfg test_data/iFLAS_config_wangbo_merge_new.cfg -g Zm00001d050245
 python iflas.py rank_as -cfg test_data/iFLAS_config_wangbo_merge_new.cfg
@@ -23,9 +23,9 @@ python iflas.py report -cfg test_data/iFLAS_config_wangbo_merge_new.cfg
 
 ############ wanglab
 python iflas.py preproc -cfg test_data/iFLAS_config_wanglab_new.cfg
-python iflas.py mapping -cfg test_data/iFLAS_config_wanglab_new.cfg
+python iflas.py mapping -cfg test_data/iFLAS_config_wanglab_new.cfg -c
 python iflas.py collapse -cfg test_data/iFLAS_config_wanglab_new.cfg
-python iflas.py refine -cfg test_data/iFLAS_config_wanglab_new.cfg
+python iflas.py refine -cfg test_data/iFLAS_config_wanglab_new.cfg -refine
 python iflas.py find_as -cfg test_data/iFLAS_config_wanglab_new.cfg
 python iflas.py visual_as -cfg test_data/iFLAS_config_wanglab_new.cfg -g Zm00001d050245
 python iflas.py rank_as -cfg test_data/iFLAS_config_wanglab_new.cfg
@@ -37,7 +37,7 @@ python iflas.py report -cfg test_data/iFLAS_config_wanglab_new.cfg
 python iflas.py preproc -cfg test_data/iFLAS_config_ont_new.cfg
 python iflas.py mapping -cfg test_data/iFLAS_config_ont_new.cfg -c
 python iflas.py collapse -cfg test_data/iFLAS_config_ont_new.cfg
-python iflas.py refine -cfg test_data/iFLAS_config_ont_new.cfg
+python iflas.py refine -cfg test_data/iFLAS_config_ont_new.cfg -refine
 python iflas.py find_as -cfg test_data/iFLAS_config_ont_new.cfg
 python iflas.py visual_as -cfg test_data/iFLAS_config_ont_new.cfg -g Zm00001d050245
 python iflas.py rank_as -cfg test_data/iFLAS_config_ont_new.cfg
@@ -49,7 +49,7 @@ python iflas.py report -cfg test_data/iFLAS_config_ont_new.cfg
 ############ ont merged
 python iflas.py mapping -cfg test_data/iFLAS_config_ont_merged_new.cfg -c
 python iflas.py collapse -cfg test_data/iFLAS_config_ont_merged_new.cfg
-python iflas.py refine -cfg test_data/iFLAS_config_ont_merged_new.cfg
+python iflas.py refine -cfg test_data/iFLAS_config_ont_merged_new.cfg -refine
 python iflas.py find_as -cfg test_data/iFLAS_config_ont_merged_new.cfg
 python iflas.py visual_as -cfg test_data/iFLAS_config_ont_merged_new.cfg -g Zm00001d050245
 python iflas.py rank_as -cfg test_data/iFLAS_config_ont_merged_new.cfg
@@ -62,7 +62,7 @@ python iflas.py report -cfg test_data/iFLAS_config_ont_merged_new.cfg
 python iflas.py preproc -cfg test_data/iFLAS_config_wangbo_hybrid_new.cfg
 python iflas.py mapping -cfg test_data/iFLAS_config_wangbo_hybrid_new.cfg
 python iflas.py collapse -cfg test_data/iFLAS_config_wangbo_hybrid_new.cfg
-python iflas.py refine -cfg test_data/iFLAS_config_wangbo_hybrid_new.cfg
+python iflas.py refine -cfg test_data/iFLAS_config_wangbo_hybrid_new.cfg -refine
 python iflas.py find_as -cfg test_data/iFLAS_config_wangbo_hybrid_new.cfg
 python iflas.py visual_as -cfg test_data/iFLAS_config_wangbo_hybrid_new.cfg -g Zm00001d050245
 python iflas.py rank_as -cfg test_data/iFLAS_config_wangbo_hybrid_new.cfg
@@ -74,7 +74,7 @@ python iflas.py report -cfg test_data/iFLAS_config_wangbo_hybrid_new.cfg
 ############ wangbo hybrid merged
 python iflas.py mapping -cfg test_data/iFLAS_config_wangbo_hybrid_merged_new.cfg
 python iflas.py collapse -cfg test_data/iFLAS_config_wangbo_hybrid_merged_new.cfg
-python iflas.py refine -cfg test_data/iFLAS_config_wangbo_hybrid_merged_new.cfg
+python iflas.py refine -cfg test_data/iFLAS_config_wangbo_hybrid_merged_new.cfg -refine
 python iflas.py find_as -cfg test_data/iFLAS_config_wangbo_hybrid_merged_new.cfg
 python iflas.py visual_as -cfg test_data/iFLAS_config_wangbo_hybrid_merged_new.cfg -g Zm00001d050245
 python iflas.py rank_as -cfg test_data/iFLAS_config_wangbo_hybrid_merged_new.cfg

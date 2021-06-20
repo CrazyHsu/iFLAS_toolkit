@@ -28,15 +28,15 @@ def visual_as_merge(dataToProcess=None, targetGenes=None, refParams=None, dirSpe
             sampleName = "{}_{}".format(dataObj.project_name, dataObj.sample_name)
             if validateDir(tmpDir):
                 tmpDict = {"tgs": [], "ngs": {}}
-                isoformGff = os.path.abspath(os.path.join(tmpDir, "{}.iFLAS.gff"))
-                isoformGpe = os.path.abspath(os.path.join(tmpDir, "{}.iFLAS.gpe"))
-                ngsSamList = glob.glob(os.path.join(tmpDir, "repeat*.{}.sam").format(geneName))
+                isoformGff = os.path.abspath(os.path.join(tmpDir, "{}.iFLAS.gff".format(geneName)))
+                isoformGpe = os.path.abspath(os.path.join(tmpDir, "{}.iFLAS.gpe".format(geneName)))
+                ngsSamList = glob.glob(os.path.join(tmpDir, "repeat*.{}.sam".format(geneName)))
                 if validateFile(isoformGff):
                     tmpDict["tgs"] = [isoformGff, isoformGpe]
                 for i in ngsSamList:
                     if validateFile(os.path.abspath(i)):
                         repeat = os.path.basename(i).split(".")[0]
-                        tmpDict["ngs"].update({repeat: validateFile(os.path.abspath(i))})
+                        tmpDict["ngs"].update({repeat: os.path.abspath(i)})
                 mergedData.update({sampleName: tmpDict})
         if mergedData:
             resolveDir(os.path.join(isoViewerDir, geneName))
@@ -51,10 +51,10 @@ def visual_as_merge(dataToProcess=None, targetGenes=None, refParams=None, dirSpe
 
             refGeneObj = refGpeObj.geneName2gpeObj[geneName]
 
-            targetGeneChrom = refGeneObj.chrom
-            plotMinpos = min([refGeneObj.minpos] + minPos)
-            plotMaxpos = max([refGeneObj.maxpos] + maxPos)
-            targetGeneStrand = refGeneObj.strand
+            targetGeneChrom = refGeneObj[0].chrom
+            targetGeneStrand = refGeneObj[0].strand
+            plotMinpos = min([x.txStart for x in refGeneObj] + minPos)
+            plotMaxpos = max([x.txEnd for x in refGeneObj] + maxPos)
 
             # Gene model section
             geneModelGPE = "{}.gpe".format(geneName)
@@ -87,26 +87,26 @@ def visual_as_merge(dataToProcess=None, targetGenes=None, refParams=None, dirSpe
                 isoItemCounts += postCorrIsoItemCounts
                 postCorrIsoRelativeSize = resizeTrackRatio(postCorrIsoItemCounts)
                 postCorrIsoPlotType = "isoforms"
-                postCorrIsoPlot = PlotSection(section_name="[AllReadsCollapse]", plot_type=postCorrIsoPlotType,
+                postCorrIsoPlot = PlotSection(section_name="[AllReadsCollapse_{}]".format(sampleName), plot_type=postCorrIsoPlotType,
                                               source_file=tmpSample["tgs"][0], relative_size=postCorrIsoRelativeSize,
-                                              title_string="Corrected isoforms and AS events in %s from %s data" % (geneName, sampleName))
+                                              title_string="Corrected isoforms and AS events in {} from {} data".format(geneName, sampleName))
                 sectionToPlot.append(postCorrIsoPlot)
                 for repeatName in tmpSample["ngs"]:
                     ngsSam = tmpSample["ngs"][repeatName]
-                    ngsPlot = PlotSection(section_name="[Reads_%s]" % (repeatName), plot_type="read_depth",
+                    ngsPlot = PlotSection(section_name="[Reads_{}_{}]".format(repeatName, sampleName), plot_type="read_depth",
                                             source_file=ngsSam, relative_size=5.0,
-                                            title_string="%s Read Coverage in sample %s" % (geneName, repeatName))
+                                            title_string="{} Read Coverage in {} {}".format(geneName, sampleName, repeatName))
                     sectionToPlot.append(ngsPlot)
             figOut = geneName + ".pdf"
             cfgOut = open(geneName + ".cfg", "w")
             majorItemCount = geneModelItemCount + isoItemCounts
-            figHeight = 10 if majorItemCount <= 50 else 15 if majorItemCount <= 150 else 20
+            figHeight = 20 if majorItemCount <= 50 else 30 if majorItemCount <= 150 else 40
             mainSec = MainSection(fout=figOut, height=figHeight)
             print >> cfgOut, mainSec.printStr()
             for sec in sectionToPlot:
                 print >> cfgOut, sec.printStr()
             cfgOut.close()
-            os.system("plotter.py %s.cfg 2>/dev/null" % geneName)
+            os.system("plotter.py {}.cfg 2>/dev/null".format(geneName))
 
 
 def visual_as(dataObj=None, targetGenes=None, refParams=None, dirSpec=None):

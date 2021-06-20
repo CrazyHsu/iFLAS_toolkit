@@ -10,7 +10,7 @@ class MainSection(object):
     def __init__(self, **args):
         self.sectionName = getAttribute("sectionName", "[SinglePlotConfig]", **args)
         self.legend      = getAttribute("legend", True, **args)
-        self.width       = getAttribute("width", 9.0, **args)
+        self.width       = getAttribute("width", 10.0, **args)
         self.height      = getAttribute("height", 11.0, **args)
         self.fontsize    = getAttribute("fontsize", 12, **args)
         self.output_file = getAttribute("fout", None, **args)
