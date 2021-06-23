@@ -644,29 +644,44 @@ plotPaTailAsStructure <- function(sigFile, outPdf){
         plotGenes(bed6Data, chrom, chromStart, chromEnd, maxrows=50,bentline=FALSE,col="red", labeloffset=0.2,fontsize=1, bheight = 0.08, lheight = 0.4, packrow = FALSE, labelat = "start", colorbygroup=colorbygroup)
     
         if (is.null(colorbygroup) == FALSE){
-            paLenData$isoform = as.factor(paLenData$isoform)
-            if (length(levels(paLenData$isoform)) < 3){
+            paLenData$group = as.factor(paLenData$group)
+            if (length(levels(paLenData$group)) < 3){
               colors = brewer.pal(3, "Set1")
             }else{
-              colors = brewer.pal(length(levels(paLenData$isoform)), "Set1")
+              colors = brewer.pal(length(levels(paLenData$group)), "Set1")
             }
         }
-        labelColor <- colors[paLenData$isoform]
+        labelColor <- colors[paLenData$group]
         paLenData$color <- as.factor(labelColor)
         # labelColor <- colors[0:length(levels(paLenData$isoform))]
-        vp <- viewport(height = unit(0.5,"npc"), width=unit(0.95, "npc"),  just = c("left","top"), y = 1, x = 0)
+        # vp <- viewport(height = unit(0.5,"npc"), width=unit(0.95, "npc"),  just = c("left","top"), y = 1, x = 0)
     
         maxPaLen <- max(paLenData$paLen)
-        p <- ggplot(paLenData, aes(x=group, y=paLen, label=paste0("n = ", count), fill=group)) +
-            geom_violin() + geom_boxplot(width=0.1) + ggtitle(gene) + ylab("Poly(A) tail length") +
-            geom_text(y=maxPaLen+1, vjust=0, size=4, fontface="plain", color=labelColor) +
+        groupedColor <- c()
+        for (x in levels(paLenData$group)) {
+            groupedColor <- c(groupedColor, as.vector(unique(paLenData[paLenData$group == x,]$color)))
+        }
+        p1 <- ggplot(paLenData, aes(x=group, y=paLen, label=paste0("n = ", count), fill=group)) +
+            geom_violin() + geom_boxplot(width=0.1) + ggtitle(paste0("Violin plot in ", gene)) + ylab("Poly(A) tail length") +
+            geom_text(y=maxPaLen+5, vjust=0, size=4, fontface="plain", color=labelColor) +
             coord_cartesian(ylim=c(0,maxPaLen), clip="off") + theme_bw() +
             theme(plot.margin=unit(c(2,0,0,1), "lines"), text = element_text(size=12, face="bold"),
             plot.title = element_text(hjust = 0.5, vjust = 5), axis.title.x=element_blank(),
             panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
             panel.border = element_blank(), axis.line = element_line(colour = "black"), legend.position = "none") +
-            scale_fill_manual(values = levels(paLenData$color))
-        print(p, vp = vp)
+            scale_fill_manual(values = groupedColor)
+        p2 <- ggplot(paLenData, aes(x=paLen, color=group)) +
+            geom_density() + ggtitle(paste0("Density plot in ", gene)) + ylab("Density (%)") + theme_bw() +
+            theme(plot.margin=unit(c(2,1,0,1), "lines"), text = element_text(size=12, face="bold"),
+            plot.title = element_text(hjust = 0.5, vjust = 5), axis.title.x=element_blank(),
+            panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+            panel.border = element_blank(), axis.line = element_line(colour = "black"), legend.title = element_blank(), legend.position = c(1, 1.05), legend.justification = c("right", "top"), legend.key.size = unit(0.3, 'cm')) +
+            scale_color_manual(values = groupedColor) + scale_y_continuous(labels = function(x) paste0(x*100))
+            
+        pushViewport(viewport(layout = grid.layout(2, 2)))            
+        vplayout <- function(x, y) viewport(layout.pos.row = x, layout.pos.col = y)
+        print(p1, vp=vplayout(1, 1))
+        print(p2, vp=vplayout(1, 2))
     
     }
     dev.off()
