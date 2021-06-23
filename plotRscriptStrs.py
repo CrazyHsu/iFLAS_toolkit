@@ -40,26 +40,29 @@ plotAllelicAsStructureStr = '''
     library(Gviz)
     
     plotAllelicAsStructure <- function(refGenome, gtfs, mixedBam, haploBams, ngsBam, chrom, chromStart, chromEnd, htStarts, htEnds, color, outName){
-        plot(paste0(outName, ".pdf"))
+        options(ucscChromosomeNames=FALSE)
+        pdf(paste0(outName, ".pdf"), height=15)
         gtrack <- GenomeAxisTrack(cex = 1)
         sTrack <- SequenceTrack(refGenome)
         gtfs <- unlist(strsplit(gtfs, ","))
-        haploIso1Track <- GeneRegionTrack(gtfs[1], name="Haplotype1 Isoforms", transcriptAnnotation = "transcript", stackHeight = 0.5)
-        haploIso2Track <- GeneRegionTrack(gtfs[2], name="Haplotype2 Isoforms", transcriptAnnotation = "transcript", stackHeight = 0.5)
-        covTrack <- AlignmentsTrack(mixedBam, isPaired = TRUE, min.height = 20, size=20, type="coverage", name="Coverage")
+        gtf1_db <- makeTxDbFromGFF(gtfs[1], format = "gtf")
+        gtf2_db <- makeTxDbFromGFF(gtfs[2], format = "gtf")
+        haploIso1Track <- GeneRegionTrack(gtf1_db, name="Haplotype1 Isoforms", transcriptAnnotation = "transcript", stackHeight = 0.5)
+        haploIso2Track <- GeneRegionTrack(gtf2_db, name="Haplotype2 Isoforms", transcriptAnnotation = "transcript", stackHeight = 0.5)
+        covTrack <- AlignmentsTrack(mixedBam, isPaired = FALSE, type="coverage", name="Coverage")
         haploBams <- unlist(strsplit(haploBams, ","))
-        haploReads1Track <- AlignmentsTrack(haploBams[1], isPaired = TRUE, min.height = 20, size = 80, type="pileup", name="Haplotype1 Alignments")
-        haploReads2Track <- AlignmentsTrack(haploBams[2], isPaired = TRUE, min.height = 20, size = 80, type="pileup", name="Haplotype2 Alignments")
+        haploReads1Track <- AlignmentsTrack(haploBams[1], isPaired = FALSE, type="pileup", name="Haplotype1 Alignments", stackHeight = 0.5)
+        haploReads2Track <- AlignmentsTrack(haploBams[2], isPaired = FALSE, type="pileup", name="Haplotype2 Alignments", stackHeight = 0.5)
         htStarts <- as.numeric(unlist(strsplit(htStarts, ","))) - 50
         htEnds <- as.numeric(unlist(strsplit(htEnds, ","))) + 50
         ht <- HighlightTrack(trackList=list(haploIso1Track, haploReads1Track, haploIso2Track, haploReads2Track), start=htStarts, end=htEnds, chromosome=chrom, col=c(color), alpha=0.8)
         if(ngsBam!=""){
-            ngsCovTrack <- AlignmentsTrack(ngsBam, isPaired = TRUE, min.height = 20, size = 80, type="Coverage", name="Short Reads Alignments")
-            p <- plotTracks(c(covTrack, ngsCovTrack, ht, sTrack, gtrack), chromosome = chrom, from = chromStart, to = chromEnd, cex=0.5, min.height=2, fontsize=10, extend.left=0.02, extend.right=0.02, main=outName, cex.main=1)
+            # ngsCovTrack <- AlignmentsTrack(ngsBam, isPaired = TRUE, min.height = 20, size = 80, type="coverage", name="Short Reads Alignments")
+            # plotTracks(c(covTrack, ngsCovTrack, ht, sTrack, gtrack), chromosome = chrom, from = chromStart, to = chromEnd, cex=0.5, min.height=2, fontsize=10, extend.left=0.02, extend.right=0.02, main=outName, cex.main=1)
+            plotTracks(c(covTrack, ht, sTrack, gtrack), chromosome = chrom, from = chromStart, to = chromEnd, cex=0.5, fontsize=10, extend.left=0.15, extend.right=0.02, main=outName, cex.main=1, sizes=c(0.05,0.1,0.35,0.1,0.35,0.025,0.025))
         }else{
-            p <- plotTracks(c(covTrack, ht, sTrack, gtrack), chromosome = chrom, from = chromStart, to = chromEnd, cex=0.5, min.height=2, fontsize=10, extend.left=0.02, extend.right=0.02, main=outName, cex.main=1)
+            plotTracks(c(covTrack, ht, sTrack, gtrack), chromosome = chrom, from = chromStart, to = chromEnd, cex=0.5, fontsize=10, extend.left=0.15, extend.right=0.02, main=outName, cex.main=1, sizes=c(0.05,0.1,0.35,0.1,0.35,0.025,0.025))
         }
-        print(p)
         dev.off()
     }
 '''

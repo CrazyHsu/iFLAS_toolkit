@@ -107,7 +107,10 @@ def visual_as_merge(dataToProcess=None, targetGenes=None, refParams=None, dirSpe
                 print >> cfgOut, sec.printStr()
             cfgOut.close()
             os.system("plotter.py {}.cfg 2>/dev/null".format(geneName))
-
+    if targetGenes == None:
+        print getCurrentTime() + " Visualize all gene structure compared to the reference genome in all samples done!"
+    else:
+        print getCurrentTime() + " Visualize selected gene structure compared to the reference genome in all samples done!"
 
 def visual_as(dataObj=None, targetGenes=None, refParams=None, dirSpec=None):
     projectName, sampleName = dataObj.project_name, dataObj.sample_name

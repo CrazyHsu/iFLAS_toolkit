@@ -25,7 +25,7 @@ def getJuncFromRegtools(dataObj=None, dirSpec=None, filterByCount=10):
     removeFiles(os.getcwd(), ["tmp.bed"])
     print getCurrentTime() + " Get junctions from RNA-seq with Regtools for project {} sample {} done!".format(projectName, sampleName)
 
-def filterByJunc(bedFile=None, refBedFile=None, juncBedFile=None, maxIntronLen=50000):
+def filterByJunc(bedFile=None, refBedFile=None, juncBedFile=None, maxIntronLen=50000, juncCombSupportN=2):
     refBed = BedFile(refBedFile, type="bed12+").reads
     flncBed = BedFile(bedFile, type="bed12+").reads
 
@@ -45,6 +45,7 @@ def filterByJunc(bedFile=None, refBedFile=None, juncBedFile=None, maxIntronLen=5
                     refJuncDict[junc] = ""
 
     flncJuncDict = {}
+    flncJuncCombDict = {}
     for read in flncBed:
         if len(flncBed[read].introns) > 0:
             for junc in flncBed[read].introns:
@@ -52,6 +53,10 @@ def filterByJunc(bedFile=None, refBedFile=None, juncBedFile=None, maxIntronLen=5
                     flncJuncDict[junc] = 1
                 else:
                     flncJuncDict[junc] += 1
+            if flncBed[read].juncChain not in flncJuncCombDict:
+                flncJuncCombDict[flncBed[read].juncChain] = [read]
+            else:
+                flncJuncCombDict[flncBed[read].juncChain].append(read)
 
     filterReads = open("filterReads.lst", "w")
     for read in flncBed:
@@ -61,19 +66,20 @@ def filterByJunc(bedFile=None, refBedFile=None, juncBedFile=None, maxIntronLen=5
             for junc in flncBed[read].introns:
                 if junc in refJuncDict or junc in ngsJuncDict or flncJuncDict[junc] >= 3:
                     consensusJuncN += 1
-            if len(flncBed[read].introns) >= 4:
+            juncCombReadsCount = len(flncJuncCombDict[flncBed[read].juncChain])
+            if len(flncBed[read].introns) >= 4 and juncCombReadsCount >= juncCombSupportN:
                 print >> filterReads, read
-            elif consensusJuncN/float(len(flncBed[read].introns)) >= 1.0/3:
+            elif consensusJuncN/float(len(flncBed[read].introns)) >= 1.0/3 and juncCombReadsCount >= juncCombSupportN:
                 print >> filterReads, read
         else:
             print >> filterReads, read
     filterReads.close()
     return os.path.join(os.getcwd(), "filterReads.lst")
 
-def mappingFilterAndAddTags(samFile=None, outPrefix="flnc", maxLength=50000, refBedFile=None, juncBedFile=None, threads=10):
+def mappingFilterAndAddTags(samFile=None, outPrefix="flnc", maxLength=50000, refBedFile=None, juncBedFile=None, threads=10, juncCombSup=2):
     cmd = "bamToBed -i <(samtools view -bS {}) -bed12 > tmp.bed12".format(samFile)
     subprocess.call(cmd, shell=True, executable="/bin/bash")
-    filteredReads = filterByJunc(bedFile="tmp.bed12", refBedFile=refBedFile, juncBedFile=juncBedFile, maxIntronLen=maxLength)
+    filteredReads = filterByJunc(bedFile="tmp.bed12", refBedFile=refBedFile, juncBedFile=juncBedFile, maxIntronLen=maxLength, juncCombSupportN=juncCombSup)
     cmd = '''(samtools view -H {}; filter.pl -o {} {} -m i) > tmp.sam'''.format(samFile, filteredReads, samFile)
     subprocess.call(cmd, shell=True, executable="/bin/bash")
     cmd = '''(samtools view -H tmp.sam; samtools view -f 16 -F 4079 tmp.sam; samtools view -f 0 -F 4095 tmp.sam) | 
@@ -86,7 +92,7 @@ def mappingFilterAndAddTags(samFile=None, outPrefix="flnc", maxLength=50000, ref
     subprocess.call(cmd, shell=True)
     removeFiles(os.getcwd(), ["tmp.bed12", "tmp.sam"])
 
-def minimap2mapping(dataObj=None, minimap2Params=None, refParams=None, dirSpec=None, threads=10):
+def minimap2mapping(dataObj=None, minimap2Params=None, refParams=None, dirSpec=None, threads=10, juncCombSup=2):
     projectName, sampleName = dataObj.project_name, dataObj.sample_name
     print getCurrentTime() + " Mapping flnc reads to reference genome for project {} sample {}...".format(projectName, sampleName)
     baseDir = os.path.join(dirSpec.out_dir, projectName, sampleName)
@@ -133,8 +139,12 @@ def minimap2mapping(dataObj=None, minimap2Params=None, refParams=None, dirSpec=N
     subprocess.call(cmd, shell=True)
     if dataObj.ngs_junctions == None and (dataObj.ngs_right_reads or dataObj.ngs_left_reads):
         dataObj.ngs_junctions = os.path.join(baseDir, "mapping", "rna-seq", "reassembly", "junctions.bed")
-    mappingFilterAndAddTags(samFile="flnc.mm2.sam", outPrefix="flnc", maxLength=minimap2Params.max_intron_length, refBedFile=refParams.ref_bed, juncBedFile=dataObj.ngs_junctions, threads=threads)
-    mappingFilterAndAddTags(samFile="rawFlnc.mm2.sam", outPrefix="rawFlnc", maxLength=minimap2Params.max_intron_length, refBedFile=refParams.ref_bed, juncBedFile=dataObj.ngs_junctions, threads=threads)
+    mappingFilterAndAddTags(samFile="flnc.mm2.sam", outPrefix="flnc", maxLength=minimap2Params.max_intron_length,
+                            refBedFile=refParams.ref_bed, juncBedFile=dataObj.ngs_junctions, threads=threads,
+                            juncCombSup=juncCombSup)
+    mappingFilterAndAddTags(samFile="rawFlnc.mm2.sam", outPrefix="rawFlnc", maxLength=minimap2Params.max_intron_length,
+                            refBedFile=refParams.ref_bed, juncBedFile=dataObj.ngs_junctions, threads=threads,
+                            juncCombSup=juncCombSup)
     print getCurrentTime() + " Mapping flnc reads to reference genome for project {} sample {} done!".format(projectName, sampleName)
     os.chdir(prevDir)
 
@@ -212,7 +222,7 @@ def hisat2mapping(dataObj=None, refParams=None, dirSpec=None, threads=10):
     resolveDir(prevDir)
     print getCurrentTime() + " Mapping rna-seq short reads to reference genome with hisat2 for project {} sample {} done!".format(projectName, sampleName)
 
-def mapping(dataObj=None, minimap2Params=None, refParams=None, dirSpec=None, threads=10, useFmlrc2=True):
+def mapping(dataObj=None, minimap2Params=None, refParams=None, dirSpec=None, threads=10, useFmlrc2=True, juncCombSup=2):
     projectName, sampleName = dataObj.project_name, dataObj.sample_name
     if dataObj.ngs_left_reads or dataObj.ngs_right_reads:
         from preprocess import renameNGSdata2fastp, processRnaseq
@@ -235,7 +245,7 @@ def mapping(dataObj=None, minimap2Params=None, refParams=None, dirSpec=None, thr
                 from preprocess import correctWithFmlrc2
                 correctWithFmlrc2(dataObj, dirSpec=dirSpec, useFmlrc2=True, threads=dataObj.single_run_threads)
             minimap2mapping(dataObj=dataObj, minimap2Params=minimap2Params, refParams=refParams, dirSpec=dirSpec,
-                            threads=threads)
+                            threads=threads, juncCombSup=juncCombSup)
         elif isinstance(dataObj.data_processed_location, basestring):
             if validateFile(dataObj.data_processed_location):
                 if dataObj.use_fmlrc2 and useFmlrc2:
@@ -245,7 +255,7 @@ def mapping(dataObj=None, minimap2Params=None, refParams=None, dirSpec=None, thr
                     from preprocess import correctWithFmlrc2
                     correctWithFmlrc2(dataObj, dirSpec=dirSpec, useFmlrc2=True, threads=dataObj.single_run_threads)
                 minimap2mapping(dataObj=dataObj, minimap2Params=minimap2Params, refParams=refParams, dirSpec=dirSpec,
-                                threads=threads)
+                                threads=threads, juncCombSup=juncCombSup)
     else:
         if dataObj.use_fmlrc2:
             dataObj.data_processed_location = os.path.join(dirSpec.out_dir, projectName, sampleName, "preprocess", "fmlrc", "fmlrc_corrected.fasta")
@@ -255,7 +265,8 @@ def mapping(dataObj=None, minimap2Params=None, refParams=None, dirSpec=None, thr
                 from preprocess import correctWithFmlrc2
                 correctWithFmlrc2(dataObj, dirSpec=dirSpec, useFmlrc2=True, threads=dataObj.single_run_threads)
         if validateFile(dataObj.data_processed_location):
-            minimap2mapping(dataObj=dataObj, minimap2Params=minimap2Params, refParams=refParams, dirSpec=dirSpec, threads=threads)
+            minimap2mapping(dataObj=dataObj, minimap2Params=minimap2Params, refParams=refParams, dirSpec=dirSpec,
+                            threads=threads, juncCombSup=juncCombSup)
         else:
             raise Exception("Something wrong happened for generating preprocess flnc reads! Please check it!")
 

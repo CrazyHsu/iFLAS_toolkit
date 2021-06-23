@@ -8,6 +8,7 @@ Last modified: 2021-04-29 16:20:53
 '''
 from commonFuncs import *
 from commonObjs import *
+from multiprocessing import Pool
 import pandas as pd
 import PyPDF2, glob, itertools
 import warnings
@@ -296,13 +297,14 @@ def reportAllelicAS1(dataObj=None, refParams=None, dirSpec=None):
     # asHaplo = asHaplo.loc[:, ["gene", "haplo1", "haplo1isos", "haplo2", "haplo2isos"]].drop_duplicates()
     allelicAsDir = os.path.join(os.getcwd(), "allelicAsPlots")
     resolveDir(allelicAsDir)
-    isoformFile = os.path.join(baseDir, "collapse", "isoformGrouped.bed12+")
+    isoformFile = os.path.join(baseDir, "refine", "isoformGrouped.bed12+")
     collapsedGroupFile = os.path.join(baseDir, "collapse", "tofu.collapsed.group.txt")
     flncBam = os.path.join(baseDir, "mapping", "flnc.mm2.sorted.bam")
     isoBedObj = BedFile(isoformFile, type="bed12+")
     collapsedTrans2reads = getDictFromFile(collapsedGroupFile, sep="\t", inlineSep=",", valueCol=2)
     allelicAsPdfs = []
     highlightColorDict = {"IR": "#0000FF", "SE": "#00EE00", "A3SS": "#FFA500", "A5SS": "#DD77FF"}
+    runParams = []
     for name, group in asHaplo.groupby(["gene", "asType"]):
         outName = "{}.{}.allelic_as".format(name[0], name[1])
         resolveDir(outName)
@@ -355,10 +357,14 @@ def reportAllelicAS1(dataObj=None, refParams=None, dirSpec=None):
         cmd = "samtools cat haplo1.flnc.sorted.bam haplo2.flnc.sorted.bam | samtools sort -@ {} > {}.flnc.sorted.bam"
         cmd = cmd.format(dataObj.single_run_threads, outName)
         subprocess.call(cmd, shell=True, executable="/bin/bash")
+        cmd = "samtools index {}.flnc.sorted.bam".format(outName)
+        subprocess.call(cmd, shell=True)
         refGenome = refParams.ref_genome
         gtfs = "{},{}".format(os.path.join(os.getcwd(), "haplo1isosOut.gtf"), os.path.join(os.getcwd(), "haplo2isosOut.gtf"))
         mixedBam = os.path.join(os.getcwd(), "{}.flnc.sorted.bam".format(outName))
         haploBams = "{},{}".format(os.path.join(os.getcwd(), "haplo1.flnc.sorted.bam"), os.path.join(os.getcwd(), "haplo2.flnc.sorted.bam"))
+        cmd = "samtools index haplo1.flnc.sorted.bam; samtools index haplo2.flnc.sorted.bam"
+        subprocess.call(cmd, shell=True)
 
         targetNgsBam = ""
         if dataObj.ngs_left_reads or dataObj.ngs_right_reads:
@@ -366,14 +372,30 @@ def reportAllelicAS1(dataObj=None, refParams=None, dirSpec=None):
             cmd = "samtools view -h {} {} | samtools sort - > ngsReads.sorted.bam".format(ngsBam, "{}:{}-{}".format(list(chrom)[0], min(chromStarts), max(chromEnds)))
             subprocess.call(cmd, shell=True, executable="/bin/bash")
             targetNgsBam = os.path.join(os.getcwd(), "ngsReads.sorted.bam")
+            cmd = "samtools index {}".format(targetNgsBam)
+            subprocess.call(cmd, shell=True)
 
-        from plotRscriptStrs import plotAllelicAsStructureStr
-        robjects.r(plotAllelicAsStructureStr)
-        robjects.r.plotAllelicAsStructure(refGenome, gtfs, mixedBam, haploBams, targetNgsBam, list(chrom)[0],
-                                          min(chromStarts), max(chromEnds), ",".join(map(str, highlightStarts)),
-                                          ",".join(map(str, highlightEnds)), highlightColorDict[name[1]], outName)
-        allelicAsPdfs.append(os.path.join("{}.pdf".format(outName)))
+        params = [refGenome, gtfs, mixedBam, haploBams, targetNgsBam, list(chrom)[0], min(chromStarts), max(chromEnds),
+                  ",".join(map(str, highlightStarts)), ",".join(map(str, highlightEnds)), highlightColorDict[name[1]],
+                  outName, allelicAsDir]
+        runParams.append(params)
+
+        # robjects.r.plotAllelicAsStructure(refGenome, gtfs, mixedBam, haploBams, targetNgsBam, list(chrom)[0],
+        #                                   min(chromStarts), max(chromEnds), ",".join(map(str, highlightStarts)),
+        #                                   ",".join(map(str, highlightEnds)), highlightColorDict[name[1]], outName)
+        # allelicAsPdfs.append(os.path.join("{}.pdf".format(outName)))
         os.chdir(allelicAsDir)
+
+    from plotRscriptStrs import plotAllelicAsStructureStr
+    robjects.r(plotAllelicAsStructureStr)
+    pool = Pool(processes=dataObj.single_run_threads)
+    for params in runParams:
+        pool.apply_async(robjects.r.plotAllelicAsStructure, (params[0], params[1], params[2], params[3], params[4],
+                                                             params[5], params[6], params[7], params[8], params[9],
+                                                             params[10], os.path.join(params[12], params[11])))
+        allelicAsPdfs.append(os.path.join(params[12], "{}.pdf".format(params[11])))
+    pool.close()
+    pool.join()
 
     # for i, row in asHaplo.iterrows():
     #     outName = "{}.allelic_as".format(row.gene)

@@ -374,6 +374,7 @@ def scoreAsIsoform(irFile, seFile, a3ssFile, a5ssFile, paFile, isoformFile, coll
                             index = dist2pa.index(min(dist2pa))
                             choiceName = "choice_pa{}".format(index)
                         else:
+                            if not getBlockLength(getOverlapOfTuple(isoformBed[iso.name].exons, [junc])) == junc[1] - junc[0]: continue
                             choiceName = "choice_ir"
                     if choiceName not in eventCombination[eventName]:
                         eventCombination[eventName][choiceName] = [iso]
@@ -402,59 +403,67 @@ def scoreAsIsoform(irFile, seFile, a3ssFile, a5ssFile, paFile, isoformFile, coll
                 choiceFreq = len(readsInChoice) / float(len(allReadsInEvent))
                 resultDict[eventName].update({choiceName: {"readsInChoice": readsInChoice, "choiceFreq": choiceFreq}})
             allEventChoice.append(tmpList)
-            choiceFreqList.append(
-                ",".join(map(str, [resultDict[eventName][x]["choiceFreq"] for x in resultDict[eventName]])))
-        combinations = list(itertools.product(*allEventChoice))
-        combination2iso = {}
-        identifiedComb = []
-        for comb in combinations:
-            combination2iso[comb] = {"iso": [], "freq": "NA", "freqList": [], "reads": []}
-            for iso in isoformAssign:
-                if sorted(isoformAssign[iso].items()) == sorted(comb):
-                    identifiedComb.append(comb)
-                    combination2iso[comb]["iso"].append(iso)
-                    freqList = []
-                    for i in comb:
-                        freqList.append(resultDict[i[0]][i[1]]["choiceFreq"])
-                    combination2iso[comb].update({"freq": round(reduce(lambda x, y: x * y, freqList), 4)})
-                    combination2iso[comb].update({"freqList": freqList})
-                else:
-                    freqList = []
-                    for i in comb:
-                        freqList.append(resultDict[i[0]][i[1]]["choiceFreq"])
-                    combination2iso[comb].update({"freq": round(reduce(lambda x, y: x * y, freqList), 4)})
-                    combination2iso[comb].update({"freqList": freqList})
-            readsInComb = set(itertools.chain.from_iterable([isoform2reads[x] for x in combination2iso[comb]["iso"]]))
-            counts = len(readsInComb)
-            combination2iso[comb].update({"counts": counts})
-            combination2iso[comb].update({"reads": readsInComb})
-        identifiedComb = list(set(identifiedComb))
-        combCounts = sorted([(combination2iso[x]["iso"], combination2iso[x]["counts"]) for x in identifiedComb],
-                            key=lambda x: x[1], reverse=True)
-        # majorCombCount = 0
-        # tmpSum = 0
-        # isoList = []
-        # for x in combCounts:
-        #     majorCombCount += 1
-        #     tmpSum += x[1]
-        #     isoList.append(x[0])
-        #     if tmpSum / float(sum([y[1] for y in combCounts])) >= 0.75:
-        #         break
-        print >>asEnumerateOut, "\t".join(map(str, [chrom, strand, geneName, len(eventCombination),
-                                  ";".join(eventCombination.keys()), \
-                                  ";".join(choiceFreqList), len(combinations), \
-                                  ",".join(map(str, [combination2iso[x]["counts"] for x in identifiedComb])), \
-                                  ",".join(map(str, [combination2iso[x]["freq"] for x in identifiedComb])), \
-                                  len(list(set(identifiedComb))), len(set(allReads)),
-                                  ";".join([",".join(x[0]) for x in combCounts])]))
-        for item in combCounts:
-            simFreq = 0
-            for x in combination2iso:
-                if combination2iso[x]["iso"] == item[0]:
-                    simFreq = combination2iso[x]["freq"]
-            annotation = "Novel" if item[0][0] in novelIsoformDict else "Annotated"
-            print >>isoformScoreOut, "\t".join(map(str, [geneName, ",".join(item[0]), item[1], len(set(allReads)),
-                                                         float(item[1])/len(set(allReads)), simFreq, annotation]))
+            choiceFreqList.append(",".join(map(str, [resultDict[eventName][x]["choiceFreq"] for x in resultDict[eventName]])))
+
+        for n in range(1, len(allEventChoice) + 1):
+            tmpComb = list(itertools.combinations(allEventChoice, n))
+            for m in range(len(tmpComb)):
+                combinations = list(itertools.product(*(tmpComb[m])))
+                combination2iso = {}
+                identifiedComb = []
+                for comb in combinations:
+                    combination2iso[comb] = {"iso": [], "freq": "NA", "freqList": [], "reads": []}
+                    for iso in isoformAssign:
+                        if sorted(isoformAssign[iso].items()) == sorted(comb):
+                            identifiedComb.append(comb)
+                            combination2iso[comb]["iso"].append(iso)
+                            freqList = []
+                            for i in comb:
+                                freqList.append(resultDict[i[0]][i[1]]["choiceFreq"])
+                            combination2iso[comb].update({"freq": round(reduce(lambda x, y: x * y, freqList), 4)})
+                            combination2iso[comb].update({"freqList": freqList})
+                        else:
+                            freqList = []
+                            for i in comb:
+                                freqList.append(resultDict[i[0]][i[1]]["choiceFreq"])
+                            combination2iso[comb].update({"freq": round(reduce(lambda x, y: x * y, freqList), 4)})
+                            combination2iso[comb].update({"freqList": freqList})
+                    readsInComb = set(itertools.chain.from_iterable([isoform2reads[x] for x in combination2iso[comb]["iso"]]))
+                    counts = len(readsInComb)
+                    combination2iso[comb].update({"counts": counts})
+                    combination2iso[comb].update({"reads": readsInComb})
+                identifiedComb = list(set(identifiedComb))
+                combCounts = sorted([(combination2iso[x]["iso"], combination2iso[x]["counts"]) for x in identifiedComb],
+                                    key=lambda x: x[1], reverse=True)
+                # majorCombCount = 0
+                # tmpSum = 0
+                # isoList = []
+                # for x in combCounts:
+                #     majorCombCount += 1
+                #     tmpSum += x[1]
+                #     isoList.append(x[0])
+                #     if tmpSum / float(sum([y[1] for y in combCounts])) >= 0.75:
+                #         break
+                if len(identifiedComb) == 0: continue
+                choiceFreqList = []
+                events = list(set([x[0] for x in list(itertools.chain.from_iterable(identifiedComb))]))
+                for e in events:
+                    choiceFreqList.append(",".join(map(str, [resultDict[e][x]["choiceFreq"] for x in resultDict[e]])))
+                print >>asEnumerateOut, "\t".join(map(str, [chrom, strand, geneName, len(events),
+                                          ";".join(events), \
+                                          ";".join(choiceFreqList), len(combinations), \
+                                          ",".join(map(str, [combination2iso[x]["counts"] for x in identifiedComb])), \
+                                          ",".join(map(str, [combination2iso[x]["freq"] for x in identifiedComb])), \
+                                          len(list(set(identifiedComb))), len(set(allReads)),
+                                          ";".join([",".join(x[0]) for x in combCounts])]))
+                for item in combCounts:
+                    simFreq = 0
+                    for x in combination2iso:
+                        if combination2iso[x]["iso"] == item[0]:
+                            simFreq = combination2iso[x]["freq"]
+                    annotation = "Novel" if item[0][0] in novelIsoformDict else "Annotated"
+                    print >>isoformScoreOut, "\t".join(map(str, [geneName, ",".join(item[0]), item[1], len(set(allReads)),
+                                                                 float(item[1])/len(set(allReads)), simFreq, annotation]))
     asEnumerateOut.close()
     isoformScoreOut.close()
     return "asEnumerate.txt", "isoformScore.txt"

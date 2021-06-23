@@ -80,7 +80,7 @@ def mergeSample(strain2data):
 
 def oneCommandRunWrapped(dataObj, dataToProcess, refParams, minimap2Params, collapseParams, dirSpec, args):
     from mapping import mapping
-    mapping(dataObj, minimap2Params, refParams, dirSpec, dataObj.single_run_threads, args.correction)
+    mapping(dataObj, minimap2Params, refParams, dirSpec, dataObj.single_run_threads, args.correction, args.juncCombSup)
 
     # from filter import filter
     # filter(dataObj, refParams, dirSpec)
@@ -216,7 +216,7 @@ def splitCommandRun(args, dataToProcess, refInfoParams, dirSpec, ccsParams, mini
                     if args.command == 'mapping':
                         from mapping import mapping
                         # mapping(dataObj=dataObj, minimap2Params=minimap2Params, refParams=refParams, dirSpec=dirSpec, threads=dataObj.single_run_threads)
-                        pool.apply_async(mapping, (dataObj, minimap2Params, refParams, dirSpec, dataObj.single_run_threads, args.correction))
+                        pool.apply_async(mapping, (dataObj, minimap2Params, refParams, dirSpec, dataObj.single_run_threads, args.correction, args.juncCombSup))
                     # if args.command == 'filter':
                     #     from filter import filter
                     #     # filter(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
@@ -269,7 +269,12 @@ def splitCommandRun(args, dataToProcess, refInfoParams, dirSpec, ccsParams, mini
         if args.command == 'report':
             from report import report
             # report(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
-            report(dataToProcess=sampleMergedToProcess, refInfoParams=refInfoParams, dirSpec=dirSpec, args=args)
+            for proj in sampleMergedToProcess:
+                for ref_strain in sampleMergedToProcess[proj]:
+                    dataToProcess = sampleMergedToProcess[proj][ref_strain].values()
+                    # for strain in sampleMergedToProcess[proj][ref_strain]:
+                    #     dataObj = sampleMergedToProcess[proj][ref_strain][strain]
+                    report(dataToProcess=dataToProcess, refInfoParams=refInfoParams, dirSpec=dirSpec, args=args)
     else:
         pool = MyPool(processes=len(dataToProcess))
         for dataObj in dataToProcess:
@@ -277,8 +282,8 @@ def splitCommandRun(args, dataToProcess, refInfoParams, dirSpec, ccsParams, mini
             dataObj.single_run_threads = int(optionTools.threads / float(len(dataToProcess)))
             if args.command == 'mapping':
                 from mapping import mapping
-                # mapping(dataObj=dataObj, minimap2Params=minimap2Params, refParams=refParams, dirSpec=dirSpec, threads=dataObj.single_run_threads)
-                pool.apply_async(mapping, (dataObj, minimap2Params, refParams, dirSpec, dataObj.single_run_threads, args.correction))
+                # mapping(dataObj=dataObj, minimap2Params=minimap2Params, refParams=refParams, dirSpec=dirSpec, threads=dataObj.single_run_threads, juncCombSup=args.juncCombSup)
+                pool.apply_async(mapping, (dataObj, minimap2Params, refParams, dirSpec, dataObj.single_run_threads, args.correction, args.juncCombSup))
             # if args.command == 'filter':
             #     from filter import filter
             #     # filter(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
@@ -366,6 +371,7 @@ if __name__ == "__main__":
     parser_mapping = subparsers.add_parser('mapping', help='Mapping the TGS/NGS reads to the reference genome with minimap2', usage='%(prog)s [options]')
     parser_mapping.add_argument('-cfg', dest="default_cfg", help="The config file used for init setting.")
     parser_mapping.add_argument('-c', dest="correction", action="store_true", default=False, help="Correct the flnc reads with fmlrc2.")
+    parser_mapping.add_argument('-jcs', dest="juncCombSup", type=int, default=2, help="The number of junction combination supported by flnc reads. Default: 2.")
 
     parser_collapse = subparsers.add_parser('collapse', help='Collapse corrected reads into high-confidence isoforms', usage='%(prog)s [options]')
     parser_collapse.add_argument('-cfg', dest="default_cfg", help="The config file used for init setting.")
@@ -377,6 +383,7 @@ if __name__ == "__main__":
 
     parser_findAS = subparsers.add_parser('find_as', help='Identify alternative splicing(AS) type from high-confidence isoforms. Four common AS type are included: intron retention, exon skipping, alternative 3 end splicing and alternative 5 end splicing', usage='%(prog)s [options]')
     parser_findAS.add_argument('-cfg', dest="default_cfg", help="The config file used for init setting.")
+    parser_findAS.add_argument('-conf_pa', dest="confidentPa", default=None, help="The config file used for init setting.")
 
     parser_visualAS = subparsers.add_parser('visual_as', help='Visualize the specific gene structure with details including isoform mapping, short reads coverage and AS types identified', usage='%(prog)s [options]')
     parser_visualAS.add_argument('-cfg', dest="default_cfg", help="The config file used for init setting.")

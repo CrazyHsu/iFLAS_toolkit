@@ -288,7 +288,9 @@ def allelic_as(dataObj=None, refParams=None, dirSpec=None, args=None):
     readStatFile = "tofu.collapsed.read_stat.txt"
     makeAbundanceFile(collapsedGroupFile, outFile=readStatFile)
 
-    processedFq = os.path.join(dirSpec.out_dir, projectName, sampleName, "preprocess", dataObj.tgs_plat.lower(), "rawFlnc.fq")
+    processedFq = os.path.join(baseDir, "preprocess", dataObj.tgs_plat.lower(), "rawFlnc.fq")
+    if not validateFile(processedFq):
+        processedFq = os.path.join(baseDir, "preprocess", "fmlrc", "rawFlnc.fq")
     collapsedGff = os.path.join(baseDir, "collapse", "tofu.collapsed.good.gff")
     isoformFile = os.path.join(baseDir, "refine", "isoformGrouped.bed12+")
 
@@ -414,7 +416,7 @@ def getHaploIsoformSeq(lociDir, isoformFile, refGenome, refFa=None, altFa=None):
                 haplo2flncCount[repIso.name] = [tmpCount, repIso.otherList[0]]
                 print >> representIsoOut, str(repIso)
     representIsoOut.close()
-    cmd = '''bedtools getfasta -fi {} -bed representIso.bed -name -split | seqkit replace -w 0 -p "(.*?):(.*)" -r '$1' | seqkit rmdup -n > representIso.fa'''.format(refGenome)
+    cmd = '''cut -f 1-12 representIso.bed | bedtools getfasta -fi {} -bed - -name -split | seqkit replace -w 0 -p "(.*?):(.*)" -r '$1' | seqkit rmdup -n > representIso.fa'''.format(refGenome)
     subprocess.call(cmd, shell=True, executable="/bin/bash")
     if not refFa or not validateFile(refFa):
         cmd = '''seqkit grep -p "REF$" -r representIso.fa > representIso.REF.fa'''

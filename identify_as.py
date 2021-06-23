@@ -9,7 +9,7 @@ Last modified: 2021-05-12 22:07:52
 import os
 from commonFuncs import validateDir
 
-def identify_as(dataObj=None, refParams=None, dirSpec=None):
+def identify_as(dataObj=None, refParams=None, dirSpec=None, args=None):
     refineDir = os.path.join(dirSpec.out_dir, dataObj.project_name, dataObj.sample_name, "refine")
     # refineDirExist = validateDir(refineDir)
     if not validateDir(refineDir):
@@ -19,6 +19,6 @@ def identify_as(dataObj=None, refParams=None, dirSpec=None):
     from find_as import find_as
     find_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
     from find_pa import find_pa
-    find_pa(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
+    find_pa(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, confidentPa=args.confidentPa)
     from charaterize_as import charaterize_as
     charaterize_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
