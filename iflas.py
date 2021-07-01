@@ -383,6 +383,8 @@ if __name__ == "__main__":
 
     parser_findAS = subparsers.add_parser('find_as', help='Identify alternative splicing(AS) type from high-confidence isoforms. Four common AS type are included: intron retention, exon skipping, alternative 3 end splicing and alternative 5 end splicing', usage='%(prog)s [options]')
     parser_findAS.add_argument('-cfg', dest="default_cfg", help="The config file used for init setting.")
+    parser_findAS.add_argument('-pa_rpkm', dest="paRPKM", type=float, default=0, help="Filter the pa cluster by RPKM(PAC). Default: 0.")
+    parser_findAS.add_argument('-pa_sup', dest="pa_support", type=int, default=5, help="Filter the pa cluster by RPKM(PAC). Default: 5.")
     parser_findAS.add_argument('-conf_pa', dest="confidentPa", default=None, help="The config file used for init setting.")
 
     parser_visualAS = subparsers.add_parser('visual_as', help='Visualize the specific gene structure with details including isoform mapping, short reads coverage and AS types identified', usage='%(prog)s [options]')

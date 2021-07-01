@@ -230,7 +230,7 @@ def mapping(dataObj=None, minimap2Params=None, refParams=None, dirSpec=None, thr
         from preprocess import renameNGSdata2fastp, processRnaseq
         processRnaseq(dataObj=dataObj, threads=threads, dirSpec=dirSpec, max_reads_length_tirmmed=1)
         renameNGSdata2fastp(dataObj=dataObj)
-        hisat2mapping(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, threads=threads)
+        # hisat2mapping(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, threads=threads)
 
     if dataObj.data_processed_location:
         if isinstance(dataObj.data_processed_location, list):

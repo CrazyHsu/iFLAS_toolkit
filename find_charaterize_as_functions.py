@@ -327,7 +327,7 @@ def filterIrByJunc(irBed, junctionBed, confidentIrBed):
                 print >> out, line.strip("\n")
     out.close()
 
-def getPaCluster(readsBed=None, tofuGroup=None, filterByCount=0, threads=None, paClusterOut=None, paDist=20, windowSize=5, tpmPAC=10, confidentPa=None):
+def getPaCluster(readsBed=None, tofuGroup=None, filterByCount=0, threads=None, paClusterOut=None, paDist=20, windowSize=5, rpkmPAC=0, confidentPa=None):
     gene2reads = {}
     readsDict = BedFile(readsBed, type="bed12+").reads
     allReadCount = len(readsDict)
@@ -358,7 +358,7 @@ def getPaCluster(readsBed=None, tofuGroup=None, filterByCount=0, threads=None, p
         mostChrom = Counter(chroms).most_common(1)[0][0]
         readsBedList = [r for r in readsBedList if r.chrom == mostChrom]
         paCluster_test(readsBedList, distance=paDist, windowSize=windowSize, outHandle=outHandle,
-                       allReadCount=allReadCount, paSup=filterByCount, tpmPAC=tpmPAC, confidentPaDict=confidentPaDict)
+                       allReadCount=allReadCount, paSup=filterByCount, rpkmPAC=rpkmPAC, confidentPaDict=confidentPaDict)
         # paCluster(readsBedList, outHandle=outHandle, distance=paDist)
     outHandle.close()
 
@@ -895,7 +895,7 @@ def motifAroundPA(bed6plus=None, up1=100, down1=100, up2=100, down2=100, refFast
                 print >>sixNucleotideOut, "\t".join(map(str, [j + 1, downPercent[j]]))
             sixNucleotideOut.close()
 
-def getPAC(depth, distance=20, windowSize=2, paSup=5, tpmPAC=10, allReadCount=1000000):
+def getPAC(depth, distance=20, windowSize=2, paSup=5, rpkmPAC=0, allReadCount=1000000, effLen=1):
     N = len(depth)
     # peaks = []
     # counts = []
@@ -942,12 +942,16 @@ def getPAC(depth, distance=20, windowSize=2, paSup=5, tpmPAC=10, allReadCount=10
 
     finalPeak2Count = []
     for pac in newPacDict:
-        peak = np.argmax(currPeaksBak[newPacDict[pac]])
+        peak = newPacDict[pac][int(np.argmax(currPeaksBak[newPacDict[pac]]))]
         count = sum(depth[newPacDict[pac]])
-        tpm = (count * 1000000) / allReadCount
-        if tpm >= tpmPAC:
+        if rpkmPAC:
+            rpkm = (count * 1000000) / float(allReadCount*effLen)
+            if rpkm >= rpkmPAC:
+                finalPeak2Count.append((peak, count, newPacDict[pac]))
+        else:
             finalPeak2Count.append((peak, count, newPacDict[pac]))
-    finalPeak2Count = sorted(finalPeak2Count, key=lambda pair: pair[1])
+    if finalPeak2Count:
+        finalPeak2Count = sorted(finalPeak2Count, key=lambda pair: pair[1], reverse=True)
     return finalPeak2Count
 
     # while True:
@@ -975,36 +979,36 @@ def getPAC(depth, distance=20, windowSize=2, paSup=5, tpmPAC=10, allReadCount=10
     # finalPeak2count = sorted(finalPeak2count, key=lambda pair: pair[0])
     # return finalPeak2count
 
-def getPaPeaks(depth, distance=20, windowSize=3, paSup=5, tpmPAC=10, allReadCount=1000000):
-    N = len(depth)
-    peaks = []
-    counts = []
-    while True:
-        currPeaks = np.zeros(len(depth))
-        for i in xrange(N):
-            for c in peaks:
-                if i <= c and c - i + 1 < distance or \
-                        i >= c and i - c + 1 < distance:
-                    break
-            else:
-                if np.sum(depth[max(0, i - windowSize - 1):min(N, i + windowSize)]) >= paSup:
-                    currPeaks[i] = depth[i] * 2 + np.median(depth[max(0, i - windowSize - 1):min(N, i + windowSize)])
-        if np.max(currPeaks) == 0:
-            break
-        cp = np.argmax(currPeaks)
-        if cp not in peaks:
-            peaks.append(cp)
-            counts.append(sum(depth[max(0, cp - windowSize - 1):min(N, cp + windowSize)]))
-    peak2count = zip(peaks, counts)
-    finalPeak2count = []
-    for peak, count in peak2count:
-        tpm = (count * 1000000)/allReadCount
-        if tpm >= tpmPAC:
-            finalPeak2count.append((peak, count))
-    finalPeak2count = sorted(finalPeak2count, key=lambda pair: pair[0])
-    return finalPeak2count
+# def getPaPeaks(depth, distance=20, windowSize=3, paSup=5, rpkmPAC=10, allReadCount=1000000):
+#     N = len(depth)
+#     peaks = []
+#     counts = []
+#     while True:
+#         currPeaks = np.zeros(len(depth))
+#         for i in xrange(N):
+#             for c in peaks:
+#                 if i <= c and c - i + 1 < distance or \
+#                         i >= c and i - c + 1 < distance:
+#                     break
+#             else:
+#                 if np.sum(depth[max(0, i - windowSize - 1):min(N, i + windowSize)]) >= paSup:
+#                     currPeaks[i] = depth[i] * 2 + np.median(depth[max(0, i - windowSize - 1):min(N, i + windowSize)])
+#         if np.max(currPeaks) == 0:
+#             break
+#         cp = np.argmax(currPeaks)
+#         if cp not in peaks:
+#             peaks.append(cp)
+#             counts.append(sum(depth[max(0, cp - windowSize - 1):min(N, cp + windowSize)]))
+#     peak2count = zip(peaks, counts)
+#     finalPeak2count = []
+#     for peak, count in peak2count:
+#         tpm = (count * 1000000)/allReadCount
+#         if tpm >= tpmPAC:
+#             finalPeak2count.append((peak, count))
+#     finalPeak2count = sorted(finalPeak2count, key=lambda pair: pair[0])
+#     return finalPeak2count
 
-def paCluster_test(readsBedList, distance=20, windowSize=3, outHandle=None, allReadCount=1000000, paSup=5, tpmPAC=10, confidentPaDict=None):
+def paCluster_test(readsBedList, distance=20, windowSize=3, outHandle=None, allReadCount=1000000, paSup=5, rpkmPAC=0, confidentPaDict=None):
     chroms = [i.chrom for i in readsBedList]
     strands = [i.strand for i in readsBedList]
     refGene = Counter([i.otherList[2] for i in readsBedList]).most_common()[0][0]
@@ -1014,6 +1018,7 @@ def paCluster_test(readsBedList, distance=20, windowSize=3, outHandle=None, allR
     if strand == "+":
         sortedPAs = sorted(readsBedList, key=lambda x: x.chromEnd)
         paRange = [sortedPAs[0].chromEnd, sortedPAs[-1].chromEnd]
+        effectiveLength = abs(paRange[0] - paRange[1]) + 1
         depth = np.zeros(paRange[1] - paRange[0] + 1, int)
         depth2reads = {}
         offest = paRange[0]
@@ -1022,10 +1027,11 @@ def paCluster_test(readsBedList, distance=20, windowSize=3, outHandle=None, allR
             if read.chromEnd-offest not in depth2reads:
                 depth2reads[read.chromEnd-offest] = []
             depth2reads[read.chromEnd-offest].append(read.name)
-        finalPeak2Count = getPaPeaks(depth, distance=distance, windowSize=windowSize, paSup=paSup, tpmPAC=tpmPAC, allReadCount=allReadCount)
+        finalPeak2Count = getPAC(depth, distance=distance, windowSize=windowSize, paSup=paSup, rpkmPAC=rpkmPAC, allReadCount=allReadCount, effLen=effectiveLength)
     else:
         sortedPAs = sorted(readsBedList, key=lambda x: x.chromStart)
         paRange = [sortedPAs[0].chromStart, sortedPAs[-1].chromStart]
+        effectiveLength = abs(paRange[0] - paRange[1]) + 1
         depth = np.zeros(paRange[1] - paRange[0] + 1, int)
         depth2reads = {}
         offest = paRange[0]
@@ -1034,7 +1040,7 @@ def paCluster_test(readsBedList, distance=20, windowSize=3, outHandle=None, allR
             if read.chromStart-offest not in depth2reads:
                 depth2reads[read.chromStart-offest] = []
             depth2reads[read.chromStart-offest].append(read.name)
-        finalPeak2Count = getPaPeaks(depth, distance=distance, windowSize=windowSize, paSup=paSup, tpmPAC=tpmPAC, allReadCount=allReadCount)
+        finalPeak2Count = getPAC(depth, distance=distance, windowSize=windowSize, paSup=paSup, rpkmPAC=rpkmPAC, allReadCount=allReadCount, effLen=effectiveLength)
     for peak, count, pac in finalPeak2Count:
         currPaSite = "{}_{}".format(chrom, peak+offest)
         if confidentPaDict:

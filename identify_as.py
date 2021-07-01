@@ -19,6 +19,7 @@ def identify_as(dataObj=None, refParams=None, dirSpec=None, args=None):
     from find_as import find_as
     find_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
     from find_pa import find_pa
-    find_pa(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, confidentPa=args.confidentPa)
+    find_pa(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, confidentPa=args.confidentPa,
+            filterPaByRPKM=args.paRPKM, filterPaByCount=args.pa_support)
     from charaterize_as import charaterize_as
     charaterize_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)

@@ -106,7 +106,7 @@ def find_python(isoformBed, tofuGroupFile, dataObj=None, refParams=None):
                     awk '$9>1 && $11>1{print $5/1000}' NGS/A3SS.{known,novel}.bed6+ | hist.R -p=NGS/A3SS.InclusionRatio.pdf 2>/dev/null
             '''
         subprocess.call(cmd, shell=True, executable="/bin/bash")
-        filterIrByJunc("IR.bed6+", dataObj.ngs_junctions, "IR.NGS.bed12+")
+        filterIrByJunc("PB/IR.bed6+", dataObj.ngs_junctions, "PB/IR.NGS.bed6+")
         makeLink("IR.NGS.bed6+", "PB/IR.confident.bed6+")
         makeLink("SE.NGS.bed12+", "PB/SE.confident.bed12+")
         makeLink("A5SS.NGS.bed6+", "PB/A5SS.confident.bed6+")
