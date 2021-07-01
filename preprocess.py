@@ -252,7 +252,7 @@ def correctWithFmlrc2(dataObj, dirSpec=None, useFmlrc2=True, threads=None):
             makeLink(dataObj.data_processed_location, "rawFlnc.fq")
         cmd = "seqkit seq --rna2dna {} -w 0 > raw.dna.fastq".format(dataObj.data_processed_location)
         subprocess.call(cmd, shell=True)
-        cmd = "fmlrc2 -t {} -C 10 comp_msbwt.npy raw.dna.fastq fmlrc_corrected.fasta 1>{}/{}.fmlrc.log 2>&1".format(
+        cmd = "fmlrc2 -t {} -k 25 59 -C 10 comp_msbwt.npy raw.dna.fastq fmlrc_corrected.fasta 1>{}/{}.fmlrc.log 2>&1".format(
             threads, logDir, sampleName)
         subprocess.call(cmd, shell=True)
         dataObj.data_processed_location = os.path.join(os.getcwd(), "fmlrc_corrected.fasta")

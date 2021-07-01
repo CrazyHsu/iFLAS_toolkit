@@ -15,6 +15,8 @@ def charaterize_as(dataObj=None, refParams=None, dirSpec=None):
     getAnnoASList("../pa/reads.paGrouped.tsv", "PB.APA.lst", PA=True)
 
     if dataObj.ngs_left_reads or dataObj.ngs_right_reads:
+        if dataObj.ngs_junctions == None:
+            dataObj.ngs_junctions = os.path.join(dirSpec.out_dir, projectName, sampleName, "mapping", "rna-seq", "reassembly", "junctions.bed")
         getAnnoASList("../ordinary_as/NGS/SE.bed12+", "NGS.SE.lst")
         getAnnoASList("../ordinary_as/NGS/A5SS.known.bed6+", "NGS.A5SS.lst")
         getAnnoASList("../ordinary_as/NGS/A5SS.PB.bed6+", "NGS.A5SS.lst", append=True, uniq=True)
@@ -36,16 +38,16 @@ def charaterize_as(dataObj=None, refParams=None, dirSpec=None):
         '''
         subprocess.call(cmd, shell=True)
 
-        filterFile(originFile="NGS.SE.lst", targetFile="PB.SE.lst", outFile="PB.specific.SE.lst")
-        filterFile(originFile="NGS.A5SS.lst", targetFile="PB.A5SS.lst", outFile="PB.specific.A5SS.lst")
-        filterFile(originFile="NGS.A3SS.lst", targetFile="PB.A3SS.lst", outFile="PB.specific.A3SS.lst")
+        filterFile(originFile="NGS.SE.lst", targetFile="PB.SE.lst", outFile="PB.specific.SE.lst", mode="e")
+        filterFile(originFile="NGS.A5SS.lst", targetFile="PB.A5SS.lst", outFile="PB.specific.A5SS.lst", mode="e")
+        filterFile(originFile="NGS.A3SS.lst", targetFile="PB.A3SS.lst", outFile="PB.specific.A3SS.lst", mode="e")
 
-        cmd = "seDiagnose.pl -j {} PB.specific.SE.lst > seDiagnose.tsv".format(dataObj.ngs_junctions)
-        subprocess.call(cmd, shell=True)
-        cmd = "anssDiagnose.pl -a 5 -j {} PB.specific.A5SS.lst >a5ssDiagnose.tsv".format(dataObj.ngs_junctions)
-        subprocess.call(cmd, shell=True)
-        cmd = "anssDiagnose.pl -a 3 -j {} PB.specific.A3SS.lst >a3ssDiagnose.tsv".format(dataObj.ngs_junctions)
-        subprocess.call(cmd, shell=True)
+        # cmd = "seDiagnose.pl -j {} PB.specific.SE.lst > seDiagnose.tsv".format(dataObj.ngs_junctions)
+        # subprocess.call(cmd, shell=True)
+        # cmd = "anssDiagnose.pl -a 5 -j {} PB.specific.A5SS.lst >a5ssDiagnose.tsv".format(dataObj.ngs_junctions)
+        # subprocess.call(cmd, shell=True)
+        # cmd = "anssDiagnose.pl -a 3 -j {} PB.specific.A3SS.lst >a3ssDiagnose.tsv".format(dataObj.ngs_junctions)
+        # subprocess.call(cmd, shell=True)
     else:
         makeLink("PB.SE.lst", "confident.SE.lst")
         makeLink("PB.A5SS.lst", "confident.A5SS.lst")

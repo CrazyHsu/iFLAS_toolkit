@@ -312,6 +312,21 @@ def getAS(annoBedRes, novelBedRes, offset=0, reference=0):
                 novelDict[read.chrom][read.strand].append(read)
     return annoDict, novelDict
 
+def filterIrByJunc(irBed, junctionBed, confidentIrBed):
+    juncDict = {}
+    with open(junctionBed) as f:
+        for line in f.readlines():
+            juncDict.update({Junction(line.strip("\n")).jPos: ""})
+
+    out = open(confidentIrBed, "w")
+    with open(irBed) as f:
+        for line in f.readlines():
+            infoList = line.strip("\n").split("\t")
+            juncPos = "{}:{}-{}".format(infoList[0], infoList[1], infoList[2])
+            if juncPos in juncDict:
+                print >> out, line.strip("\n")
+    out.close()
+
 def getPaCluster(readsBed=None, tofuGroup=None, filterByCount=0, threads=None, paClusterOut=None, paDist=20, windowSize=5, tpmPAC=10, confidentPa=None):
     gene2reads = {}
     readsDict = BedFile(readsBed, type="bed12+").reads
@@ -328,8 +343,9 @@ def getPaCluster(readsBed=None, tofuGroup=None, filterByCount=0, threads=None, p
         with open(confidentPa) as f:
             for i in f.readlines():
                 infoList = i.strip("\n").split("\t")
-                paSite = "{}_{}".format(infoList[0], infoList[2])
-                confidentPaDict.update({paSite: ""})
+                for x in xrange(max(0, int(infoList[2])-paDist-1), int(infoList[2])+paDist):
+                    paSite = "{}_{}".format(infoList[0], x)
+                    confidentPaDict.update({paSite: ""})
     outHandle = open(paClusterOut, "w")
     for z in gene2reads:
         if filterByCount:
@@ -879,6 +895,86 @@ def motifAroundPA(bed6plus=None, up1=100, down1=100, up2=100, down2=100, refFast
                 print >>sixNucleotideOut, "\t".join(map(str, [j + 1, downPercent[j]]))
             sixNucleotideOut.close()
 
+def getPAC(depth, distance=20, windowSize=2, paSup=5, tpmPAC=10, allReadCount=1000000):
+    N = len(depth)
+    # peaks = []
+    # counts = []
+    currPeaks = np.zeros(len(depth))
+    for i in xrange(N):
+        if np.sum(depth[max(0, i - windowSize - 1):min(N, i + windowSize)]) >= paSup:
+            currPeaks[i] = depth[i] * 2 + np.mean(depth[max(0, i - windowSize - 1):min(N, i + windowSize)])
+            # currPeaks[i] = sum(depth[max(0, i - windowSize - 1):min(N, i + windowSize)])
+    currPeaksBak = copy.copy(currPeaks)
+    pacDict = {}
+    count = 0
+    while np.max(currPeaks):
+        cp = np.argmax(currPeaks)
+        overlapFlag = 0
+        maxDiff = 1000000
+        closestPAC = ""
+        for pac in pacDict:
+            if isOverlap((cp-distance-1, cp+distance), (min(pacDict[pac]), max(pacDict[pac]))):
+                overlapFlag = 1
+                diff2pac = min(abs(cp - min(pacDict[pac])), abs(cp - max(pacDict[pac])))
+                if diff2pac < maxDiff:
+                    maxDiff = diff2pac
+                    closestPAC = pac
+        if overlapFlag:
+            pacDict[closestPAC].append(cp)
+        else:
+            count += 1
+            pacName = "PAC_{}".format(count)
+            pacDict[pacName] = [cp]
+        currPeaks[cp] = 0
+
+    newPacDict = {pacDict.keys()[0]: copy.copy(pacDict[pacDict.keys()[0]])}
+    for pac1 in pacDict.keys()[1:]:
+        pac1Start = min(pacDict[pac1])
+        pac1End = max(pacDict[pac1])
+        for pac2 in newPacDict:
+            pac2Start = min(newPacDict[pac2])
+            pac2End = max(newPacDict[pac2])
+            if isOverlap((pac1Start-distance-1, pac1End+distance), (pac2Start, pac2End)):
+                newPacDict[pac2].extend(pacDict[pac1])
+                break
+        else:
+            newPacDict[pac1] = copy.copy(pacDict[pac1])
+
+    finalPeak2Count = []
+    for pac in newPacDict:
+        peak = np.argmax(currPeaksBak[newPacDict[pac]])
+        count = sum(depth[newPacDict[pac]])
+        tpm = (count * 1000000) / allReadCount
+        if tpm >= tpmPAC:
+            finalPeak2Count.append((peak, count, newPacDict[pac]))
+    finalPeak2Count = sorted(finalPeak2Count, key=lambda pair: pair[1])
+    return finalPeak2Count
+
+    # while True:
+    #     currPeaks = np.zeros(len(depth))
+    #     for i in xrange(N):
+    #         for c in peaks:
+    #             if i <= c and c - i + 1 < distance or \
+    #                     i >= c and i - c + 1 < distance:
+    #                 break
+    #         else:
+    #             if np.sum(depth[max(0, i - windowSize - 1):min(N, i + windowSize)]) >= paSup:
+    #                 currPeaks[i] = sum(depth[max(0, i - windowSize - 1):min(N, i + windowSize)])
+    #     if np.max(currPeaks) == 0:
+    #         break
+    #     cp = np.argmax(currPeaks)
+    #     if cp not in peaks:
+    #         peaks.append(cp)
+    #         counts.append(sum(depth[max(0, cp - windowSize - 1):min(N, cp + windowSize)]))
+    # peak2count = zip(peaks, counts)
+    # finalPeak2count = []
+    # for peak, count in peak2count:
+    #     tpm = (count * 1000000) / allReadCount
+    #     if tpm >= tpmPAC:
+    #         finalPeak2count.append((peak, count))
+    # finalPeak2count = sorted(finalPeak2count, key=lambda pair: pair[0])
+    # return finalPeak2count
+
 def getPaPeaks(depth, distance=20, windowSize=3, paSup=5, tpmPAC=10, allReadCount=1000000):
     N = len(depth)
     peaks = []
@@ -939,12 +1035,19 @@ def paCluster_test(readsBedList, distance=20, windowSize=3, outHandle=None, allR
                 depth2reads[read.chromStart-offest] = []
             depth2reads[read.chromStart-offest].append(read.name)
         finalPeak2Count = getPaPeaks(depth, distance=distance, windowSize=windowSize, paSup=paSup, tpmPAC=tpmPAC, allReadCount=allReadCount)
-    for pos, count in finalPeak2Count:
-        currPaSite = "{}_{}".format(chrom, pos+offest)
-        if confidentPaDict and currPaSite not in confidentPaDict: continue
-        readNames = list(itertools.chain.from_iterable([depth2reads[x] for x in range(pos-windowSize-1, pos+windowSize)]))
-        print >> outHandle, "\t".join(map(str, [chrom, offest + pos-1, offest + pos, ",".join(readNames),
-                                                len(readNames), strand, offest + pos-1, offest + pos, refGene]))
+    for peak, count, pac in finalPeak2Count:
+        currPaSite = "{}_{}".format(chrom, peak+offest)
+        if confidentPaDict:
+            if currPaSite not in confidentPaDict:
+                annotation = "Known"
+            else:
+                annotation = "Novel"
+        else:
+            annotation = "Unknown"
+        readNames = list(itertools.chain.from_iterable([depth2reads[x] for x in pac if x in depth2reads]))
+        print >> outHandle, "\t".join(map(str, [chrom, offest + min(pac), offest + max(pac), ",".join(readNames),
+                                                len(readNames), strand, offest + peak-1, offest + peak, refGene,
+                                                annotation]))
 
 
 def paCluster(readsBedList, distance=20, windowSize=3, manner="mode", outHandle=None, allReadCount=1000000):

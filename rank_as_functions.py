@@ -222,10 +222,10 @@ import itertools
 #             ",".join(map(str, [combination2iso[x]["freq"] for x in identifiedComb])), \
 #             len(list(set(identifiedComb))), len(list(set(allReads))), majorCombCount, ";".join([",".join(x) for x in isoList])]))
 
-def scoreAsIsoform(irFile, seFile, a3ssFile, a5ssFile, paFile, isoformFile, collapsedTrans2reads, novelIsoformFile):
+def scoreAsIsoform(irFile, seFile, a3ssFile, a5ssFile, paFile, isoformFile, collapsedTrans2reads, annoIsoformFile):
     # isoform2reads = {}
     isoform2reads = getDictFromFile(collapsedTrans2reads, sep="\t", inlineSep=",", valueCol=2)
-    novelIsoformDict = getDictFromFile(novelIsoformFile, sep="\t", keyCol=4)
+    annoIsoformDict = getDictFromFile(annoIsoformFile, sep="\t", keyCol=4)
     # with open(isoform2readsFile) as f:
     #     for line in f.readlines():
     #         isoform, reads = line.strip("\n").split("\t")
@@ -461,7 +461,15 @@ def scoreAsIsoform(irFile, seFile, a3ssFile, a5ssFile, paFile, isoformFile, coll
                     for x in combination2iso:
                         if combination2iso[x]["iso"] == item[0]:
                             simFreq = combination2iso[x]["freq"]
-                    annotation = "Novel" if item[0][0] in novelIsoformDict else "Annotated"
+                    annoFlag = 0
+                    for i in item[0]:
+                        if i in annoIsoformDict:
+                            annoFlag = 1
+                            break
+                    if annoFlag == 1:
+                        annotation = "Annotated"
+                    else:
+                        annotation = "Novel"
                     print >>isoformScoreOut, "\t".join(map(str, [geneName, ",".join(item[0]), item[1], len(set(allReads)),
                                                                  float(item[1])/len(set(allReads)), simFreq, annotation]))
     asEnumerateOut.close()
@@ -477,17 +485,18 @@ def getIsoTPM(quant_sf):
             iso2tpmDict.update({iso: float(tpm)})
     return iso2tpmDict
 
-def quantIsoformWithSalmon(isoformScoreFile, isoformFile, dataObj, refParams, dirSpec):
+def quantIsoformWithSalmon(isoformScoreFile, isoformFile, collapsedTrans2reads, dataObj, refParams, dirSpec):
+    isoform2reads = getDictFromFile(collapsedTrans2reads, sep="\t", inlineSep=",", valueCol=2)
     representIsoOut = open("representIso.bed", "w")
     with open(isoformScoreFile) as f:
         isoformBed = BedFile(isoformFile, type="bed12+").reads
         for line in f.readlines():
             isoforms = line.strip("\n").split("\t")[1]
             repIsoName = ""
-            maxIsoLength = 0
+            maxCount = 0
             for x in isoforms.split(","):
-                if getBlockLength(isoformBed[x].exons) > maxIsoLength:
-                    maxIsoLength = getBlockLength(isoformBed[x].exons)
+                if len(isoform2reads[x]) > maxCount:
+                    maxCount = len(isoform2reads[x])
                     repIsoName = x
             repIso = copy.copy(isoformBed[x])
             repIso.name = isoforms
@@ -498,7 +507,7 @@ def quantIsoformWithSalmon(isoformScoreFile, isoformFile, dataObj, refParams, di
     subprocess.call(cmd, shell=True, executable="/bin/bash")
 
     logDir = os.path.join(dirSpec.out_dir, dataObj.project_name, dataObj.sample_name, "log")
-    cmd = "salmon index -t representIso.fa -i representIso_index -p {} 1>{}/salmon.index.log 2>&1".format(dataObj.single_run_threads, logDir)
+    cmd = "salmon index -t representIso.fa -i representIso_index --keepDuplicates -p {} 1>{}/salmon.index.log 2>&1".format(dataObj.single_run_threads, logDir)
     subprocess.call(cmd, shell=True)
 
     from preprocess import renameNGSdata2fastp, processRnaseq
@@ -552,14 +561,14 @@ def quantIsoformWithSalmon(isoformScoreFile, isoformFile, dataObj, refParams, di
 # seFile = "/home/xufeng/xufeng/iso-seq/iFLAS_toolkit/test_data/Zm00001d050245.SE.PB.bed12+"
 # a3ssFile = "/home/xufeng/xufeng/iso-seq/iFLAS_toolkit/test_data/Zm00001d050245.A3SS.PB.bed6+"
 # a5ssFile = "/home/xufeng/xufeng/iso-seq/iFLAS_toolkit/test_data/Zm00001d050245.A5SS.PB.bed6+"
-# paFile = "/home/xufeng/xufeng/iso-seq/iFLAS_toolkit/test_data/test.pa"
+# paFile = "/home/xufeng/xufeng/iso-seq/iFLAS_toolkit/test_data/test.py.pa"
 # isoformFile = "/home/xufeng/xufeng/iso-seq/iFLAS_toolkit/test_data/Zm00001d050245.deSingleExonIsoform.bed12+"
 # isoform2readsFile = "/home/xufeng/xufeng/iso-seq/iFLAS_toolkit/test_data/tofu.collapsed.group.txt"
 #
 irFile = "/home/xufeng/xufeng/iso-seq/iFLAS_toolkit/test_data/Zm00001d050929.IR.bed6+"
-seFile = "/home/xufeng/xufeng/iso-seq/iFLAS_toolkit/test_data/test.pa"
-a3ssFile = "/home/xufeng/xufeng/iso-seq/iFLAS_toolkit/test_data/test.pa"
-a5ssFile = "/home/xufeng/xufeng/iso-seq/iFLAS_toolkit/test_data/test.pa"
-paFile = "/home/xufeng/xufeng/iso-seq/iFLAS_toolkit/test_data/test.pa"
+seFile = "/home/xufeng/xufeng/iso-seq/iFLAS_toolkit/test_data/test.py.pa"
+a3ssFile = "/home/xufeng/xufeng/iso-seq/iFLAS_toolkit/test_data/test.py.pa"
+a5ssFile = "/home/xufeng/xufeng/iso-seq/iFLAS_toolkit/test_data/test.py.pa"
+paFile = "/home/xufeng/xufeng/iso-seq/iFLAS_toolkit/test_data/test.py.pa"
 isoformFile = "/home/xufeng/xufeng/iso-seq/iFLAS_toolkit/test_data/PB.7806.bed12+"
 collapsedTrans2reads = "/home/xufeng/xufeng/iso-seq/iFLAS_toolkit/test_data/PB.7806.collapsed.group.txt"

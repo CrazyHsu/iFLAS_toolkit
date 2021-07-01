@@ -19,8 +19,8 @@ plotReadsCorrectedEvalStr = '''
         correctMapped$type <- "Corrected"
         pdf(outPdf)
         p <- ggplot(rbind(rawMapped,correctMapped), aes(x=accuracy, fill=type)) + 
-        geom_histogram(alpha=0.6, position = 'identity', binwidth=2) + 
-        scale_fill_manual(values=c("#69b3a2", "#404080")) + 
+        geom_histogram(alpha=0.6, position = 'identity', binwidth=1) + 
+        scale_fill_manual(values=c("#ff6666", "#C0C0C0")) + 
         ggtitle("Reads Correction Evaluation") + xlab("Accuracy (%)") + 
         theme_bw() + 
         theme(plot.title = element_text(hjust = 0.5, size=20), text = element_text(size=12), 
@@ -610,7 +610,7 @@ plotPaTailAsStructure <- function(sigFile, outPdf){
     data <- read.csv(inFile, sep="\t", header=FALSE, stringsAsFactors=FALSE)
     data <- data[!duplicated(data), ]
     data[, 14] <- as.factor(data[, 14])
-    pdf(outPdf)
+    pdf(outPdf, useDingbats=FALSE)
     for (i in levels(data[, 14])){
         subData <- data[data[, 14] == i, ]
         groupInfo <- subData[, 15]

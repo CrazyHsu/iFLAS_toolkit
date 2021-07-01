@@ -77,18 +77,18 @@ def filterByJunc(bedFile=None, refBedFile=None, juncBedFile=None, maxIntronLen=5
     return os.path.join(os.getcwd(), "filterReads.lst")
 
 def mappingFilterAndAddTags(samFile=None, outPrefix="flnc", maxLength=50000, refBedFile=None, juncBedFile=None, threads=10, juncCombSup=2):
+    cmd = '''samAddTag.pl --checkHardClip --coverage --identity --u unmmaped.sam {} 2> lengthInconsistent.sam | 
+        sam2bed.pl -t CV,ID > {}.addCVandID.bed12+ 2>/dev/null'''.format(samFile, outPrefix)
+    subprocess.call(cmd, shell=True)
     cmd = "bamToBed -i <(samtools view -bS {}) -bed12 > tmp.bed12".format(samFile)
     subprocess.call(cmd, shell=True, executable="/bin/bash")
     filteredReads = filterByJunc(bedFile="tmp.bed12", refBedFile=refBedFile, juncBedFile=juncBedFile, maxIntronLen=maxLength, juncCombSupportN=juncCombSup)
     cmd = '''(samtools view -H {}; filter.pl -o {} {} -m i) > tmp.sam'''.format(samFile, filteredReads, samFile)
     subprocess.call(cmd, shell=True, executable="/bin/bash")
     cmd = '''(samtools view -H tmp.sam; samtools view -f 16 -F 4079 tmp.sam; samtools view -f 0 -F 4095 tmp.sam) | 
-        samAddTag.pl --checkHardClip --coverage --identity 2>lengthInconsistent.sam |
         samtools sort -@ {} --output-fmt SAM > {}.mm2.sam'''.format(threads, outPrefix)
     subprocess.call(cmd, shell=True, executable="/bin/bash")
-    cmd = "sam2bed.pl -t CV,ID {}.mm2.sam > {}.addCVandID.bed12+".format(outPrefix, outPrefix)
-    subprocess.call(cmd, shell=True)
-    cmd = "samtools view -@ {} -bS {}.mm2.sam > {}.mm2.sorted.bam".format(threads, outPrefix, outPrefix)
+    cmd = "samtools view -bS {}.mm2.sam > {}.mm2.sorted.bam".format(threads, outPrefix, outPrefix)
     subprocess.call(cmd, shell=True)
     removeFiles(os.getcwd(), ["tmp.bed12", "tmp.sam"])
 
@@ -139,6 +139,8 @@ def minimap2mapping(dataObj=None, minimap2Params=None, refParams=None, dirSpec=N
     subprocess.call(cmd, shell=True)
     if dataObj.ngs_junctions == None and (dataObj.ngs_right_reads or dataObj.ngs_left_reads):
         dataObj.ngs_junctions = os.path.join(baseDir, "mapping", "rna-seq", "reassembly", "junctions.bed")
+    cmd = "samtools view -h -q 1 flnc.mm2.sam | samtools sort -@ {} --output-fmt SAM > flnc.unfiltered.mm2.sam 2>/dev/null".format(threads)
+    subprocess.call(cmd, shell=True)
     mappingFilterAndAddTags(samFile="flnc.mm2.sam", outPrefix="flnc", maxLength=minimap2Params.max_intron_length,
                             refBedFile=refParams.ref_bed, juncBedFile=dataObj.ngs_junctions, threads=threads,
                             juncCombSup=juncCombSup)
@@ -243,7 +245,8 @@ def mapping(dataObj=None, minimap2Params=None, refParams=None, dirSpec=None, thr
             subprocess.call(cmd, shell=True)
             if dataObj.use_fmlrc2 and useFmlrc2:
                 from preprocess import correctWithFmlrc2
-                correctWithFmlrc2(dataObj, dirSpec=dirSpec, useFmlrc2=True, threads=dataObj.single_run_threads)
+                # correctWithFmlrc2(dataObj, dirSpec=dirSpec, useFmlrc2=True, threads=dataObj.single_run_threads)
+                dataObj.data_processed_location = os.path.join(dirSpec.out_dir, projectName, sampleName, "preprocess", "fmlrc", "fmlrc_corrected.fasta")
             minimap2mapping(dataObj=dataObj, minimap2Params=minimap2Params, refParams=refParams, dirSpec=dirSpec,
                             threads=threads, juncCombSup=juncCombSup)
         elif isinstance(dataObj.data_processed_location, basestring):

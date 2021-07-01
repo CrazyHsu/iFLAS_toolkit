@@ -592,9 +592,9 @@ def allelic_specific_exp(dataObj=None, refParams=None, dirSpec=None, refFa=None,
     ##################
     isoformFile = os.path.join(dirSpec.out_dir, projectName, sampleName, "refine", "isoformGrouped.bed12+")
     refFa, altFa, haplo2flncCount = getHaploIsoformSeq(lociDir, isoformFile, refParams.ref_genome, refFa=refFa, altFa=altFa)
-    cmd = "salmon index -t {} -i ref_salmon_index -p {} 2>{}/alleleAS.ref_index.log".format(refFa, dataObj.single_run_threads, logDir)
+    cmd = "salmon index -t {} -i ref_salmon_index --keepDuplicates -p {} 2>{}/alleleAS.ref_index.log".format(refFa, dataObj.single_run_threads, logDir)
     subprocess.call(cmd, shell=True)
-    cmd = "salmon index -t {} -i alt_salmon_index -p {} 2>{}/alleleAS.ref_index.log".format(altFa, dataObj.single_run_threads, logDir)
+    cmd = "salmon index -t {} -i alt_salmon_index --keepDuplicates -p {} 2>{}/alleleAS.ref_index.log".format(altFa, dataObj.single_run_threads, logDir)
     subprocess.call(cmd, shell=True)
 
     if dataObj.ngs_reads_paired == "paired":
@@ -687,7 +687,7 @@ def allelic_specific_exp(dataObj=None, refParams=None, dirSpec=None, refFa=None,
         else:
             raise Exception("The NGS data seem not to be single, please check it")
 
-
+    print getCurrentTime() + " Identify allelic-specific expression genes for project {} sample {} done!".format(projectName, sampleName)
     os.chdir(prevDir)
 
 def allelic(dataObj=None, refParams=None, dirSpec=None, args=None):

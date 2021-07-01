@@ -83,8 +83,9 @@ def reportReadsContentEval(dataObj=None, refParams=None, dirSpec=None):
     subprocess.call(cmd, shell=True)
 
     dataObj.ngsJunctions = os.path.join(dirSpec.out_dir, dataObj.project_name, dataObj.sample_name, "mapping", "rna-seq", "reassembly", "junctions.bed")
-    cmd = '''awk '$10>1' isoforms.assigned.unambi.bed12+ | bed2gpe.pl | transSupportByJunction.pl -j {} >supportedByRNAseq.tsv 2>supportedByRNAseq.summary'''.format(
-        dataObj.ngsJunctions)
+    isoformBed = os.path.join(dirSpec.out_dir, dataObj.project_name, dataObj.sample_name, "refine", "isoformGrouped.bed12+")
+    cmd = '''awk '$10>1' {} | bed2gpe.pl | transSupportByJunction.pl -j {} >supportedByRNAseq.tsv 2>supportedByRNAseq.summary'''.format(
+        isoformBed, dataObj.ngsJunctions)
     subprocess.call(cmd, shell=True, executable="/bin/bash")
     cmd = '''awk 'BEGIN{OFS="\t"}{print $1,$2,$4/$3}' supportedByRNAseq.summary | summary2d.R -binWidthX=0.9999999 -binWidthY=0.9999999 -x='Junction Count of PacBio Reads' -y='Supported Junction Count' -fL=gray -fH=red -w=12 -p=supportedByRNAseq.pdf'''
     subprocess.call(cmd, shell=True, executable="/bin/bash")

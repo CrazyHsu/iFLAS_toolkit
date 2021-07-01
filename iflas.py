@@ -92,7 +92,7 @@ def oneCommandRunWrapped(dataObj, dataToProcess, refParams, minimap2Params, coll
     refineJunc(dataObj, refParams, dirSpec, args.refine, args.adjust)
 
     from identify_as import identify_as
-    identify_as(dataObj, refParams, dirSpec)
+    identify_as(dataObj, refParams, dirSpec, args)
 
     from visual_as import visual_as
     targetGenes = args.genes
@@ -232,7 +232,7 @@ def splitCommandRun(args, dataToProcess, refInfoParams, dirSpec, ccsParams, mini
                         # from find_charaterize_as_functions import *
                         from identify_as import identify_as
                         # identify_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
-                        pool.apply_async(identify_as, (dataObj, refParams, dirSpec))
+                        pool.apply_async(identify_as, (dataObj, refParams, dirSpec, args))
                     if args.command == 'visual_as':
                         from visual_as import visual_as
                         targetGenes = args.genes
@@ -240,7 +240,7 @@ def splitCommandRun(args, dataToProcess, refInfoParams, dirSpec, ccsParams, mini
                         pool.apply_async(visual_as, (dataObj, targetGenes, refParams, dirSpec))
                     if args.command == 'rank_as':
                         from rank_as import rank_as
-                        # rank_as(dataObj=dataObj, dirSpec=dirSpec)
+                        # rank_as(dataObj=dataObj, dirSpec=dirSpec, refParams=refParams)
                         pool.apply_async(rank_as, (dataObj, dirSpec, refParams))
                     if args.command == 'allelic_as':
                         from allelic_as import allelic
@@ -299,7 +299,7 @@ def splitCommandRun(args, dataToProcess, refInfoParams, dirSpec, ccsParams, mini
                 # from find_charaterize_as_functions import *
                 from identify_as import identify_as
                 # identify_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
-                pool.apply_async(identify_as, (dataObj, refParams, dirSpec))
+                pool.apply_async(identify_as, (dataObj, refParams, dirSpec, args))
             if args.command == 'visual_as':
                 from visual_as import visual_as
                 targetGenes = args.genes
@@ -307,7 +307,7 @@ def splitCommandRun(args, dataToProcess, refInfoParams, dirSpec, ccsParams, mini
                 pool.apply_async(visual_as, (dataObj, targetGenes, refParams, dirSpec))
             if args.command == 'rank_as':
                 from rank_as import rank_as
-                # rank_as(dataObj=dataObj, dirSpec=dirSpec)
+                # rank_as(dataObj=dataObj, dirSpec=dirSpec, refParams=refParams)
                 pool.apply_async(rank_as, (dataObj, dirSpec, refParams))
             if args.command == 'allelic_as':
                 from allelic_as import allelic

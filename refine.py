@@ -328,20 +328,60 @@ def identifyNovelIsoformsByJunctions(gpeFile, bedFile, anno="annoIsoform.bed", n
     novelOut = open(novel, "w")
     gpeObj = GenePredObj(gpeFile, bincolumn=False)
     bedObj = BedFile(bedFile, type="bed12+")
+    knownJuncDict = {}
+    for gene in gpeObj.geneName2gpeObj:
+        for trans in gpeObj.geneName2gpeObj[gene]:
+            chrom = trans.chrom
+            if len(trans.introns) == 0:
+                if "monoExon" not in knownJuncDict:
+                    knownJuncDict["monoExon"] = {chrom: [(trans.txStart, trans.txEnd)]}
+                elif chrom not in knownJuncDict["monoExon"]:
+                    knownJuncDict["monoExon"][chrom] = [(trans.txStart, trans.txEnd)]
+                else:
+                    knownJuncDict["monoExon"][chrom].append((trans.txStart, trans.txEnd))
+            else:
+                transIntronsChain = chrom + ":" + ";".join(map(lambda x: str(trans.introns[x][0])+"-"+str(trans.introns[x][1]), range(len(trans.introns))))
+                if transIntronsChain not in knownJuncDict:
+                    knownJuncDict[transIntronsChain] = ''
     for i in bedObj.reads:
-        bedGene = bedObj.reads[i].otherList[0]
         readsIntrons = bedObj.reads[i].introns
-        if len(readsIntrons) < 1: continue
-        if bedGene in gpeObj.geneName2gpeObj:
-            for trans in gpeObj.geneName2gpeObj[bedGene]:
-                transIntrons = trans.introns
-                if not len(set(readsIntrons) - set(transIntrons)):
-                    print >> annoOut, bedObj.reads[i]
-                    break
+        chrom = bedObj.reads[i].chrom
+        if len(readsIntrons) == 0:
+            readStart = bedObj.reads[i].chromStart
+            readEnd = bedObj.reads[i].chromEnd
+            if chrom not in knownJuncDict["monoExon"]:
+                print >> novelOut, bedObj.reads[i]
+            else:
+                for txStart, txEnd in knownJuncDict["monoExon"][chrom]:
+                    if isOverlap((txStart, txEnd), (readStart, readEnd)):
+                        overlapLen = getBlockLength(getOverlapOfTuple([(10, 50)], [(20, 60)]))
+                        if float(overlapLen)/getBlockLength([(txStart, txEnd)]) >= 0.5:
+                            print >> annoOut, bedObj.reads[i]
+                            break
+                else:
+                    print >> novelOut, bedObj.reads[i]
+        else:
+            readsIntronsChain = chrom + ":" + ";".join(map(lambda x: str(readsIntrons[x][0])+"-"+str(readsIntrons[x][1]), range(len(readsIntrons))))
+            if readsIntronsChain in knownJuncDict:
+                print >> annoOut, bedObj.reads[i]
             else:
                 print >> novelOut, bedObj.reads[i]
-        else:
-            print >> novelOut, bedObj.reads[i]
+    # annoOut.close()
+    # novelOut.close()
+    # for i in bedObj.reads:
+    #     bedGene = bedObj.reads[i].otherList[0]
+    #     readsIntrons = bedObj.reads[i].introns
+    #     if len(readsIntrons) < 1: continue
+    #     if bedGene in gpeObj.geneName2gpeObj:
+    #         for trans in gpeObj.geneName2gpeObj[bedGene]:
+    #             transIntrons = trans.introns
+    #             if not len(set(readsIntrons) - set(transIntrons)):
+    #                 print >> annoOut, bedObj.reads[i]
+    #                 break
+    #         else:
+    #             print >> novelOut, bedObj.reads[i]
+    #     else:
+    #         print >> novelOut, bedObj.reads[i]
     annoOut.close()
     novelOut.close()
 

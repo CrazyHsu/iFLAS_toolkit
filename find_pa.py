@@ -40,7 +40,7 @@ def find_pa(dataObj=None, refParams=None, dirSpec=None, filterPaByCount=5, confi
     # pa(polish_flnc_cluster="clustered_unclustered.merged_report.csv", bed12="target.transcript.correlated.flnc.sorted.bed12+",
     #    tofu_group="tofu.collapsed.group.txt", threads=refParams.threads, out="paCluster.bed8+")
     getPaCluster(readsBed="reads.assigned.unambi.bed12+", tofuGroup="tofu.collapsed.group.txt",
-                 threads=dataObj.single_run_threads, paClusterOut="paCluster.bed8+", paDist=24, windowSize=3,
+                 threads=dataObj.single_run_threads, paClusterOut="paCluster.bed8+", paDist=24, windowSize=2,
                  tpmPAC=10, filterByCount=filterPaByCount, confidentPa=confidentPa)
     # cmd = '''awk '$5>1{print $3-$2}' paCluster.bed8+ |
     #          distrCurve.R -d -x='Cluster Size (limited in 1-100)' -y='Density' -m='Distribution of Cluster Size' -x1=0 -x2=100 -b=1 -p=paClusterSize.pdf 2>/dev/null
@@ -55,8 +55,10 @@ def find_pa(dataObj=None, refParams=None, dirSpec=None, filterPaByCount=5, confi
     # paBed6.close()
     cmd = "paGroup.pl isoformGrouped.bed12+ >isoform.paGrouped.tsv 2>isoform.paGrouped.bed6"
     subprocess.call(cmd, shell=True)
-    cmd = '''3endRevise.pl -p paCluster.bed8+ <(cut -f 1-12,15 reads.assigned.unambi.bed12+) | tee reads.3endRevised.bed12+ | paGroup.pl >reads.paGrouped.tsv 2>reads.paGrouped.bed6'''
+    cmd = '''3endRevise.pl -p <(awk 'OFS="\t"{print $1,$7,$8,$4}' paCluster.bed8+) <(cut -f 1-12,15 reads.assigned.unambi.bed12+) > reads.3endRevised.bed12+'''
     subprocess.call(cmd, shell=True, executable="/bin/bash")
+    cmd = '''cut -f 4 paCluster.bed8+ | tr ',' '\n' | filter.pl -o - reads.3endRevised.bed12+ -2 4 -m i | paGroup.pl >reads.paGrouped.tsv 2>reads.paGrouped.bed6'''
+    subprocess.call(cmd, shell=True)
 
     # cmd = "PAClassbyRead.pl -a reads.assigned.unambi.bed12+ <(cut -f1-8 paCluster.bed8+) >paCluster.type.bed8+ 2>singleExonReadWithExonInMEread.bed12+"
     # subprocess.call(cmd, shell=True, executable="/bin/bash")
