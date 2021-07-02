@@ -46,18 +46,18 @@ def find_pa(dataObj=None, refParams=None, dirSpec=None, filterPaByRPKM=0, filter
     #          distrCurve.R -d -x='Cluster Size (limited in 1-100)' -y='Density' -m='Distribution of Cluster Size' -x1=0 -x2=100 -b=1 -p=paClusterSize.pdf 2>/dev/null
     # '''
     # subprocess.call(cmd, shell=True)
-    # paBed6 = open("PA.bed6+", "w")
-    # with open("paCluster.bed8+") as f:
-    #     for line in f.readlines():
-    #         lineInfo = line.strip("\n").split("\t")
-    #         if int(lineInfo[4]) >= filterPaByCount:
-    #             print >> paBed6, "\t".join(map(str, [lineInfo[0], lineInfo[6], lineInfo[7]] + lineInfo[3:6] + lineInfo[9:]))
-    # paBed6.close()
+    paBed6 = open("PA.bed6+", "w")
+    with open("paCluster.bed8+") as f:
+        for line in f.readlines():
+            lineInfo = line.strip("\n").split("\t")
+            if int(lineInfo[4]) >= filterPaByCount:
+                print >> paBed6, "\t".join(map(str, [lineInfo[0], lineInfo[6], lineInfo[7]] + lineInfo[3:6] + lineInfo[9:]))
+    paBed6.close()
     cmd = "paGroup.pl isoformGrouped.bed12+ >isoform.paGrouped.tsv 2>isoform.paGrouped.bed6"
     subprocess.call(cmd, shell=True)
-    cmd = '''3endRevise.pl -p <(awk 'OFS="\t"{print $1,$7,$8,$4}' paCluster.bed8+) <(cut -f 1-12,15 reads.assigned.unambi.bed12+) > reads.3endRevised.bed12+'''
+    cmd = '''3endRevise.pl -p PA.bed6+ <(cut -f 1-12,15 reads.assigned.unambi.bed12+) > reads.3endRevised.bed12+'''
     subprocess.call(cmd, shell=True, executable="/bin/bash")
-    cmd = '''cut -f 4 paCluster.bed8+ | tr ',' '\n' | filter.pl -o - reads.3endRevised.bed12+ -2 4 -m i | paGroup.pl >reads.paGrouped.tsv 2>reads.paGrouped.bed6'''
+    cmd = '''cut -f 4 PA.bed6+ | tr ',' '\n' | filter.pl -o - reads.3endRevised.bed12+ -2 4 -m i | paGroup.pl >reads.paGrouped.tsv 2>reads.paGrouped.bed6'''
     subprocess.call(cmd, shell=True)
 
     # cmd = "PAClassbyRead.pl -a reads.assigned.unambi.bed12+ <(cut -f1-8 paCluster.bed8+) >paCluster.type.bed8+ 2>singleExonReadWithExonInMEread.bed12+"
@@ -76,7 +76,7 @@ def find_pa(dataObj=None, refParams=None, dirSpec=None, filterPaByRPKM=0, filter
     # singleExon.close()
 
     resolveDir("motif")
-    motifAroundPA("../paCluster.bed8+", up1=100, down1=100, up2=50, down2=0, refFasta=refParams.ref_genome, chrLenFile=refParams.ref_size)
+    motifAroundPA("../PA.bed6+", up1=100, down1=100, up2=50, down2=0, refFasta=refParams.ref_genome, chrLenFile=refParams.ref_size)
 
     cmd = '''lines.R -w=15 -y=Frequency -x='Distance Relative to PA' -m='Distribution of Nucleotide Frequency around PA' -p=nucleotide.pdf *.nucleotide 2>/dev/null'''
     subprocess.call(cmd, shell=True)

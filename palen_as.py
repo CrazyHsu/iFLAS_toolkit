@@ -198,7 +198,7 @@ def getPalenAPA(paClusterBed, flncReads2Palen, filterByCount, palenAPA):
             reads = infoList[3].split(",")
             if len(reads) < filterByCount: continue
             gene = infoList[8]
-            paSite = "{}_{}".format(infoList[0], infoList[7])
+            paSite = "{}_{}".format(infoList[0], infoList[3])
             if gene not in gene2paReads:
                 gene2paReads[gene] = {paSite: reads}
             else:
@@ -276,7 +276,7 @@ def palen_as(dataObj=None, refParams=None, dirSpec=None, filterByCount=10, dataT
 
     print getCurrentTime() + " Identify functional poly(A) tail length related to APA for project {} sample {}...".format(projectName, sampleName)
     resolveDir(os.path.join(baseDir, "palenAS", "palenAPA"))
-    paClusterBed = os.path.join(baseDir, "as_events", "pa", "paCluster.bed8+")
+    paClusterBed = os.path.join(baseDir, "as_events", "pa", "PA.bed6+")
     palenAPA = "apaRelatedPalen.txt"
     getPalenAPA(paClusterBed, flncReads2Palen, filterByCount, palenAPA)
     os.chdir(prevDir)
@@ -309,7 +309,7 @@ def palen_apa(dataObj=None, refParams=None, dirSpec=None, filterByCount=10, data
     palen = pd.concat([pd.read_csv(x, sep="\t", dtype={"contig": "string"}) for x in palenFileList])
     palen_pass = palen.loc[palen.qc_tag == "PASS", ]
     flncReads2Palen = dict(zip(palen_pass.readname, palen_pass.polya_length))
-    paClusterBed = os.path.join(baseDir, "as_events", "pa", "paCluster.bed8+")
+    paClusterBed = os.path.join(baseDir, "as_events", "pa", "PA.bed6+")
     palenAPA = "apaRelatedPalen.txt"
     getPalenAPA(paClusterBed, flncReads2Palen, filterByCount, palenAPA)
 
