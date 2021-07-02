@@ -901,8 +901,8 @@ def getPAC(depth, distance=20, windowSize=2, paSup=5, rpkmPAC=0, allReadCount=10
     # counts = []
     currPeaks = np.zeros(len(depth))
     for i in xrange(N):
-        if np.sum(depth[max(0, i - windowSize - 1):min(N, i + windowSize)]) >= paSup:
-            currPeaks[i] = depth[i] * 2 + np.mean(depth[max(0, i - windowSize - 1):min(N, i + windowSize)])
+        if np.sum(depth[max(0, i - windowSize):min(N, i + windowSize + 1)]) >= paSup:
+            currPeaks[i] = depth[i] * 2 + np.mean(depth[max(0, i - windowSize):min(N, i + windowSize + 1)])
             # currPeaks[i] = sum(depth[max(0, i - windowSize - 1):min(N, i + windowSize)])
     currPeaksBak = copy.copy(currPeaks)
     pacDict = {}
@@ -913,7 +913,7 @@ def getPAC(depth, distance=20, windowSize=2, paSup=5, rpkmPAC=0, allReadCount=10
         maxDiff = 1000000
         closestPAC = ""
         for pac in pacDict:
-            if isOverlap((cp-distance-1, cp+distance), (min(pacDict[pac]), max(pacDict[pac]))):
+            if isOverlap((cp-distance, cp+distance+1), (min(pacDict[pac]), max(pacDict[pac]))):
                 overlapFlag = 1
                 diff2pac = min(abs(cp - min(pacDict[pac])), abs(cp - max(pacDict[pac])))
                 if diff2pac < maxDiff:
@@ -924,9 +924,10 @@ def getPAC(depth, distance=20, windowSize=2, paSup=5, rpkmPAC=0, allReadCount=10
         else:
             count += 1
             pacName = "PAC_{}".format(count)
-            pacDict[pacName] = [cp]
+            pacDict[pacName] = [cp, max([0, cp-windowSize]), min([cp+windowSize+1, N])]
         currPeaks[cp] = 0
 
+    if len(pacDict) == 0: return []
     newPacDict = {pacDict.keys()[0]: copy.copy(pacDict[pacDict.keys()[0]])}
     for pac1 in pacDict.keys()[1:]:
         pac1Start = min(pacDict[pac1])
@@ -934,7 +935,7 @@ def getPAC(depth, distance=20, windowSize=2, paSup=5, rpkmPAC=0, allReadCount=10
         for pac2 in newPacDict:
             pac2Start = min(newPacDict[pac2])
             pac2End = max(newPacDict[pac2])
-            if isOverlap((pac1Start-distance-1, pac1End+distance), (pac2Start, pac2End)):
+            if isOverlap((pac1Start-distance, pac1End+distance+1), (pac2Start, pac2End)):
                 newPacDict[pac2].extend(pacDict[pac1])
                 break
         else:
@@ -942,14 +943,17 @@ def getPAC(depth, distance=20, windowSize=2, paSup=5, rpkmPAC=0, allReadCount=10
 
     finalPeak2Count = []
     for pac in newPacDict:
-        peak = newPacDict[pac][int(np.argmax(currPeaksBak[newPacDict[pac]]))]
-        count = sum(depth[newPacDict[pac]])
+        pacStart = min(newPacDict[pac])
+        pacEnd = max(newPacDict[pac])
+        peakPosInPac = int(np.argmax(currPeaksBak[pacStart: pacEnd]))
+        peak = range(pacStart, pacEnd)[peakPosInPac]
+        count = sum(depth[pacStart:pacEnd])
         if rpkmPAC:
             rpkm = (count * 1000000) / float(allReadCount*effLen)
             if rpkm >= rpkmPAC:
-                finalPeak2Count.append((peak, count, newPacDict[pac]))
+                finalPeak2Count.append((peak, count, [x for x in range(pacStart, pacEnd) if depth[x] > 0]))
         else:
-            finalPeak2Count.append((peak, count, newPacDict[pac]))
+            finalPeak2Count.append((peak, count, [x for x in range(pacStart, pacEnd) if depth[x] > 0]))
     if finalPeak2Count:
         finalPeak2Count = sorted(finalPeak2Count, key=lambda pair: pair[1], reverse=True)
     return finalPeak2Count
@@ -1050,7 +1054,7 @@ def paCluster_test(readsBedList, distance=20, windowSize=3, outHandle=None, allR
                 annotation = "Novel"
         else:
             annotation = "Unknown"
-        readNames = list(itertools.chain.from_iterable([depth2reads[x] for x in pac if x in depth2reads]))
+        readNames = list(itertools.chain.from_iterable([depth2reads[x] for x in range(min(pac), max(pac)+1) if x in depth2reads]))
         print >> outHandle, "\t".join(map(str, [chrom, offest + min(pac), offest + max(pac), ",".join(readNames),
                                                 len(readNames), strand, offest + peak-1, offest + peak, refGene,
                                                 annotation]))
