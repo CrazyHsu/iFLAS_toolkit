@@ -464,10 +464,10 @@ def scoreAsIsoform(irFile, seFile, a3ssFile, a5ssFile, paFile, isoformFile, coll
                     annoFlag = 0
                     tmpJuncDict = {}
                     for i in item[0]:
-                        if gene2isoDict[geneName][i].juncChain not in tmpJuncDict:
-                            tmpJuncDict[gene2isoDict[geneName][i].juncChain] = [i]
+                        if isoformBed[i].juncChain not in tmpJuncDict:
+                            tmpJuncDict[isoformBed[i].juncChain] = [i]
                         else:
-                            tmpJuncDict[gene2isoDict[geneName][i].juncChain].append(i)
+                            tmpJuncDict[isoformBed[i].juncChain].append(i)
                     for j in tmpJuncDict:
                         for x in tmpJuncDict[j]:
                             if x in annoIsoformDict:
@@ -567,8 +567,9 @@ def quantIsoformWithSalmon(isoformScoreFile, isoformFile, collapsedTrans2reads, 
             print >> newScoreOut, "\t".join(infoList[0:-1]) + "\t" + "\t".join(map(str, [minTPM, maxTPM, meanTPM])) + "\t" + infoList[-1]
     newScoreOut.close()
 
-def getHqIsoCombs(isoformFile):
+def getHqIsoCombs():
     isoformScoreFile = os.path.join(os.getcwd(), "isoformScore.tpm.txt")
+    isoformFile = os.path.join("../refine/", "tofu.collapsed.assigned.bed12+")
     isoformScoreDict = {}
     with open(isoformScoreFile) as f:
         for line in f.readlines()[1:]:
@@ -593,13 +594,26 @@ def getHqIsoCombs(isoformFile):
         for iso in novelIsos:
             if int(iso[2]) > int(annoIsos[0][2]) * 1.5:
                 flag = 1
-                print >> out, "\t".join(iso) + "\t" + "{}:{}".format(isoformBed[iso[1].split(",")[0]].chrom, isoformBed[iso[1].split(",")[0]].juncChain)
+                if len(isoformBed[iso[1].split(",")[0]].introns) > 1:
+                    print >> out, "\t".join(iso) + "\t" + "{}:{}".format(isoformBed[iso[1].split(",")[0]].chrom, isoformBed[iso[1].split(",")[0]].juncChain)
+                else:
+                    refGene = list(set(isoformBed[iso[1].split(",")[0]].otherList[3].split(",")))[0]
+                    print >> out, "\t".join(iso) + "\t" + "{}:{}".format(isoformBed[iso[1].split(",")[0]].chrom, "Novel_"+refGene)
             elif int(annoIsos[0][2]) < int(iso[2]) and int(iso[2]) < 1.5 * int(annoIsos[0][2]):
                 if float(iso[-2]) > float(annoIsos[0][-2]):
                     flag = 1
-                    print >> out, "\t".join(iso) + "\t" + "{}:{}".format(isoformBed[iso[1].split(",")[0]].chrom, isoformBed[iso[1].split(",")[0]].juncChain)
+                    if len(isoformBed[iso[1].split(",")[0]].introns) > 1:
+                        print >> out, "\t".join(iso) + "\t" + "{}:{}".format(isoformBed[iso[1].split(",")[0]].chrom, isoformBed[iso[1].split(",")[0]].juncChain)
+                    else:
+                        refGene = list(set(isoformBed[iso[1].split(",")[0]].otherList[3].split(",")))[0]
+                        print >> out, "\t".join(iso) + "\t" + "{}:{}".format(isoformBed[iso[1].split(",")[0]].chrom, "Novel_" + refGene)
         if flag:
-            print >> out, "\t".join(annoIsos[0]) + "\t" + "{}:{}".format(isoformBed[annoIsos[0][1].split(",")[0]].chrom, isoformBed[annoIsos[0][1].split(",")[0]].juncChain)
+            if len(isoformBed[annoIsos[0][1].split(",")[0]].introns) > 1:
+                print >> out, "\t".join(annoIsos[0]) + "\t" + "{}:{}".format(isoformBed[annoIsos[0][1].split(",")[0]].chrom, isoformBed[annoIsos[0][1].split(",")[0]].juncChain)
+            else:
+                refGene = list(set(isoformBed[annoIsos[0][1].split(",")[0]].otherList[3].split(",")))[0]
+                print >> out, "\t".join(annoIsos[0]) + "\t" + "{}:{}".format(isoformBed[annoIsos[0][1].split(",")[0]].chrom, "Known_" + refGene)
+            # print >> out, "\t".join(annoIsos[0]) + "\t" + "{}:{}".format(isoformBed[annoIsos[0][1].split(",")[0]].chrom, isoformBed[annoIsos[0][1].split(",")[0]].juncChain)
     out.close()
 # irFile = "/home/xufeng/xufeng/iso-seq/iFLAS_toolkit/test_data/Zm00001d050245.IR.PB.bed6+"
 # seFile = "/home/xufeng/xufeng/iso-seq/iFLAS_toolkit/test_data/Zm00001d050245.SE.PB.bed12+"
