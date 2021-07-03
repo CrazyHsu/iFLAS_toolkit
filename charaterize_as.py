@@ -4,7 +4,7 @@ import pybedtools
 
 def charaterize_as(dataObj=None, refParams=None, dirSpec=None):
     projectName, sampleName = dataObj.project_name, dataObj.sample_name
-    print getCurrentTime() + " ASE Characterization for project {} sample {}...".format(projectName, sampleName)
+    print getCurrentTime() + " ASE Characterization for project {} entry {}...".format(projectName, sampleName)
     prevDir = os.getcwd()
     characAsDir = os.path.join(dirSpec.out_dir, projectName, sampleName, "as_events", "characterization")
     resolveDir(characAsDir)
@@ -54,7 +54,7 @@ def charaterize_as(dataObj=None, refParams=None, dirSpec=None):
         makeLink("PB.A3SS.lst", "confident.A3SS.lst")
 
     # Classify APE into annotated or novel according to reference gene model
-    cmd = '''awk '{{print $0"\t"$12}}' {} | gpe2bed.pl -p >reference.bed12+'''.format(refParams.ref_gpe)
+    cmd = "cut -f 1,12 {} | gpe2bed.pl -p >reference.bed12+".format(refParams.ref_gpe)
     subprocess.call(cmd, shell=True, executable="/bin/bash")
 
     transBedList = GenePredObj(refParams.ref_gpe, bincolumn=False).toBed(gene=True)

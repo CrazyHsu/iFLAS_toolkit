@@ -27,5 +27,6 @@ def rank_as(dataObj=None, dirSpec=None, refParams=None):
     annoIsoformFile = os.path.join(os.path.join(baseDir, "refine", "isoformGrouped.anno.bed12+"))
     asEnumerateFile, isoformScoreFile = scoreAsIsoform(irFile, seFile, a3ssFile, a5ssFile, paFile, isoformFile, collapsedTrans2reads, annoIsoformFile)
     quantIsoformWithSalmon(isoformScoreFile, isoformFile, collapsedTrans2reads, dataObj, refParams, dirSpec)
+    getHqIsoCombs(isoformFile)
     os.chdir(prevDir)
     print getCurrentTime() + " End analysis independence between alternative splicing(AS) isoforms for project {} sample {}!".format(projectName, sampleName)

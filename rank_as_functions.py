@@ -462,16 +462,26 @@ def scoreAsIsoform(irFile, seFile, a3ssFile, a5ssFile, paFile, isoformFile, coll
                         if combination2iso[x]["iso"] == item[0]:
                             simFreq = combination2iso[x]["freq"]
                     annoFlag = 0
+                    tmpJuncDict = {}
                     for i in item[0]:
-                        if i in annoIsoformDict:
-                            annoFlag = 1
-                            break
-                    if annoFlag == 1:
-                        annotation = "Annotated"
-                    else:
-                        annotation = "Novel"
-                    print >>isoformScoreOut, "\t".join(map(str, [geneName, ",".join(item[0]), item[1], len(set(allReads)),
-                                                                 float(item[1])/len(set(allReads)), simFreq, annotation]))
+                        if gene2isoDict[geneName][i].juncChain not in tmpJuncDict:
+                            tmpJuncDict[gene2isoDict[geneName][i].juncChain] = [i]
+                        else:
+                            tmpJuncDict[gene2isoDict[geneName][i].juncChain].append(i)
+                    for j in tmpJuncDict:
+                        for x in tmpJuncDict[j]:
+                            if x in annoIsoformDict:
+                                annoFlag = 1
+                                break
+                        if annoFlag == 1:
+                            annotation = "Annotated"
+                        else:
+                            annotation = "Novel"
+                        allReadCount = len(set(allReads))
+                        tmpReads = set(itertools.chain.from_iterable([isoform2reads[x] for x in tmpJuncDict[j]]))
+                        print >> isoformScoreOut, "\t".join(map(str, [geneName, ",".join(tmpJuncDict[j]), len(tmpReads),
+                                                                      allReadCount, float(len(tmpReads))/allReadCount,
+                                                                      simFreq, annotation]))
     asEnumerateOut.close()
     isoformScoreOut.close()
     return "asEnumerate.txt", "isoformScore.txt"
@@ -557,6 +567,40 @@ def quantIsoformWithSalmon(isoformScoreFile, isoformFile, collapsedTrans2reads, 
             print >> newScoreOut, "\t".join(infoList[0:-1]) + "\t" + "\t".join(map(str, [minTPM, maxTPM, meanTPM])) + "\t" + infoList[-1]
     newScoreOut.close()
 
+def getHqIsoCombs(isoformFile):
+    isoformScoreFile = os.path.join(os.getcwd(), "isoformScore.tpm.txt")
+    isoformScoreDict = {}
+    with open(isoformScoreFile) as f:
+        for line in f.readlines()[1:]:
+            infoList = line.strip("\n").split("\t")
+            if int(infoList[3]) < 10: continue
+            if infoList[0] not in isoformScoreDict:
+                # isoformScoreDict[infoList[0]] = {}
+                isoformScoreDict[infoList[0]] = {infoList[-1]: [infoList]}
+            elif infoList[-1] not in isoformScoreDict[infoList[0]]:
+                isoformScoreDict[infoList[0]][infoList[-1]] = [infoList]
+            else:
+                isoformScoreDict[infoList[0]][infoList[-1]].append(infoList)
+
+    isoformBed = BedFile(isoformFile, type="bed12+").reads
+    out = open("hqIsoCombs.txt", "w")
+    for g in isoformScoreDict:
+        if len(isoformScoreDict[g]) < 2: continue
+        annoIsos = isoformScoreDict[g]["Annotated"]
+        novelIsos = isoformScoreDict[g]["Novel"]
+        annoIsos = sorted(annoIsos, key=lambda x: int(x[2]), reverse=True)
+        flag = 0
+        for iso in novelIsos:
+            if int(iso[2]) > int(annoIsos[0][2]) * 1.5:
+                flag = 1
+                print >> out, "\t".join(iso) + "\t" + "{}:{}".format(isoformBed[iso[1].split(",")[0]].chrom, isoformBed[iso[1].split(",")[0]].juncChain)
+            elif int(annoIsos[0][2]) < int(iso[2]) and int(iso[2]) < 1.5 * int(annoIsos[0][2]):
+                if float(iso[-2]) > float(annoIsos[0][-2]):
+                    flag = 1
+                    print >> out, "\t".join(iso) + "\t" + "{}:{}".format(isoformBed[iso[1].split(",")[0]].chrom, isoformBed[iso[1].split(",")[0]].juncChain)
+        if flag:
+            print >> out, "\t".join(annoIsos[0]) + "\t" + "{}:{}".format(isoformBed[annoIsos[0][1].split(",")[0]].chrom, isoformBed[annoIsos[0][1].split(",")[0]].juncChain)
+    out.close()
 # irFile = "/home/xufeng/xufeng/iso-seq/iFLAS_toolkit/test_data/Zm00001d050245.IR.PB.bed6+"
 # seFile = "/home/xufeng/xufeng/iso-seq/iFLAS_toolkit/test_data/Zm00001d050245.SE.PB.bed12+"
 # a3ssFile = "/home/xufeng/xufeng/iso-seq/iFLAS_toolkit/test_data/Zm00001d050245.A3SS.PB.bed6+"
